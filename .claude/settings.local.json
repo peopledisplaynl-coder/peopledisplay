@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(BASE=\"d:/PeopleDipsplay_CLEAN_INSTALL/peopledisplay_install\" echo \"=== Checking schema field usage ===\" grep -rn \"standaard_locatie\\\\|primary_ip\\\\|backup_ip\\\\|ip_range_start\\\\|ip_range_end\\\\|auto_checkin_enabled\" \"$BASE\" --include=\"*.php\" --include=\"*.js\")",
+      "Read(//d/PeopleDipsplay_CLEAN_INSTALL/peopledisplay_install/**)"
+    ]
+  }
+}

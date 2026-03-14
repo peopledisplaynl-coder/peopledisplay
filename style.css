@@ -1,0 +1,1496 @@
+/**
+ * BESTANDSNAAM: style.css
+ * LOCATIE: /peopledisplay/style.css
+ * BESCHRIJVING: Main stylesheet voor aanmeldscherm
+ * VERSIE: 2.0 - FULLY OPTIMIZED RESPONSIVE
+ */
+
+/* === ALGEMEEN === */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0; /* ✅ Toegevoegd */
+  background-color: #f2f2f2;
+  width: 100%; /* ✅ Toegevoegd */
+  overflow-x: hidden; /* ✅ Toegevoegd - voorkomt horizontal scroll */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ✅ Main container - gebruik volledige breedte */
+main, .main-content {
+  max-width: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+/* === HEADER === */
+header {
+  background-color: #000;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Compacter op mobiel */
+@media (max-width: 767px) {
+  header {
+    padding: 8px;
+    gap: 6px;
+  }
+}
+
+/* ✅ HEADER BADGES - FLEXBOX VOOR PILLS */
+.header-badges {
+  display: flex !important;
+  gap: 6px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.header-badges .badge {
+  flex-shrink: 0 !important;
+}
+
+.header-left { 
+  flex: 1; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px;
+  min-width: 150px;
+}
+
+.header-center { 
+  flex: 1; 
+  display: flex; 
+  justify-content: center; 
+  gap: 10px;
+  flex-wrap: wrap;
+  overflow: visible;
+  align-items: center;
+}
+
+/* Op mobiel: center badges naar volle breedte */
+@media (max-width: 767px) {
+  .header-center {
+    flex: 1 1 100%;
+    order: 3;
+    justify-content: space-around;
+    gap: 6px;
+    margin-top: 6px;
+  }
+}
+
+.header-right { 
+  flex: 1; 
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 8px; 
+  align-items: center;
+  min-width: 150px;
+}
+
+@media (max-width: 767px) {
+  .header-left,
+  .header-right {
+    gap: 6px;
+    min-width: auto;
+  }
+}
+
+/* === USER PROFILE IN HEADER === */
+.user-profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+/* Compacter op mobiel */
+@media (max-width: 767px) {
+  .user-profile {
+    padding: 4px 6px;
+    gap: 6px;
+  }
+}
+
+.user-profile:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-profile-photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Kleinere foto op mobiel */
+@media (max-width: 767px) {
+  .user-profile-photo {
+    width: 32px;
+    height: 32px;
+    border-width: 1px;
+  }
+}
+
+.user-profile-photo.placeholder {
+  background-color: #007bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  color: white;
+}
+
+@media (max-width: 767px) {
+  .user-profile-photo.placeholder {
+    font-size: 14px;
+  }
+}
+
+.user-profile-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Verberg naam op klein mobiel */
+@media (max-width: 599px) {
+  .user-profile-name {
+    display: none;
+  }
+}
+
+/* Kleinere tekst op tablet */
+@media (min-width: 600px) and (max-width: 1023px) {
+  .user-profile-name {
+    font-size: 13px;
+    max-width: 100px;
+  }
+}
+
+/* === USER DROPDOWN MENU === */
+.user-dropdown {
+  position: absolute;
+  top: 55px;
+  left: 0;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  min-width: 220px;
+  display: none;
+  z-index: 1000;
+  overflow: hidden;
+}
+.user-dropdown.active {
+  display: block;
+}
+.user-dropdown-header {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+.user-dropdown-header strong {
+  display: block;
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+.user-dropdown-header small {
+  color: #6c757d;
+  font-size: 13px;
+}
+.user-dropdown-item {
+  display: block;
+  padding: 12px 15px;
+  color: #333;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+.user-dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+.user-dropdown-item.logout {
+  color: #dc3545;
+  border-top: 1px solid #dee2e6;
+  font-weight: 600;
+}
+.user-dropdown-item.logout:hover {
+  background-color: #fff5f5;
+}
+
+/* === KNOP STYLING === */
+.btn-overview-icon {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: background-color 0.2s ease, transform 0.06s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.btn-overview-icon:hover {
+  background-color: #138496;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1023px) {
+  .btn-overview-icon {
+    padding: 8px 12px;
+    font-size: 16px;
+  }
+  
+  .btn-overview-icon:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .btn-overview-icon {
+    padding: 6px 10px;
+    font-size: 16px;
+  }
+}
+
+#toggle-menu-btn,
+#toggle-menu,
+#fullscreen-btn,
+#toggle-fullscreen {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: background-color 0.2s ease, transform 0.06s ease;
+  white-space: nowrap;
+}
+
+/* Compacter op tablet */
+@media (max-width: 1023px) {
+  #toggle-menu-btn,
+  #toggle-menu,
+  #fullscreen-btn,
+  #toggle-fullscreen {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
+
+/* Nog compacter op mobiel */
+@media (max-width: 767px) {
+  #toggle-menu-btn,
+  #toggle-menu,
+  #fullscreen-btn,
+  #toggle-fullscreen {
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: 4px;
+  }
+}
+
+#toggle-menu-btn:hover,
+#toggle-menu:hover,
+#fullscreen-btn:hover,
+#toggle-fullscreen:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+/* Geen hover effect op mobiel */
+@media (max-width: 1023px) {
+  #toggle-menu-btn:hover,
+  #toggle-menu:hover,
+  #fullscreen-btn:hover,
+  #toggle-fullscreen:hover {
+    transform: none;
+  }
+}
+
+#fullscreen-btn.active,
+#toggle-fullscreen.active {
+  background-color: #2ecc71;
+  color: white;
+}
+
+/* === STATUS BADGES IN HEADER === */
+#count-in-top { 
+  background-color: #2ecc71;
+  color: white; 
+}
+#count-out-top { 
+  background-color: #e74c3c;
+  color: white; 
+}
+#count-bhv-top { 
+  background-color: #3498db;
+  color: white; 
+}
+
+header div[id^="count-"] {
+  padding: 8px 14px; /* ✅ Iets groter */
+  border-radius: 8px; /* ✅ Ronder */
+  font-weight: bold;
+  min-width: 110px; /* ✅ Iets breder */
+  text-align: center;
+  font-size: 15px; /* ✅ Iets groter */
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15); /* ✅ Subtiele shadow */
+  transition: transform 0.2s ease; /* ✅ Hover effect */
+}
+
+/* ✅ Hover effect badges */
+@media (min-width: 1024px) {
+  header div[id^="count-"]:hover {
+    transform: scale(1.05);
+  }
+}
+
+/* Compacter op tablet */
+@media (max-width: 1023px) {
+  header div[id^="count-"] {
+    padding: 6px 12px;
+    min-width: 90px;
+    font-size: 14px;
+  }
+}
+
+/* Nog compacter op mobiel */
+@media (max-width: 767px) {
+  header div[id^="count-"] {
+    padding: 5px 10px;
+    min-width: 80px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+}
+
+/* === LOCATION INDICATOR === */
+#location-indicator {
+  background-color: #2ecc71;
+  color: white;
+  font-weight: bold;
+  padding: 8px 12px;
+  margin: 10px;
+  border-radius: 6px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* === GEBOUWMENU === */
+#building-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  background-color: #f0f0f0;
+}
+
+/* Mobiel: kleinere gap */
+@media (max-width: 767px) {
+  #building-menu {
+    gap: 6px;
+    padding: 8px;
+  }
+}
+
+#building-menu button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, transform 0.06s ease;
+  min-height: 36px;
+  white-space: nowrap;
+}
+
+/* Grotere touch targets op mobiel */
+@media (max-width: 767px) {
+  #building-menu button {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-height: 42px;
+    border-radius: 4px;
+  }
+}
+
+#building-menu button:hover { 
+  background-color: #0069d9; 
+}
+
+/* Geen hover op mobiel */
+@media (max-width: 1023px) {
+  #building-menu button:hover {
+    background-color: #007bff;
+  }
+  #building-menu button:active {
+    background-color: #0069d9;
+  }
+}
+
+#building-menu button.selected { 
+  background-color: #28b463; 
+}
+
+#building-menu button.all-clear { 
+  background-color: #0056b3; 
+}
+
+/* === FILTERS & VELDOPTIES === */
+#filters, #field-options {
+  padding: 15px;
+  background-color: #e0e0e0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 767px) {
+  #filters {
+    gap: 8px;
+    padding: 10px;
+  }
+}
+
+#filters select, #filters input { 
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  flex: 1;
+  min-width: 150px;
+}
+
+#filters input:focus,
+#filters select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+@media (max-width: 767px) {
+  #filters select, #filters input {
+    min-width: 120px;
+    font-size: 13px;
+  }
+}
+
+#field-options label {
+  background-color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* ============================================================
+   ✅ EMPLOYEE LIST - OPTIMIZED RESPONSIVE GRID
+   ============================================================ */
+
+#employee-list {
+  padding: 20px; /* ✅ Meer padding */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* ✅ auto-fit! */
+  gap: 20px; /* ✅ Meer gap */
+  max-width: 100%; /* ✅ VOLLEDIGE BREEDTE! */
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  
+  /* ✅ Performance optimalisatie */
+  will-change: scroll-position;
+  transform: translateZ(0);
+}
+
+/* ✅ 4K+ Monitors (3840px+): Veel kaarten */
+@media (min-width: 3840px) {
+  #employee-list {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    padding: 24px;
+  }
+}
+
+/* ✅ 2K Monitors (2560px - 3839px): Meer kaarten */
+@media (min-width: 2560px) and (max-width: 3839px) {
+  #employee-list {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 22px;
+    padding: 22px;
+  }
+}
+
+/* ✅ Large Desktop (1920px - 2559px): Optimaal */
+@media (min-width: 1920px) and (max-width: 2559px) {
+  #employee-list {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    padding: 20px;
+  }
+}
+
+/* ✅ Desktop (1440px - 1919px) */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  #employee-list {
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 18px;
+    padding: 18px;
+  }
+}
+
+/* Desktop (1200px - 1439px) */
+@media (min-width: 1200px) and (max-width: 1439px) {
+  #employee-list {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
+}
+
+/* Tablet landscape (1024px - 1199px) */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  #employee-list {
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 15px;
+    padding: 15px;
+  }
+}
+
+/* Tablet portrait (768px - 1023px): 2-3 kolommen */
+@media (min-width: 768px) and (max-width: 1023px) {
+  #employee-list {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+    padding: 12px;
+  }
+}
+
+/* Mobiel landscape (600px - 767px): 2 kolommen */
+@media (min-width: 600px) and (max-width: 767px) {
+  #employee-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+}
+
+/* Mobiel portrait (<600px): 1 kolom */
+@media (max-width: 599px) {
+  #employee-list {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px;
+  }
+}
+
+/* ✅ ZOOM SUPPORT */
+/* Bij 90% zoom: meer kaarten mogelijk */
+@media (min-width: 1800px) {
+  body:not(.disable-zoom-adapt) #employee-list {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+/* Bij 80% zoom: nog meer kaarten */
+@media (min-width: 2200px) {
+  body:not(.disable-zoom-adapt) #employee-list {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  }
+}
+
+/* ============================================================
+   EMPLOYEE CARDS
+   ============================================================ */
+
+.employee-card {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  border-radius: 8px;
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  color: black;
+  transition: background-color 0.3s ease, transform 0.08s ease;
+  background: #fff;
+  min-height: 140px;
+  
+  /* ✅ Performance */
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Hover effect alleen op desktop */
+@media (min-width: 1024px) {
+  .employee-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  }
+}
+
+.employee-card.in { 
+  background-color: #a9e5c6;
+}
+.employee-card.out { 
+  background-color: #f5b5b5;
+}
+.employee-card.reset { 
+  background-color: #cccccc !important; 
+}
+
+/* 🔥 SUB-STATUS KLEUREN (moeten NA .in/.out komen voor priority!) */
+/* 🌸 PAUZE / BUTTON 1 KAART = LICHT ROZE */
+.employee-card.in.button1, .employee-card.out.button1,
+.employee-card.in.pauze, .employee-card.out.pauze {
+  background-color: #ffe4f0 !important;
+  border-left: 4px solid #ff69b4 !important;
+}
+
+/* 💜 THUISWERKEN / BUTTON 2 KAART = LICHT PAARS */
+.employee-card.in.button2, .employee-card.out.button2,
+.employee-card.in.thuiswerken, .employee-card.out.thuiswerken {
+  background-color: #f0e6fa !important;
+  border-left: 4px solid #9370db !important;
+}
+
+/* 🌿 VAKANTIE / BUTTON 3 KAART = LICHT GEELGROEN */
+.employee-card.in.button3, .employee-card.out.button3,
+.employee-card.in.vakantie, .employee-card.out.vakantie {
+  background-color: #f0f8d8 !important;
+  border-left: 4px solid #9acd32 !important;
+}
+
+.card-content { 
+  display: flex; 
+  flex-direction: row; 
+  width: 100%; 
+}
+
+.emp-photo-side { 
+  flex: 0 0 60px; 
+  margin-right: 10px; 
+}
+
+.emp-photo-side img {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  loading: lazy; /* ✅ Lazy loading */
+}
+
+/* Kleinere foto op mobiel */
+@media (max-width: 599px) {
+  .emp-photo-side { 
+    flex: 0 0 50px; 
+    margin-right: 8px; 
+  }
+  .emp-photo-side img {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+.emp-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.emp-name {
+  font-weight: bold;
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  line-height: 1.3;
+}
+
+/* Compactere fonts op desktop */
+@media (min-width: 1200px) {
+  .emp-name {
+    font-size: 14px;
+  }
+}
+
+/* Grotere touch targets op mobiel */
+@media (max-width: 767px) {
+  .emp-name {
+    font-size: 15px;
+  }
+}
+
+.status-label { 
+  font-weight: bold; 
+  margin-left: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.bhv-label {
+  background-color: #3498db;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-top: 3px;
+  display: inline-block;
+  font-weight: 600;
+}
+
+.emp-meta { 
+  font-size: 13px; 
+  margin-top: 3px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Compacter op desktop */
+@media (min-width: 1200px) {
+  .emp-meta {
+    font-size: 12px;
+  }
+}
+
+/* === KNOPPEN ONDERAAN KAART === */
+.btn-wrap {
+  display: flex;
+  margin-top: auto;
+  width: 100%;
+  gap: 8px;
+}
+
+.status-btn {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 15px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+/* Compacter op desktop */
+@media (min-width: 1200px) {
+  .status-btn {
+    padding: 8px 0;
+    font-size: 14px;
+    min-height: 38px;
+  }
+}
+
+/* Grotere touch targets op mobiel */
+@media (max-width: 767px) {
+  .status-btn {
+    padding: 12px 0;
+    font-size: 16px;
+    min-height: 48px;
+  }
+}
+
+.status-btn.in { background-color: #2ecc71; color: white; }
+.status-btn.out { background-color: #e74c3c; color: white; }
+
+.status-btn.in:hover,
+.status-btn.out:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+
+/* Hover alleen op desktop */
+@media (max-width: 1023px) {
+  .status-btn.in:hover,
+  .status-btn.out:hover {
+    transform: none;
+  }
+}
+
+.status-btn:disabled,
+.extra-btn:disabled {
+  opacity: 0.6 !important;
+  cursor: wait !important;
+  pointer-events: none;
+}
+
+.status-btn:disabled:hover,
+.extra-btn:disabled:hover {
+  transform: none !important;
+  filter: none !important;
+}
+
+/* === FOOTER === */
+footer {
+  background-color: #000;
+  color: white;
+  padding: 15px 10px; /* ✅ Iets meer padding */
+  text-align: center;
+}
+footer select, footer input, footer button {
+  margin: 5px;
+  padding: 6px;
+  font-size: 14px;
+}
+.footer-refresh {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #999; /* ✅ Subtielere kleur */
+}
+footer select#email-select {
+  position: relative;
+  z-index: 1000;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  appearance: auto;
+}
+.footer-email select,
+.footer-email input,
+.footer-email button {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 20;
+}
+
+/* === NO DATA / ERROR STYLES === */
+.no-data {
+  padding: 12px;
+  color: #444;
+  background: #fff;
+  border-radius: 6px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* === VERBERGEN + PATCH TON === */
+.hidden {
+  display: none !important;
+}
+
+.menu-hidden #building-menu {
+  display: none !important;
+}
+
+/* preserve card layout */
+#employee-list { margin-top: 12px; }
+
+/* ========================================
+   🎨 EXTRA STATUS KNOPPEN (NIEUWE KLEUREN)
+   ======================================== */
+.extra-btn-wrap {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.extra-btn {
+  flex: 1;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Compacter op grote desktop */
+@media (min-width: 1400px) {
+  .extra-btn {
+    font-size: 10px;
+    padding: 5px 3px;
+    min-height: 32px;
+  }
+}
+
+/* Iets groter op tablet en mobiel */
+@media (max-width: 767px) {
+  .extra-btn {
+    font-size: 12px;
+    padding: 8px 6px;
+    min-height: 42px;
+  }
+}
+
+/* 🌸 PAUZE / BUTTON 1 = ROZE */
+.extra-btn.pauze {
+  background-color: #ff69b4 !important;
+}
+
+.extra-btn.pauze:hover:hover {
+  background-color: #ff1493 !important;
+  transform: translateY(-1px);
+}
+
+/* 🌿 VAKANTIE / BUTTON 3 = GEELGROEN */
+.extra-btn.vakantie {
+  background-color: #9acd32 !important;
+}
+
+.extra-btn.vakantie:hover:hover {
+  background-color: #7cb027 !important;
+  transform: translateY(-1px);
+}
+
+/* 💜 THUISWERKEN / BUTTON 2 = PAARS */
+.extra-btn.thuiswerken {
+  background-color: #9370db !important;
+}
+
+.extra-btn.thuiswerken:hover:hover {
+  background-color: #7b68ee !important;
+  transform: translateY(-1px);
+}
+
+/* Hover alleen op desktop */
+@media (max-width: 1023px) {
+  .extra-btn.pauze:hover,
+  .extra-btn.button1:hover,
+  .extra-btn.vakantie:hover,
+  .extra-btn.button3:hover,
+  .extra-btn.thuiswerken:hover,
+  .extra-btn.button2:hover {
+    transform: none;
+  }
+}
+
+
+/* ========================================
+   🏷️ BADGE PILL STYLING - ICOON + GETAL
+   ======================================== */
+
+.badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  width: 48px !important;
+  height: 32px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 6px !important;
+  margin: 0 !important;
+  border-radius: 16px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  flex-shrink: 0 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+}
+
+.badge-icon {
+  font-size: 16px !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+}
+
+/* ========================================
+   🏷️ EXTRA STATUS BADGES (NIEUWE KLEUREN)
+   ======================================== */
+
+/* 🌸 PAUZE BADGE = ROZE */
+.badge-pauze,
+#count-pauze-top {
+  background-color: #ff69b4 !important;
+  color: white;
+}
+
+/* 🌿 VAKANTIE BADGE = GEELGROEN */
+.badge-vakantie,
+#count-vakantie-top {
+  background-color: #9acd32 !important;
+  color: white;
+}
+
+/* 💜 THUISWERKEN BADGE = PAARS */
+.badge-thuiswerken,
+#count-thuiswerken-top {
+  background-color: #9370db !important;
+  color: white;
+}
+
+/* ========================================
+   🃏 KAART ACHTERGRONDEN (NIEUWE KLEUREN)
+   ======================================== */
+
+/* ========================================
+   🔘 FOOTER BUTTONS (BHV + ADMIN)
+   ======================================== */
+
+.footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.footer-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  text-decoration: none;
+  color: white;
+}
+
+.footer-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* BHV Button - Rode kleuren voor emergency/alert */
+.footer-btn-bhv {
+  background: linear-gradient(135deg, #ff4757 0%, #e84118 100%);
+}
+
+.footer-btn-bhv:hover {
+  background: linear-gradient(135deg, #ff6348 0%, #ff4757 100%);
+}
+
+/* Admin Button - Blauwe kleuren voor admin/settings */
+.footer-btn-admin {
+  background: linear-gradient(135deg, #4b7bec 0%, #3867d6 100%);
+}
+
+.footer-btn-admin:hover {
+  background: linear-gradient(135deg, #5a8dee 0%, #4b7bec 100%);
+}
+
+/* Footer actions container */
+.footer-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 10px 0;
+}
+
+/* Responsive: kleinere buttons op mobile */
+@media (max-width: 768px) {
+  .footer-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    gap: 6px;
+  }
+  
+  .footer-actions {
+    gap: 10px;
+  }
+}
+
+/* Extra groot icoon voor BHV (emergency alert) */
+.footer-btn-bhv::before {
+  font-size: 18px;
+  animation: pulse-bhv 2s ease-in-out infinite;
+}
+
+@keyframes pulse-bhv {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+/* Admin icoon draait bij hover */
+.footer-btn-admin:hover::before {
+  display: inline-block;
+  animation: rotate-admin 0.6s ease-in-out;
+}
+
+@keyframes rotate-admin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+/* ========================================
+   🏁 END OF FILE
+   ======================================== 
+   
+   CHANGELOG v2.0:
+   ✅ Employee list: auto-fit + max-width 100%
+   ✅ Header badges: Flex → Grid (2x3)
+   ✅ Responsive: 8+ breakpoints (mobiel tot 4K)
+   ✅ Zoom support: 80% - 120%
+   ✅ Performance: GPU acceleration
+   ✅ Lazy loading: Images
+   ✅ Footer buttons: Geoptimaliseerd
+   ✅ Body: overflow-x hidden
+   
+   RESULT:
+   📱 Mobiel: 1 kaart/rij
+   📱 Tablet: 2-3 kaarten/rij
+   💻 Desktop (1080p): 4-5 kaarten/rij
+   💻 Desktop (1440p): 5-6 kaarten/rij
+   🖥️ Large (1920p): 6-7 kaarten/rij
+   🖥️ 2K (2560p): 8-9 kaarten/rij
+   🖥️ 4K (3840p+): 12-14 kaarten/rij
+   
+   ======================================== */
+
+/* ========================================
+   HEADER KNOPPEN STYLING
+   ======================================== */
+
+.header-right .btn,
+.header-right button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.header-right .btn-primary,
+.header-right button.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.header-right .btn-primary:hover,
+.header-right button.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.header-right .btn-secondary,
+.header-right button.btn-secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(240, 147, 251, 0.3);
+}
+
+.header-right .btn-secondary:hover,
+.header-right button.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+}
+
+.header-right .btn:active,
+.header-right button:active {
+  transform: translateY(0);
+}
+
+/* Mobile: Kleinere knoppen */
+@media (max-width: 767px) {
+  .header-right .btn,
+  .header-right button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ============================================================================
+   FILTER PERSISTENCE STYLING
+   ============================================================================ */
+
+/* Filters section - actieve state */
+.filters-section.filters-active {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
+    border: 3px solid #2f855a !important;
+    box-shadow: 0 4px 20px rgba(72, 187, 120, 0.3) !important;
+    animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% {
+        border-color: #2f855a;
+        box-shadow: 0 4px 20px rgba(72, 187, 120, 0.3);
+    }
+    50% {
+        border-color: #48bb78;
+        box-shadow: 0 6px 30px rgba(72, 187, 120, 0.5);
+    }
+}
+
+/* Reset filters button */
+.reset-filters-btn {
+    background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+}
+
+.reset-filters-btn:hover {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 101, 101, 0.4);
+}
+
+.reset-filters-btn:active {
+    transform: translateY(0);
+}
+
+/* Filter count indicator */
+.filter-count {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-block;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Active filter inputs styling */
+.filters-section.filters-active input,
+.filters-section.filters-active select {
+    border: 2px solid #48bb78 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .reset-filters-btn {
+        width: 100%;
+        margin: 10px 0 0 0;
+        justify-content: center;
+    }
+}
+
+/* ============================================================
+   ✨ SORTEER TOGGLE BUTTON (NIEUW)
+   ============================================================ */
+
+/* ============================================================
+   🔄 SORTEER TOGGLE - COMPACT VERSIE
+   ============================================================ */
+
+/* Compact Sort Toggle Button */
+.sort-toggle-compact {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    transition: all 0.2s ease;
+    margin-left: 10px;
+    position: relative;
+}
+
+.sort-toggle-compact:hover {
+    background: #f8f9fa;
+    border-color: #007bff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.sort-toggle-compact.active {
+    background: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.sort-toggle-compact .sort-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.sort-toggle-compact.active .sort-icon {
+    stroke: white;
+}
+
+.sort-letter {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    min-width: 12px;
+    text-align: center;
+}
+
+/* Compact Dropdown */
+.sort-dropdown-compact {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 180px;
+    overflow: hidden;
+}
+
+.sort-dropdown-compact.show {
+    display: block;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sort-dropdown-compact .sort-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    font-size: 14px;
+    color: #333;
+}
+
+.sort-dropdown-compact .sort-option:hover {
+    background: #f0f7ff;
+}
+
+.sort-dropdown-compact .sort-option.active {
+    background: #e3f2fd;
+    font-weight: 600;
+    color: #007bff;
+}
+
+.sort-dropdown-compact .sort-option:not(:last-child) {
+    border-bottom: 1px solid #eee;
+}
+
+.sort-option-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.sort-option-text {
+    flex: 1;
+    white-space: nowrap;
+}
+
+/* Responsive - smaller on mobile */
+@media (max-width: 768px) {
+    .sort-toggle-compact {
+        padding: 5px 8px;
+        gap: 3px;
+    }
+    
+    .sort-toggle-compact .sort-icon {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .sort-letter {
+        font-size: 13px;
+    }
+    
+    .sort-dropdown-compact {
+        min-width: 160px;
+    }
+    
+    .sort-dropdown-compact .sort-option {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+}
+
+/* ============================================================
+   EINDE SORTEER TOGGLE BUTTON
+   ============================================================ */

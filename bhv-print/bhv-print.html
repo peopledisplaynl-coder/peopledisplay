@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>BHV Overzicht – Print & Export</title>
+  <link rel="stylesheet" href="bhv-print.css">
+</head>
+<body>
+  <header>
+    <h1>BHV Overzicht – Medewerkers met status IN</h1>
+  </header>
+
+  <section id="controls">
+    <button id="print-btn">🖨️ Print</button>
+    <button id="pdf-btn">📄 PDF</button>
+    <button id="csv-btn">📥 CSV</button>
+
+    <label for="email-select">📧 Kies e-mailadres:</label>
+    <select id="email-select">
+      <option value="emailadres@email.com">emailadres@email.com</option>
+      <option value="">-- Eigen adres invullen --</option>
+    </select>
+    <input type="email" id="email-input" placeholder="Eigen e-mailadres">
+    <button id="email-send-btn">📨 Verstuur per e-mail</button>
+  </section>
+
+  <section id="filters">
+    <input type="text" id="search-input" placeholder="Zoek op naam, functie...">
+    <select id="filter-afdeling"><option value="">Afdeling (alles)</option></select>
+    <select id="filter-locatie"><option value="">Locatie (alles)</option></select>
+    <select id="filter-bhv">
+      <option value="">BHV (alles)</option>
+      <option value="ja">Alleen BHV</option>
+      <option value="nee">Zonder BHV</option>
+    </select>
+  </section>
+
+  <main id="bhv-list"></main>
+
+  <script src="bhv-print.js"></script>
+</body>
+</html>

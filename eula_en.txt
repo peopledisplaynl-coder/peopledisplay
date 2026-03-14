@@ -1,0 +1,151 @@
+TERMS AND CONDITIONS — PEOPLEDISPLAY
+Version 1.0 — March 2026
+================================================================================
+
+By installing and using PeopleDisplay, you agree to these Terms and Conditions.
+Please read carefully before proceeding.
+
+--------------------------------------------------------------------------------
+1. LICENSE GRANT
+--------------------------------------------------------------------------------
+
+The developer grants you a non-exclusive, non-transferable right to use
+PeopleDisplay ("the Software") solely for your own business operations, for
+the domain for which the license was issued.
+
+Each license is bound to a single domain. Use on multiple domains requires
+separate licenses.
+
+--------------------------------------------------------------------------------
+2. INTELLECTUAL PROPERTY
+--------------------------------------------------------------------------------
+
+The Software, including all source code, documentation, graphic elements and
+associated materials, is and remains the property of the developer and is
+protected by copyright law.
+
+You may not:
+- Copy, modify, or adapt the Software in whole or in part
+- Distribute, sell, or rent the Software to third parties
+- Remove or alter copyright notices
+- Reverse-engineer or decompile the Software
+
+--------------------------------------------------------------------------------
+3. NO WARRANTY
+--------------------------------------------------------------------------------
+
+THE SOFTWARE IS PROVIDED "AS-IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED. THE DEVELOPER DOES NOT WARRANT THAT:
+
+- The Software will operate error-free or without interruption
+- The Software is fit for any particular purpose
+- Defects in the Software will be corrected
+- The Software is free of viruses or other harmful components
+
+USE OF THE SOFTWARE IS ENTIRELY AT YOUR OWN RISK.
+
+--------------------------------------------------------------------------------
+4. LIMITATION OF LIABILITY
+--------------------------------------------------------------------------------
+
+To the maximum extent permitted by applicable law, the developer shall not be
+liable for any direct, indirect, incidental, special, or consequential damages
+arising from the use or inability to use the Software, including but not limited to:
+
+- Loss of data or business information
+- Business interruption or loss of productivity
+- Loss of profits or revenue
+- Damage resulting from security incidents
+
+--------------------------------------------------------------------------------
+5. DATA PROCESSING AND GDPR
+--------------------------------------------------------------------------------
+
+You are solely responsible for compliance with the General Data Protection
+Regulation (GDPR) and other applicable privacy laws when using the Software
+to process personal data.
+
+This includes, but is not limited to:
+- Informing employees and visitors about data processing activities
+- Maintaining a record of processing activities
+- Providing rights of access, correction, and erasure
+- Implementing appropriate technical and organizational security measures
+
+The developer is not a processor of your personal data.
+
+--------------------------------------------------------------------------------
+6. BACKUPS AND DATA SECURITY
+--------------------------------------------------------------------------------
+
+You are solely responsible for regularly backing up your data. The developer
+is not liable for data loss resulting from technical failures, human error,
+or any other cause.
+
+It is recommended to perform at least daily database backups.
+
+--------------------------------------------------------------------------------
+7. UPDATES AND MAINTENANCE
+--------------------------------------------------------------------------------
+
+Updates to the Software are provided on a best-effort basis and are not
+guaranteed. The developer reserves the right to:
+
+- Update, modify, or add or remove features from the Software
+- Discontinue support for older versions
+- Cease further development or distribution of the Software
+
+You are responsible for installing updates in a timely manner.
+
+--------------------------------------------------------------------------------
+8. SUPPORT AND TECHNICAL ASSISTANCE
+--------------------------------------------------------------------------------
+
+Support is provided voluntarily via support@peopledisplay.nl, without guarantee
+of response time, completeness, or resolution of reported issues.
+
+Commercial support agreements are available upon request.
+
+--------------------------------------------------------------------------------
+9. LICENSE REVOCATION
+--------------------------------------------------------------------------------
+
+The developer reserves the right to revoke the license with immediate effect if:
+
+- You breach these Terms and Conditions
+- You use the Software for unlawful purposes
+- You resell, distribute, or sublicense the Software without permission
+- License payments are not made on time
+
+Upon revocation, you are required to immediately cease all use of the Software.
+
+--------------------------------------------------------------------------------
+10. GOVERNING LAW AND DISPUTES
+--------------------------------------------------------------------------------
+
+These Terms and Conditions are governed by Dutch law. Disputes shall be
+submitted exclusively to the competent court in the Netherlands.
+
+--------------------------------------------------------------------------------
+11. CHANGES TO TERMS AND CONDITIONS
+--------------------------------------------------------------------------------
+
+The developer reserves the right to modify these Terms and Conditions. For
+significant changes, you will be notified via the software or by email.
+Continued use of the Software after notification of changes constitutes
+acceptance of the revised terms.
+
+--------------------------------------------------------------------------------
+ACCEPTANCE
+--------------------------------------------------------------------------------
+
+By clicking "Accept & Continue", you confirm that you:
+- Have read and understood these Terms and Conditions in full
+- Agree to all provisions contained herein
+- Are authorized to enter into this agreement on behalf of your organization
+
+The date of acceptance is automatically recorded during installation.
+
+For questions about these terms: support@peopledisplay.nl
+Website: https://peopledisplay.nl
+
+© 2026 PeopleDisplay — All rights reserved

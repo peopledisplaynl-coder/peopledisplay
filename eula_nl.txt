@@ -1,0 +1,153 @@
+GEBRUIKSVOORWAARDEN PEOPLEDISPLAY
+Versie 1.0 — Maart 2026
+================================================================================
+
+Door PeopleDisplay te installeren en gebruiken, gaat u akkoord met deze
+gebruiksvoorwaarden. Lees deze voorwaarden zorgvuldig door voordat u verder gaat.
+
+--------------------------------------------------------------------------------
+1. LICENTIEVERLENING
+--------------------------------------------------------------------------------
+
+De ontwikkelaar verleent u een niet-exclusief, niet-overdraagbaar gebruiksrecht
+voor PeopleDisplay ("de Software") uitsluitend voor uw eigen bedrijfsactiviteiten,
+voor het domein waarvoor de licentie is uitgegeven.
+
+Elke licentie is gekoppeld aan één domein. Gebruik op meerdere domeinen vereist
+afzonderlijke licenties.
+
+--------------------------------------------------------------------------------
+2. INTELLECTUEEL EIGENDOM
+--------------------------------------------------------------------------------
+
+De Software, inclusief alle broncode, documentatie, grafische elementen en
+bijbehorende materialen, is en blijft eigendom van de ontwikkelaar en is
+beschermd door het auteursrecht.
+
+Het is niet toegestaan om:
+- De Software geheel of gedeeltelijk te kopiëren, te wijzigen of aan te passen
+- De Software te distribueren, te verkopen of te verhuren aan derden
+- Auteursrechtelijke vermeldingen te verwijderen of te wijzigen
+- De Software te reverse-engineeren of te decompileren
+
+--------------------------------------------------------------------------------
+3. GEEN GARANTIE
+--------------------------------------------------------------------------------
+
+DE SOFTWARE WORDT GELEVERD "AS-IS", ZONDER ENIGE GARANTIE VAN WELKE AARD DAN
+OOK, EXPLICIET OF IMPLICIET. DE ONTWIKKELAAR GEEFT GEEN GARANTIE DAT:
+
+- De Software foutloos of ononderbroken zal werken
+- De Software geschikt is voor een bepaald doel
+- Defecten in de Software zullen worden hersteld
+- De Software vrij is van virussen of andere schadelijke componenten
+
+HET GEBRUIK VAN DE SOFTWARE GESCHIEDT VOLLEDIG OP EIGEN RISICO.
+
+--------------------------------------------------------------------------------
+4. BEPERKING VAN AANSPRAKELIJKHEID
+--------------------------------------------------------------------------------
+
+Voor zover maximaal toegestaan door toepasselijk recht, is de ontwikkelaar in
+geen geval aansprakelijk voor enige directe, indirecte, incidentele, bijzondere
+of gevolgschade voortvloeiend uit het gebruik of de onmogelijkheid tot gebruik
+van de Software, inclusief maar niet beperkt tot:
+
+- Verlies van gegevens of bedrijfsinformatie
+- Bedrijfsonderbreking of productiviteitsverlies
+- Winstderving of omzetverlies
+- Schade als gevolg van beveiligingsincidenten
+
+--------------------------------------------------------------------------------
+5. GEGEVENSVERWERKING EN AVG/GDPR
+--------------------------------------------------------------------------------
+
+U bent zelf verantwoordelijk voor de naleving van de Algemene Verordening
+Gegevensbescherming (AVG/GDPR) en andere toepasselijke privacywetgeving bij het
+gebruik van de Software voor de verwerking van persoonsgegevens.
+
+Dit omvat onder meer:
+- Het informeren van medewerkers en bezoekers over de gegevensverwerking
+- Het bijhouden van een verwerkingsregister
+- Het bieden van inzage-, correctie- en verwijderingsrechten
+- Het treffen van passende technische en organisatorische beveiligingsmaatregelen
+
+De ontwikkelaar is geen verwerker van uw persoonsgegevens.
+
+--------------------------------------------------------------------------------
+6. BACK-UPS EN GEGEVENSBEVEILIGING
+--------------------------------------------------------------------------------
+
+U bent zelf verantwoordelijk voor het regelmatig maken van back-ups van uw
+gegevens. De ontwikkelaar is niet aansprakelijk voor gegevensverlies als gevolg
+van technische storingen, menselijke fouten of andere oorzaken.
+
+Aanbevolen wordt om minimaal dagelijks een back-up te maken van uw database.
+
+--------------------------------------------------------------------------------
+7. UPDATES EN ONDERHOUD
+--------------------------------------------------------------------------------
+
+Updates van de Software worden naar beste vermogen geleverd maar zijn niet
+gegarandeerd. De ontwikkelaar behoudt het recht om:
+
+- De Software bij te werken, te wijzigen of functies toe te voegen of te verwijderen
+- De ondersteuning voor oudere versies te staken
+- De verdere ontwikkeling of distributie van de Software te staken
+
+U bent zelf verantwoordelijk voor het tijdig installeren van updates.
+
+--------------------------------------------------------------------------------
+8. SUPPORT EN TECHNISCHE ONDERSTEUNING
+--------------------------------------------------------------------------------
+
+Support wordt vrijwillig geleverd via support@peopledisplay.nl, zonder garantie
+op reactietijd, volledigheid of oplossing van het gemelde probleem.
+
+Commerciële supportovereenkomsten zijn beschikbaar op aanvraag.
+
+--------------------------------------------------------------------------------
+9. LICENTIE-INTREKKING
+--------------------------------------------------------------------------------
+
+De ontwikkelaar behoudt het recht de licentie met onmiddellijke ingang in te
+trekken indien:
+
+- U deze gebruiksvoorwaarden schendt
+- U de Software gebruikt voor onwettige doeleinden
+- U de Software doorverkoopt, distribueert of sublicenseert zonder toestemming
+- De licentiebetaling niet tijdig wordt voldaan
+
+Na intrekking bent u verplicht het gebruik van de Software onmiddellijk te staken.
+
+--------------------------------------------------------------------------------
+10. TOEPASSELIJK RECHT EN GESCHILLEN
+--------------------------------------------------------------------------------
+
+Op deze overeenkomst is Nederlands recht van toepassing. Geschillen worden
+bij uitsluiting voorgelegd aan de bevoegde rechtbank in Nederland.
+
+--------------------------------------------------------------------------------
+11. WIJZIGINGEN IN GEBRUIKSVOORWAARDEN
+--------------------------------------------------------------------------------
+
+De ontwikkelaar behoudt het recht deze gebruiksvoorwaarden te wijzigen. Bij
+significante wijzigingen wordt u via de software of per e-mail geïnformeerd.
+Voortgezet gebruik van de Software na kennisgeving van wijzigingen geldt als
+aanvaarding van de gewijzigde voorwaarden.
+
+--------------------------------------------------------------------------------
+ACCEPTATIE
+--------------------------------------------------------------------------------
+
+Door op "Akkoord & Verder" te klikken, bevestigt u dat u:
+- Deze gebruiksvoorwaarden volledig heeft gelezen en begrepen
+- Akkoord gaat met alle hierin opgenomen bepalingen
+- Bevoegd bent deze overeenkomst namens uw organisatie aan te gaan
+
+Datum van acceptatie wordt automatisch vastgelegd bij installatie.
+
+Voor vragen over deze voorwaarden: support@peopledisplay.nl
+Website: https://peopledisplay.nl
+
+© 2026 PeopleDisplay — Alle rechten voorbehouden

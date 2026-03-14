@@ -1,0 +1,14 @@
+{
+  "sheetID": "1A2B3C4D5E6F7G8H9I0J",
+  "scriptURL": "https://script.google.com/macros/s/AKfycbX1234567890/exec",
+  "presentationID": "1X2Y3Z4W5V6U7T8S9R0Q",
+  "db_host": "localhost",
+  "db_name": "labee_db",
+  "db_user": "labee_admin",
+  "db_pass": "securepassword",
+  "smtp_host": "smtp.strato.nl",
+  "smtp_port": 587,
+  "smtp_user": "noreply@labee.eu",
+  "smtp_pass": "mailpassword",
+  "from_email": "noreply@labee.eu"
+}

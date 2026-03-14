@@ -1,0 +1,42 @@
+# ============================================================
+# PEOPLEDISPLAY ROOT .HTACCESS - MINIMAL SAFE VERSION
+# ============================================================
+# Versie: 2.0 SAFE
+# Deze versie bevat alleen basis features die overal werken
+# ============================================================
+
+# ============================================================
+# 1. BASIC SECURITY
+# ============================================================
+
+# Disable directory browsing
+Options -Indexes
+
+# Protect .htaccess files
+<Files .htaccess>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Protect sensitive files
+<FilesMatch "\.(env|log|ini|sql|bak)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ============================================================
+# 2. BLOCK INSTALL DIRECTORY (uncomment after installation)
+# ============================================================
+
+# RewriteEngine On
+# RewriteCond %{REQUEST_URI} ^/install/ [NC]
+# RewriteRule .* - [F,L]
+
+# ============================================================
+# END MINIMAL .HTACCESS
+# ============================================================
+# 
+# This is a MINIMAL version that works on most hosting.
+# Test this first. If it works, you can add more features.
+# See .htaccess-builder.php for step-by-step feature adding.
+# ============================================================

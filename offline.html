@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - PeopleDisplay</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .offline-container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .offline-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .retry-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .retry-btn:hover {
+            transform: translateY(-2px);
+        }
+        .status {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📡</div>
+        <h1>Geen Internetverbinding</h1>
+        <p>PeopleDisplay is momenteel offline. Check je internetverbinding en probeer het opnieuw.</p>
+        <p><strong>Check-ins worden lokaal opgeslagen</strong> en automatisch gesynchroniseerd zodra de verbinding hersteld is.</p>
+        <button class="retry-btn" onclick="window.location.reload()">🔄 Opnieuw Proberen</button>
+        <div class="status" id="status">Controleren...</div>
+    </div>
+    
+    <script>
+        // Check connection status
+        function updateStatus() {
+            const status = document.getElementById('status');
+            if (navigator.onLine) {
+                status.textContent = '✅ Online - pagina wordt opnieuw geladen...';
+                status.style.color = '#27ae60';
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                status.textContent = '❌ Nog steeds offline';
+                status.style.color = '#e74c3c';
+            }
+        }
+        
+        // Check every 3 seconds
+        setInterval(updateStatus, 3000);
+        updateStatus();
+        
+        // Listen for online event
+        window.addEventListener('online', () => {
+            updateStatus();
+        });
+    </script>
+</body>
+</html>

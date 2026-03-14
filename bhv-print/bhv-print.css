@@ -1,0 +1,84 @@
+body {
+  font-family: "Segoe UI", sans-serif;
+  margin: 0;
+  padding: 1em;
+  background: #f9f9f9;
+  color: #222;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 1em;
+}
+
+h1 {
+  font-size: 1.6em;
+  margin: 0.5em 0;
+}
+
+#controls, #filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-bottom: 1em;
+  justify-content: center;
+}
+
+#controls button,
+#controls select,
+#controls input {
+  padding: 0.4em 0.6em;
+  font-size: 0.95em;
+}
+
+#bhv-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1em;
+}
+
+.card {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.8em;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.card .name {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 0.3em;
+}
+
+.card .meta {
+  font-size: 0.9em;
+  color: #555;
+}
+
+.card .bhv-badge {
+  display: inline-block;
+  background: #d00;
+  color: white;
+  font-size: 0.75em;
+  padding: 0.2em 0.5em;
+  border-radius: 4px;
+  margin-top: 0.4em;
+}
+
+@media print {
+  #controls, #filters {
+    display: none;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .card {
+    page-break-inside: avoid;
+    border: none;
+    box-shadow: none;
+  }
+}

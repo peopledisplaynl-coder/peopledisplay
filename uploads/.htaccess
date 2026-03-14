@@ -1,0 +1,66 @@
+# ============================================
+# PeopleDisplay Uploads .htaccess
+# Location: /uploads/.htaccess
+# ============================================
+
+# ============================================
+# BLOCK PHP EXECUTION IN UPLOADS
+# ============================================
+
+# Prevent PHP execution
+<FilesMatch "\.ph(p[3-7]?|tml)$">
+    Require all denied
+</FilesMatch>
+
+# Additional PHP handler blocking
+<IfModule mod_php5.c>
+    php_flag engine off
+</IfModule>
+
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# ============================================
+# ALLOW ONLY SPECIFIC FILE TYPES
+# ============================================
+
+# Deny all by default, then allow specific types
+<FilesMatch ".*">
+    Require all denied
+</FilesMatch>
+
+# Allow images
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|svg)$">
+    Require all granted
+</FilesMatch>
+
+# Allow PDFs (if needed)
+<FilesMatch "\.pdf$">
+    Require all granted
+</FilesMatch>
+
+# ============================================
+# PREVENT DIRECT ACCESS TO UPLOAD SCRIPT
+# ============================================
+
+Options -Indexes
+
+# ============================================
+# SECURITY HEADERS FOR UPLOADED FILES
+# ============================================
+
+<IfModule mod_headers.c>
+    # Prevent uploaded files from being executed
+    Header set X-Content-Type-Options "nosniff"
+    Header set Content-Disposition "attachment"
+    
+    # For images, allow inline display
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+        Header set Content-Disposition "inline"
+    </FilesMatch>
+</IfModule>
