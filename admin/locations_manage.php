@@ -65,7 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } // end canAddLocation else
 
         } elseif ($action === 'update') {
-            // Update location
+            // Haal oude naam op VOOR de update
+            $stmt_old = $db->prepare("SELECT location_name FROM locations WHERE id = ?");
+            $stmt_old->execute([$_POST['id']]);
+            $oude_naam = $stmt_old->fetchColumn();
+
+            // Update de locatie zelf
             $stmt = $db->prepare("
                 UPDATE locations SET
                     location_name = ?,
@@ -90,8 +95,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 isset($_POST['auto_checkin_enabled']) ? 1 : 0,
                 $_POST['id']
             ]);
-            
-            $_SESSION['pd_flash'] = '✅ Locatie bijgewerkt!';
+
+            // Cascade: medewerkers automatisch meenemen
+            $nieuwe_naam = $_POST['location_name'];
+            $stmt2 = $db->prepare("UPDATE employees SET locatie = ? WHERE locatie = ?");
+            $stmt2->execute([$nieuwe_naam, $oude_naam]);
+            $bijgewerkt = $stmt2->rowCount();
+
+            $extra = $bijgewerkt > 0 ? " ($bijgewerkt medewerker(s) automatisch bijgewerkt)" : "";
+            $_SESSION['pd_flash'] = "✅ Locatie bijgewerkt!$extra";
             header('Location: locations_manage.php');
             exit;
             

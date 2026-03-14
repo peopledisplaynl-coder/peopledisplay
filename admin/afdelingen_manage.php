@@ -57,9 +57,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($name)) {
             $error = 'Afdeling naam is verplicht';
         } else {
+            // Haal oude naam op VOOR de update
+            $stmt = $db->prepare("SELECT afdeling_name FROM afdelingen WHERE id = ?");
+            $stmt->execute([$id]);
+            $oude_naam = $stmt->fetchColumn();
+
+            // Update de afdeling zelf
             $stmt = $db->prepare("UPDATE afdelingen SET afdeling_name = ?, afdeling_code = ?, description = ? WHERE id = ?");
             if ($stmt->execute([$name, $code, $description, $id])) {
-                $_SESSION['pd_flash'] = "✅ Afdeling bijgewerkt: $name";
+                // Cascade: medewerkers automatisch meenemen
+                $stmt2 = $db->prepare("UPDATE employees SET afdeling = ? WHERE afdeling = ?");
+                $stmt2->execute([$name, $oude_naam]);
+                $bijgewerkt = $stmt2->rowCount();
+
+                $extra = $bijgewerkt > 0 ? " ($bijgewerkt medewerker(s) automatisch bijgewerkt)" : "";
+                $_SESSION['pd_flash'] = "✅ Afdeling bijgewerkt: $name$extra";
                 header('Location: afdelingen_manage.php');
                 exit;
             } else {
