@@ -1,0 +1,8 @@
+# Files and folders excluded from distribution archives (git archive / ZIP export)
+tools/          export-ignore
+.claude/        export-ignore
+.gitattributes  export-ignore
+CHANGELOG.md    export-ignore
+SCHEMA_COMPARISON.md export-ignore
+INSTALLATION_GUIDE.md export-ignore
+PACKAGE_READY.md export-ignore
