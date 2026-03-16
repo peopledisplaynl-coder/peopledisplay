@@ -1,14 +1,71 @@
 {
   "version": "2.0.5",
   "critical": false,
-  "message": "Fix: BHV-overzicht sluitknop voor kioskmodus",
+  "message": "BHV Overzicht sluitknop voor kiosk mode",
   "download_url": "",
   "checksum": "",
   "changelog": [
     {
       "version": "2.0.5",
+      "date": "2026-03-16",
       "changes": [
-        "Fix: Added close button to BHV overview for kiosk mode"
+        "Fix: BHV Overzicht sluitknop toegevoegd voor kiosk mode gebruik"
+      ]
+    },
+    {
+      "version": "2.0.4",
+      "date": "2026-03-16",
+      "changes": [
+        "Kleine aanpassingen in update bestanden"
+      ]
+    },
+    {
+      "version": "2.0.3",
+      "date": "2026-03-16",
+      "changes": [
+        "Cache probleem gefixt",
+        "Changelog bestand opnieuw aangemaakt met automatische koppeling"
+      ]
+    },
+    {
+      "version": "2.0.2",
+      "date": "2026-03-16",
+      "changes": [
+        "Fix: Sluitknop toegevoegd aan BHV overzicht voor kiosk modus",
+        "Fix: BHV footer-knop gewijzigd van link naar popup-venster",
+        "Fix: CSS footer-btn genormaliseerd voor button-elementen"
+      ]
+    },
+    {
+      "version": "2.0.0",
+      "date": "2026-03-09",
+      "changes": [
+        "Nieuw: Licentiesysteem met Starter, Professional en Business tiers",
+        "Nieuw: 8-staps webinstaller met EULA-acceptatie en licentiesleutelvalidatie",
+        "Nieuw: Automatisch updatecontrolesysteem via admin.peopledisplay.nl",
+        "Nieuw: Bezoekersbeheer met e-mailmeldingen en token-gebaseerde in-/uitcheck",
+        "Nieuw: Kiosk-modus met token-gebaseerde aanmelding",
+        "Nieuw: Auditlog voor alle statuswijzigingen van medewerkers",
+        "Nieuw: CSV import/export voor medewerkers",
+        "Nieuw: Badge- en ID-kaartgeneratie (PDF via TCPDF)",
+        "Nieuw: WiFi auto-inchecken op basis van IP-bereik",
+        "Nieuw: PWA-ondersteuning — installeerbaar als app op mobiel/tablet",
+        "Nieuw: Presentatiemodus met automatische start Google Slides",
+        "Nieuw: Rol-gebaseerde toegang (superadmin, admin, gebruiker)",
+        "Fix: Statusupdates blijven nu bewaard na paginanavigatie",
+        "Fix: PHP-waarschuwingen corrumpeerden geen API JSON-antwoorden meer",
+        "Fix: UI-kaarten bevriezen niet meer na statusupdate",
+        "Fix: Auditlog HTTP 500 opgelost (created_at kolom)",
+        "Fix: Redirect-loop op dashboard opgelost"
+      ]
+    },
+    {
+      "version": "1.0",
+      "date": "2025-01-01",
+      "changes": [
+        "Eerste release: basis medewerker IN/UIT registratie",
+        "Beheerpaneel met meerdere locaties",
+        "Initiële implementatie op Strato hosting"
       ]
     }
   ]
