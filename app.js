@@ -1846,12 +1846,14 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       actions.innerHTML = "";
       
       // ✅ BHV Button - ALTIJD ZICHTBAAR met duidelijk icoon
-      const bhvBtn = document.createElement("a");
-      bhvBtn.href = BASE_PATH + "/bhv-print/bhv-print.html";
+      const bhvBtn = document.createElement("button");
+      bhvBtn.type = "button";
       bhvBtn.className = "footer-btn footer-btn-bhv";
       bhvBtn.innerHTML = "🚨 BHV Overzicht"; // ✅ Icoon toegevoegd
-      bhvBtn.setAttribute("target", "_blank");
       bhvBtn.setAttribute("title", "Open BHV Overzicht");
+      bhvBtn.addEventListener("click", function() {
+        window.open(BASE_PATH + "/bhv-print/bhv-print.html", "bhv_overzicht", "width=1200,height=800,menubar=no,toolbar=no,location=no");
+      });
       
       // ✅ Admin Button - CORRECTE URL naar dashboard
       const adminBtn = document.createElement("a");

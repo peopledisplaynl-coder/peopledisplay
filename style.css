@@ -1085,7 +1085,9 @@ footer select#email-select {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   text-decoration: none;
+  border: none;
   border-radius: 8px;
+  font-family: inherit;
   font-weight: 600;
   font-size: 14px;
   transition: all 0.3s ease;

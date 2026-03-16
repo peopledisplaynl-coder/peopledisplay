@@ -2,6 +2,11 @@
 
 All notable changes to PeopleDisplay are documented here.
 
+## Version 2.0.2 — Patch (2026-03-16)
+
+### Fixed
+- Fix: Added close button to BHV overview for kiosk mode
+
 ## Version 2.0.0 — License System Release (2026-03-09)
 
 ### Added

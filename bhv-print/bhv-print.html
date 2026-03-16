@@ -4,8 +4,43 @@
   <meta charset="UTF-8">
   <title>BHV Overzicht – Print & Export</title>
   <link rel="stylesheet" href="bhv-print.css">
+  <style>
+    #bhv-close-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: #c0392b;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 6px 16px;
+      box-sizing: border-box;
+    }
+    #bhv-close-bar button {
+      background: white;
+      color: #c0392b;
+      border: none;
+      border-radius: 5px;
+      padding: 6px 16px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #bhv-close-bar button:hover {
+      background: #f5f5f5;
+    }
+    body {
+      padding-top: 44px;
+    }
+  </style>
 </head>
 <body>
+  <div id="bhv-close-bar">
+    <button onclick="window.close()">✕ Venster sluiten</button>
+  </div>
+
   <header>
     <h1>BHV Overzicht – Medewerkers met status IN</h1>
   </header>
