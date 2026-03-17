@@ -1,0 +1,11 @@
+{
+  "name": "peopledisplay-tools",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "generate-docx": "node generate_docx.js"
+  },
+  "dependencies": {
+    "docx": "^8.5.0"
+  }
+}
