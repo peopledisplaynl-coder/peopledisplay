@@ -61,6 +61,19 @@ VALUES (1, '["Naam","Functie","Afdeling"]', '["Kantoor"]', '[]', 'PAUZE', 'THUIS
 ON DUPLICATE KEY UPDATE `id` = 1;
 
 -- ============================================================
+-- TABLE: user_groups
+-- Optional user group assignments for admins
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `user_groups` (
+  `id`            int(11)      NOT NULL AUTO_INCREMENT,
+  `name`          varchar(100) NOT NULL,
+  `description`   varchar(255) DEFAULT NULL,
+  `created_at`    timestamp    NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- TABLE: users
 -- Admin and staff login accounts
 -- IMPORTANT: column is 'password_hash' (NOT 'password')
@@ -73,6 +86,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email`                    varchar(255)                      DEFAULT NULL,
   `profile_photo`            varchar(255)                      DEFAULT NULL,
   `role`                     enum('user','admin','superadmin') NOT NULL DEFAULT 'user',
+  `group_id`                 int(11)                           DEFAULT NULL,
   `features`                 longtext                          DEFAULT NULL,
   `active`                   tinyint(1)                        NOT NULL DEFAULT 1,
   `can_show_presentation`    tinyint(1)                        NOT NULL DEFAULT 0,
@@ -85,8 +99,10 @@ CREATE TABLE IF NOT EXISTS `users` (
   `last_login`               datetime                          DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_username`   (`username`),
+  KEY `idx_group_id`         (`group_id`),
   KEY `idx_deleted_at`       (`deleted_at`),
-  KEY `idx_active`           (`active`)
+  KEY `idx_active`           (`active`),
+  CONSTRAINT `fk_users_group_id` FOREIGN KEY (`group_id`) REFERENCES `user_groups` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================

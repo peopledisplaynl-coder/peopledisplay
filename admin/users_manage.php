@@ -51,9 +51,117 @@ $currentUserStmt->execute([$currentUserId]);
 $currentUserData = $currentUserStmt->fetch();
 $isSuperAdmin = ($currentUserData['role'] === 'superadmin');
 
+/**
+ * Ensure the database has the user_groups table and related column.
+ * This is safe to run on every page load for admin pages.
+ */
+function ensureUserGroupsSchema(PDO $db): void
+{
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS user_groups (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            description VARCHAR(255) DEFAULT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $col = $db->query("SHOW COLUMNS FROM users LIKE 'group_id'")->fetch();
+        if (!$col) {
+            $db->exec("ALTER TABLE users ADD COLUMN group_id INT NULL AFTER role");
+        }
+
+        // Add foreign key constraint if it doesn't exist
+        $fk = $db->prepare("SELECT COUNT(*) as cnt FROM information_schema.KEY_COLUMN_USAGE
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'group_id' AND REFERENCED_TABLE_NAME = 'user_groups'");
+        $fk->execute();
+        $fkExists = (int) $fk->fetchColumn();
+        if ($fkExists === 0) {
+            $db->exec("ALTER TABLE users ADD CONSTRAINT fk_users_group_id FOREIGN KEY (group_id) REFERENCES user_groups(id) ON DELETE SET NULL");
+        }
+    } catch (Throwable $e) {
+        error_log('User groups schema ensure failed: ' . $e->getMessage());
+    }
+}
+
+ensureUserGroupsSchema($db);
+
+// Load groups for filtering and assignment
+$groupsStmt = $db->query("SELECT id, name, description FROM user_groups ORDER BY name ASC");
+$groups = $groupsStmt->fetchAll(PDO::FETCH_ASSOC);
+
 // ═══════════════════════════════════════════════════════════════════
 // AJAX ENDPOINTS
 // ═══════════════════════════════════════════════════════════════════
+
+// Get all groups (for dropdowns / filtering)
+if (isset($_GET['action']) && $_GET['action'] === 'get_groups') {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true, 'groups' => $groups]);
+    exit;
+}
+
+// Create or update a group
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array($_POST['action'], ['create_group', 'update_group'], true)) {
+    header('Content-Type: application/json');
+
+    if (!$isSuperAdmin) {
+        echo json_encode(['success' => false, 'error' => 'Alleen SuperAdmin kan groepen beheren']);
+        exit;
+    }
+
+    $groupName = trim($_POST['name'] ?? '');
+    $groupDesc = trim($_POST['description'] ?? '');
+
+    if ($groupName === '') {
+        echo json_encode(['success' => false, 'error' => 'Groepsnaam is verplicht']);
+        exit;
+    }
+
+    try {
+        if ($_POST['action'] === 'create_group') {
+            $stmt = $db->prepare("INSERT INTO user_groups (name, description) VALUES (?, ?)");
+            $stmt->execute([$groupName, $groupDesc]);
+            echo json_encode(['success' => true, 'message' => 'Groep aangemaakt']);
+        } else {
+            $groupId = intval($_POST['group_id'] ?? 0);
+            if ($groupId <= 0) {
+                echo json_encode(['success' => false, 'error' => 'Ongeldige groep']);
+                exit;
+            }
+            $stmt = $db->prepare("UPDATE user_groups SET name = ?, description = ? WHERE id = ?");
+            $stmt->execute([$groupName, $groupDesc, $groupId]);
+            echo json_encode(['success' => true, 'message' => 'Groep bijgewerkt']);
+        }
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'error' => 'Database fout: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// Delete a group
+if (isset($_GET['action']) && $_GET['action'] === 'delete_group' && isset($_GET['group_id'])) {
+    header('Content-Type: application/json');
+
+    if (!$isSuperAdmin) {
+        echo json_encode(['success' => false, 'error' => 'Alleen SuperAdmin kan groepen verwijderen']);
+        exit;
+    }
+
+    $groupId = intval($_GET['group_id']);
+    if ($groupId <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Ongeldige groep']);
+        exit;
+    }
+
+    try {
+        $stmt = $db->prepare("DELETE FROM user_groups WHERE id = ?");
+        $stmt->execute([$groupId]);
+        echo json_encode(['success' => true, 'message' => 'Groep verwijderd']);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'error' => 'Database fout: ' . $e->getMessage()]);
+    }
+    exit;
+}
 
 // Get user details (for editing)
 if (isset($_GET['action']) && $_GET['action'] === 'get_user' && isset($_GET['user_id'])) {
@@ -117,6 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $email = trim($_POST['email']);
     $role = $_POST['role'];
     $active = isset($_POST['active']) ? 1 : 0;
+    $groupId = isset($_POST['group_id']) && $_POST['group_id'] !== '' ? intval($_POST['group_id']) : null;
     
     // Presentatie settings
     $canShowPresentation = isset($_POST['can_show_presentation']) ? 1 : 0;
@@ -184,6 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             SET display_name = ?, 
                 email = ?, 
                 role = ?, 
+                group_id = ?,
                 active = ?, 
                 features = ?,
                 can_show_presentation = ?, 
@@ -199,6 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $displayName, 
             $email, 
             $role, 
+            $groupId,
             $active, 
             $features,
             $canShowPresentation, 
@@ -337,14 +448,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete_user' && isset($_GET['
 
 // FORCE NO CACHE - get fresh data every time
 $usersStmt = $db->query("
-    SELECT SQL_NO_CACHE id, username, display_name, email, role, active, 
-           can_show_presentation, presentation_id, presentation_idle_seconds,
-           can_use_scanner,
-           features,
-           created_at,
-           updated_at
-    FROM users 
-    ORDER BY username ASC
+    SELECT SQL_NO_CACHE u.id, u.username, u.display_name, u.email, u.role, u.active, 
+           u.group_id, g.name AS group_name,
+           u.can_show_presentation, u.presentation_id, u.presentation_idle_seconds,
+           u.can_use_scanner,
+           u.features,
+           u.created_at,
+           u.updated_at
+    FROM users u
+    LEFT JOIN user_groups g ON u.group_id = g.id
+    ORDER BY u.username ASC
 ");
 $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -597,6 +710,17 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
             background: #48bb78;
             color: white;
         }
+
+        .user-group-badge {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            background: #e2e8f0;
+            color: #2d3748;
+            font-size: 12px;
+            font-weight: 600;
+        }
         
         .status-badge {
             display: inline-flex;
@@ -771,6 +895,36 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         @keyframes tabFadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ═══ GROUP FILTER ═══ */
+        .group-filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .group-filter-button {
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            color: #4a5568;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .group-filter-button:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #667eea;
+        }
+        
+        .group-filter-button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
         }
         
         .form-grid {
@@ -1024,7 +1178,12 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 <a href="dashboard.php" class="btn btn-back">← Dashboard</a>
                 <h1 style="margin-top: 10px;">👥 Gebruikers Beheren</h1>
             </div>
-            <button onclick="openCreateModal()" class="btn btn-primary">+ Nieuwe Gebruiker</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <?php if ($isSuperAdmin): ?>
+                <button onclick="openGroupModal()" class="btn btn-secondary">⚙️ Groepen beheren</button>
+                <?php endif; ?>
+                <button onclick="openCreateModal()" class="btn btn-primary">+ Nieuwe Gebruiker</button>
+            </div>
         </div>
         
         <?php if ($message): ?>
@@ -1065,6 +1224,14 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
+
+        <!-- GROUP FILTER -->
+        <div class="group-filter-bar" id="group-filter-bar">
+            <button class="group-filter-button active" data-group-id="">Alle gebruikers</button>
+            <?php foreach ($groups as $group): ?>
+                <button class="group-filter-button" data-group-id="<?= $group['id'] ?>"><?= htmlspecialchars($group['name']) ?></button>
+            <?php endforeach; ?>
+        </div>
         
         <!-- TABLE -->
         <div class="users-table-container">
@@ -1083,8 +1250,13 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 </thead>
                 <tbody id="users-table-body">
                     <?php foreach ($users as $user): ?>
-                    <tr class="user-row" data-user-id="<?= $user['id'] ?>" data-role="<?= $user['role'] ?>" data-active="<?= $user['active'] ?>">
-                        <td><strong><?= htmlspecialchars($user['display_name'] ?: $user['username']) ?></strong></td>
+                    <tr class="user-row" data-user-id="<?= $user['id'] ?>" data-role="<?= $user['role'] ?>" data-active="<?= $user['active'] ?>" data-group-id="<?= $user['group_id'] ?? '' ?>">
+                        <td>
+                            <strong><?= htmlspecialchars($user['display_name'] ?: $user['username']) ?></strong>
+                            <?php if (!empty($user['group_name'])): ?>
+                                <span class="user-group-badge"><?= htmlspecialchars($user['group_name']) ?></span>
+                            <?php endif; ?>
+                        </td>
                         <td><?= htmlspecialchars($user['username']) ?></td>
                         <td><?= htmlspecialchars($user['email'] ?: '-') ?></td>
                         <td>
@@ -1185,7 +1357,41 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
-    
+
+    <!-- GROUP MANAGEMENT MODAL -->
+    <div class="modal" id="group-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👥 Groepen Beheren</h3>
+            </div>
+            <div class="modal-body">
+                <form id="group-form" onsubmit="saveGroup(); return false;">
+                    <input type="hidden" name="group_id" id="group-id" value="">
+                    <div class="form-group">
+                        <label>Naam</label>
+                        <input type="text" name="name" id="group-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Beschrijving</label>
+                        <input type="text" name="description" id="group-description">
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <button type="submit" class="btn btn-success">💾 Opslaan</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetGroupForm()">✚ Nieuwe groep</button>
+                    </div>
+                </form>
+
+                <div style="margin-top: 20px;">
+                    <h4 style="margin-bottom: 10px;">Bestaande groepen</h4>
+                    <div id="group-list"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeGroupModal()">Sluiten</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ═══════════════════════════════════════════════════════════════════
         // JAVASCRIPT
@@ -1200,7 +1406,10 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         });
         
         const allUsers = <?= json_encode($users) ?>;
+        const allGroups = <?= json_encode($groups) ?>;
         const isSuperAdmin = <?= json_encode($isSuperAdmin) ?>;
+
+        let currentGroupFilter = '';
         
         let currentSort = { column: 'display_name', order: 'asc' };
         let openEditRow = null;
@@ -1241,10 +1450,13 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 // Active filter
                 const activeMatch = !activeOnly || user.active == 1;
-                
+
+                // Group filter
+                const groupMatch = !currentGroupFilter || (user.group_id && user.group_id.toString() === currentGroupFilter);
+
                 // Show/hide row
                 const editRow = document.getElementById(`edit-row-${userId}`);
-                if (searchMatch && roleMatch && activeMatch) {
+                if (searchMatch && roleMatch && activeMatch && groupMatch) {
                     row.style.display = '';
                     if (editRow && editRow.classList.contains('active')) {
                         editRow.style.display = '';
@@ -1418,6 +1630,16 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                     <option value="user" ${user.role === 'user' ? 'selected' : ''}>👤 User</option>
                                     <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>🔧 Admin</option>
                                     ${isSuperAdmin ? `<option value="superadmin" ${user.role === 'superadmin' ? 'selected' : ''}>👑 SuperAdmin</option>` : ''}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Groep</label>
+                                <select name="group_id">
+                                    <option value="">— Geen groep —</option>
+                                    ${allGroups.map(group => `
+                                        <option value="${group.id}" ${user.group_id == group.id ? 'selected' : ''}>${group.name}</option>
+                                    `).join('')}
                                 </select>
                             </div>
                             
@@ -1699,6 +1921,132 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 showToast('Fout bij aanmaken: ' + error.message, 'error');
             }
         }
+
+        function openGroupModal() {
+            document.getElementById('group-modal').classList.add('active');
+            resetGroupForm();
+            renderGroupList();
+        }
+
+        function closeGroupModal() {
+            document.getElementById('group-modal').classList.remove('active');
+        }
+
+        function resetGroupForm() {
+            document.getElementById('group-id').value = '';
+            document.getElementById('group-name').value = '';
+            document.getElementById('group-description').value = '';
+        }
+
+        function renderGroupList() {
+            const container = document.getElementById('group-list');
+            container.innerHTML = '';
+
+            if (!allGroups || allGroups.length === 0) {
+                container.innerHTML = '<p style="color: #718096;">Geen groepen gevonden.</p>';
+                return;
+            }
+
+            const list = document.createElement('div');
+            list.style.display = 'grid';
+            list.style.gridTemplateColumns = '1fr 1fr 160px';
+            list.style.gap = '10px';
+            list.style.alignItems = 'center';
+
+            allGroups.forEach(group => {
+                const name = document.createElement('div');
+                name.textContent = group.name;
+                name.style.fontWeight = '600';
+
+                const desc = document.createElement('div');
+                desc.textContent = group.description || '—';
+                desc.style.color = '#4a5568';
+                desc.style.fontSize = '13px';
+
+                const actions = document.createElement('div');
+                actions.style.display = 'flex';
+                actions.style.gap = '8px';
+
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'btn btn-secondary';
+                editBtn.textContent = 'Bewerken';
+                editBtn.onclick = () => {
+                    document.getElementById('group-id').value = group.id;
+                    document.getElementById('group-name').value = group.name;
+                    document.getElementById('group-description').value = group.description || '';
+                };
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn btn-danger';
+                deleteBtn.textContent = 'Verwijderen';
+                deleteBtn.onclick = () => deleteGroup(group.id, group.name);
+
+                actions.appendChild(editBtn);
+                actions.appendChild(deleteBtn);
+
+                list.appendChild(name);
+                list.appendChild(desc);
+                list.appendChild(actions);
+            });
+
+            container.appendChild(list);
+        }
+
+        async function saveGroup() {
+            const groupId = document.getElementById('group-id').value;
+            const name = document.getElementById('group-name').value.trim();
+            const description = document.getElementById('group-description').value.trim();
+
+            if (!name) {
+                showToast('Groepsnaam is verplicht', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', groupId ? 'update_group' : 'create_group');
+            if (groupId) formData.append('group_id', groupId);
+            formData.append('name', name);
+            formData.append('description', description);
+
+            try {
+                const response = await fetch('', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (error) {
+                showToast('Fout bij opslaan: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteGroup(groupId, groupName) {
+            if (!confirm(`Weet je zeker dat je groep '${groupName}' wilt verwijderen?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`?action=delete_group&group_id=${groupId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (error) {
+                showToast('Fout bij verwijderen: ' + error.message, 'error');
+            }
+        }
         
         // ═══ DELETE USER ═══
         
@@ -1728,9 +2076,21 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         
         // ═══ EVENT LISTENERS ═══
         
+        function setGroupFilter(groupId) {
+            currentGroupFilter = groupId;
+            document.querySelectorAll('.group-filter-button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.groupId === groupId);
+            });
+            applyFilters();
+        }
+
         document.getElementById('search-input').addEventListener('input', applyFilters);
         document.getElementById('filter-role').addEventListener('change', applyFilters);
         document.getElementById('filter-active').addEventListener('change', applyFilters);
+
+        document.querySelectorAll('.group-filter-button').forEach(btn => {
+            btn.addEventListener('click', () => setGroupFilter(btn.dataset.groupId));
+        });
         
         document.querySelectorAll('.users-table th.sortable').forEach(th => {
             th.addEventListener('click', () => {
@@ -1742,6 +2102,11 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         document.getElementById('create-modal').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) {
                 closeCreateModal();
+            }
+        });
+        document.getElementById('group-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeGroupModal();
             }
         });
         
