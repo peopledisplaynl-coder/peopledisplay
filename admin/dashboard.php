@@ -12,6 +12,7 @@ require_once __DIR__ . '/../includes/db.php'; // db.php calls session_start() af
 require_once __DIR__ . '/../includes/license_check.php';
 require_once __DIR__ . '/../includes/version.php';
 require_once __DIR__ . '/../includes/update_check.php';
+require_once __DIR__ . '/../includes/migrations.php';
 
 $updateInfo = checkForUpdates();
 
