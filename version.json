@@ -1,10 +1,17 @@
 {
-  "version": "2.0.7",
+  "version": "2.0.9",
   "critical": false,
   "message": "Fix: PWA sessie op mobiel blijft behouden na wisselen van app",
   "download_url": "",
   "checksum": "",
   "changelog": [
+    {
+      "version": "2.0.9",
+      "date": "2026-03-19",
+      "changes": [
+        "Fix: Fatale PHP fout in db.php opgelost waardoor de volledige site onbereikbaar was na de PWA sessie-fix"
+      ]
+    },
     {
       "version": "2.0.7",
       "date": "2026-03-19",
