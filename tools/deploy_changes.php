@@ -21,7 +21,8 @@ function run_cmd(string $cmd): string {
 
 // Build defaults
 $defaultFrom = run_cmd('git describe --tags --abbrev=0 2>/dev/null');
-if ($defaultFrom === '') {
+if ($defaultFrom === '' || stripos($defaultFrom, 'fatal:') !== false) {
+    // No tags found (or git returned an error) — fall back to the previous commit.
     $defaultFrom = 'HEAD~1';
 }
 
