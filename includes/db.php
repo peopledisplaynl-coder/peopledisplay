@@ -31,28 +31,12 @@ if (!empty($_SESSION['remember_me']) || $rememberCookiePresent) {
     setcookie(session_name(), session_id(), time() + PD_REMEMBER_ME_SECONDS, '/', $_SERVER['HTTP_HOST'] ?? '', $secure, true);
 }
 
-// Attempt to auto-login via "remember me" on every request when not already logged in.
-require_once __DIR__ . '/auth.php';
-if (empty($_SESSION['user_id'])) {
-    pd_try_remember_me_login($db);
-}
-
 $cfg = __DIR__ . '/../admin/db_config.php';
 if (!file_exists($cfg)) exit('DB config not found. Run install.php first.');
 include $cfg;
 if (!isset($DB_HOST, $DB_NAME, $DB_USER, $DB_PASS)) exit('DB config incomplete');
 
-define('DB_HOST', $DB_HOST);
-define('DB_NAME', $DB_NAME);
-define('DB_USER', $DB_USER);
-define('DB_PASS', $DB_PASS);
-define('DB_PREFIX', '');
-
-// BASE_PATH: empty for root installs, '/subdir' for subdirectory installs
-if (!defined('BASE_PATH')) {
-    define('BASE_PATH', pd_detect_base_path());
-}
-
+// Create PDO connection
 $dsn = sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', $DB_HOST, $DB_NAME);
 try {
     $db = new PDO($dsn, $DB_USER, $DB_PASS, [
@@ -64,4 +48,26 @@ try {
     error_log('DB error: ' . $e->getMessage());
     http_response_code(500);
     exit(pd_is_development() ? 'DB error: ' . $e->getMessage() : 'DB error');
+}
+
+// Auto-login via "remember me" (only if not already logged in).
+// This must run after $db is created and after the helper has been loaded.
+require_once __DIR__ . '/auth.php';
+if (!isset($_SESSION['user_id'])
+    && !empty($_COOKIE['remember_selector'])
+    && !empty($_COOKIE['remember_token'])
+    && function_exists('pd_try_remember_me_login')
+) {
+    pd_try_remember_me_login($db);
+}
+
+define('DB_HOST', $DB_HOST);
+define('DB_NAME', $DB_NAME);
+define('DB_USER', $DB_USER);
+define('DB_PASS', $DB_PASS);
+define('DB_PREFIX', '');
+
+// BASE_PATH: empty for root installs, '/subdir' for subdirectory installs
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', pd_detect_base_path());
 }
