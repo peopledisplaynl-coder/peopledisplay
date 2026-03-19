@@ -59,6 +59,30 @@ try {
     if (count($pd_migrations_changes) > 0) {
         $pd_migrations_status = 'Migraties toegepast';
     }
+
+    // Log migration run (even when no changes were made) to the employee_audit table.
+    // This helps track when the site checked/apply schema updates.
+    try {
+        $action = 'MIGRATION';
+        $details = count($pd_migrations_changes) > 0
+            ? implode('; ', $pd_migrations_changes)
+            : 'No changes needed';
+
+        $stmt = $db->prepare("INSERT INTO employee_audit (employee_id, action, field_changed, old_value, new_value, changed_by, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            null,
+            $action,
+            'schema',
+            null,
+            $details,
+            $_SESSION['user_id'] ?? null,
+            $_SERVER['REMOTE_ADDR'] ?? null,
+            $_SERVER['HTTP_USER_AGENT'] ?? null,
+        ]);
+    } catch (Throwable $e) {
+        // Ignore audit failures; keep migrations silent.
+    }
+
 } catch (Throwable $e) {
     // Keep migrations silent for end users; log errors for debugging.
     error_log('migrations.php error: ' . $e->getMessage());
