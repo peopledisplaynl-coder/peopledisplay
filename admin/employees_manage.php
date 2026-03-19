@@ -1,6 +1,8 @@
 <?php
-// 🔄 CACHE BUSTER - Force reload
-opcache_invalidate(__FILE__, true);
+// 🔄 CACHE BUSTER - Force reload (if opcache is available)
+if (function_exists('opcache_invalidate')) {
+    opcache_invalidate(__FILE__, true);
+}
 /**
  * BESTANDSNAAM: employees_manage.php
  * LOCATIE: /admin/employees_manage.php
