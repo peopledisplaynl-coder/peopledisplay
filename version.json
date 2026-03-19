@@ -1,10 +1,24 @@
 {
-  "version": "2.0.5",
+  "version": "2.0.7",
   "critical": false,
-  "message": "BHV Overzicht sluitknop voor kiosk mode",
+  "message": "Fix: PWA sessie op mobiel blijft behouden na wisselen van app",
   "download_url": "",
   "checksum": "",
   "changelog": [
+    {
+      "version": "2.0.7",
+      "date": "2026-03-19",
+      "changes": [
+        "Fix: PWA sessie op mobiel blijft behouden na wisselen van app — niet langer onterecht uitgelogd als beheerder"
+      ]
+    },
+    {
+      "version": "2.0.6",
+      "date": "2026-03-18",
+      "changes": [
+        "Gebruikersgroepen toegevoegd in gebruikersbeheer — admins kunnen gebruikers indelen in groepen per locatie"
+      ]
+    },
     {
       "version": "2.0.5",
       "date": "2026-03-16",

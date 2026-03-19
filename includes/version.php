@@ -3,5 +3,5 @@
  * BESTANDSNAAM:  version.php
  * UPLOAD NAAR:   /includes/version.php
  */
-define('PD_CURRENT_VERSION',   '2.0.5');
-define('PEOPLEDISPLAY_VERSION', '2.0.5');
+define('PD_CURRENT_VERSION',   '2.0.7');
+define('PEOPLEDISPLAY_VERSION', '2.0.7');

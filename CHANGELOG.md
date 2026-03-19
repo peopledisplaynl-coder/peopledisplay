@@ -2,6 +2,16 @@
 
 All notable changes to PeopleDisplay are documented here.
 
+## Version 2.0.7 — Patch (2026-03-19)
+
+### Fixed
+- Fix: PWA sessie op mobiel blijft behouden na wisselen van app — niet langer onterecht uitgelogd als beheerder
+
+## Version 2.0.6 — Patch (2026-03-18)
+
+### Added
+- Gebruikersgroepen toegevoegd in gebruikersbeheer — admins kunnen gebruikers indelen in groepen per locatie
+
 ## Version 2.0.2 — Patch (2026-03-16)
 
 ### Fixed
