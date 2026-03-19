@@ -56,6 +56,23 @@ try {
         $pd_migrations_changes[] = 'Added fk_users_group_id constraint';
     }
 
+    // Ensure employees table has the new columns introduced in recent updates.
+    $empCols = [
+        'visible_locations' => "TEXT DEFAULT NULL",
+        'allow_manual_location_change' => "TINYINT(1) NOT NULL DEFAULT 0",
+        'sub_status' => "VARCHAR(100) DEFAULT NULL",
+        'sub_status_type' => "VARCHAR(100) DEFAULT NULL",
+        'sub_status_until' => "DATETIME DEFAULT NULL",
+    ];
+
+    foreach ($empCols as $colName => $definition) {
+        $col = $db->query("SHOW COLUMNS FROM `employees` LIKE '$colName'")->fetch();
+        if (!$col) {
+            $db->exec("ALTER TABLE `employees` ADD COLUMN `$colName` $definition");
+            $pd_migrations_changes[] = "Added employees.$colName column";
+        }
+    }
+
     if (count($pd_migrations_changes) > 0) {
         $pd_migrations_status = 'Migraties toegepast';
     }

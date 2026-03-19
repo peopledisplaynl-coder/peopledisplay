@@ -61,6 +61,14 @@ if (!isset($_SESSION['user_id'])
     pd_try_remember_me_login($db);
 }
 
+// ✅ Run graceful schema migrations on admin pages.
+// This ensures that new tables/columns (like user_groups/group_id) exist
+// even if the dashboard hasn't been visited yet.
+$MIGRATIONS_PATH = __DIR__ . '/migrations.php';
+if (file_exists($MIGRATIONS_PATH)) {
+    require_once $MIGRATIONS_PATH;
+}
+
 define('DB_HOST', $DB_HOST);
 define('DB_NAME', $DB_NAME);
 define('DB_USER', $DB_USER);

@@ -86,8 +86,18 @@ function ensureUserGroupsSchema(PDO $db): void
 ensureUserGroupsSchema($db);
 
 // Load groups for filtering and assignment
-$groupsStmt = $db->query("SELECT id, name, description FROM user_groups ORDER BY name ASC");
-$groups = $groupsStmt->fetchAll(PDO::FETCH_ASSOC);
+// This may fail on older installs where the user_groups table / group_id column
+// does not yet exist. In that case we fall back to an empty list and keep the
+// page working.
+try {
+    $groupsStmt = $db->query("SELECT id, name, description FROM user_groups ORDER BY name ASC");
+    $groups = $groupsStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Log the error so it can be investigated; don't block the page.
+    error_log('users_manage.php: failed to load user groups: ' . $e->getMessage());
+    $groups = [];
+    $error = 'Gebruikersgroepen konden niet geladen worden; controleer de database migratie.';
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // AJAX ENDPOINTS
