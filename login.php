@@ -53,76 +53,15 @@ if (isset($_GET['forced_logout'])) {
     $logoutMessage = '<div style="background: #fed7d7; border: 2px solid #f56565; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #742a2a; font-size: 14px; text-align: center;">⚠️ Je bent uitgelogd door een beheerder</div>';
 }
 
-// Check for remember me token BEFORE showing login form
-if (isset($_COOKIE['remember_selector']) && isset($_COOKIE['remember_token'])) {
-    $selector = $_COOKIE['remember_selector'];
-    $token = $_COOKIE['remember_token'];
-    
-    try {
-        // Check if remember_tokens table exists
-        $checkTable = $db->query("SHOW TABLES LIKE 'remember_tokens'");
-        
-        if ($checkTable && $checkTable->rowCount() > 0) {
-            // Validate token
-            $stmt = $db->prepare("
-                SELECT rt.user_id, rt.token, u.username, u.display_name, u.role, u.active
-                FROM remember_tokens rt
-                JOIN users u ON rt.user_id = u.id
-                WHERE rt.selector = ? AND rt.expires_at > NOW()
-            ");
-            $stmt->execute([$selector]);
-            $tokenData = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($tokenData && hash_equals($tokenData['token'], hash('sha256', $token))) {
-                // Valid token - auto login!
-                if ($tokenData['active']) {
-                    $_SESSION['user_id'] = $tokenData['user_id'];
-                    $_SESSION['username'] = $tokenData['username'];
-                    $_SESSION['display_name'] = $tokenData['display_name'];
-                    $_SESSION['role'] = $tokenData['role'];
-                    
-                    // Update last_login
-                    $updateStmt = $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-                    $updateStmt->execute([$tokenData['user_id']]);
-                    
-                    // ✅ START SESSION TRACKING
-                    try {
-                        require_once __DIR__ . '/includes/session_tracker.php';
-                        $tracker = new SessionTracker($db);
-                        $tracker->startSession($tokenData['user_id']);
-                    } catch (Exception $e) {
-                        error_log("Session tracking start failed: " . $e->getMessage());
-                    }
-                    
-                    // Redirect based on role
-                    $userRole = $tokenData['role'];
-                    if (in_array($userRole, ['admin', 'superadmin'])) {
-                        header('Location: admin/dashboard.php');
-                        exit;
-                    } else {
-                        header('Location: frontpage.php');
-                        exit;
-                    }
-                }
-            } else {
-                // Invalid token - delete it
-                if (isset($selector)) {
-                    $deleteStmt = $db->prepare("DELETE FROM remember_tokens WHERE selector = ?");
-                    $deleteStmt->execute([$selector]);
-                }
-            }
-        }
-        
-        // Clear cookies in any case if we reach here
-        setcookie('remember_selector', '', time() - 3600, '/');
-        setcookie('remember_token', '', time() - 3600, '/');
-        
-    } catch (Exception $e) {
-        // Silent fail on remember me check
-        error_log("Remember me check failed: " . $e->getMessage());
-        // Clear cookies
-        setcookie('remember_selector', '', time() - 3600, '/');
-        setcookie('remember_token', '', time() - 3600, '/');
+// Attempt remember-me auto-login before showing the login form.
+if (function_exists('pd_try_remember_me_login') && pd_try_remember_me_login($db)) {
+    $userRole = $_SESSION['role'] ?? 'user';
+    if (in_array($userRole, ['admin', 'superadmin'])) {
+        header('Location: admin/dashboard.php');
+        exit;
+    } else {
+        header('Location: frontpage.php');
+        exit;
     }
 }
 

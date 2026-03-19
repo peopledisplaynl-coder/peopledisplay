@@ -412,22 +412,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
     (function() {
         const CHECK_INTERVAL = 10000;
+        const API_ENDPOINT = '/api/check_session_status.php';
+        let intervalId = null;
         let isRedirecting = false;
-        function checkSession() {
-            if (isRedirecting) return;
-            fetch('/api/check_session_status.php', { credentials: 'same-origin' }).then(r => r.json()).then(data => { if (data.forced_logout || !data.active) handleLogout(); }).catch(() => {});
+
+        function hasRememberToken() {
+            return /(^|; )remember_selector=/.test(document.cookie) && /(^|; )remember_token=/.test(document.cookie);
         }
-        function handleLogout() {
-            if (isRedirecting) return;
-            isRedirecting = true;
-            try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
+
+        function showForcedLogoutOverlay() {
             const overlay = document.createElement('div');
             overlay.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:999999"><div style="background:white;padding:40px;border-radius:12px;text-align:center"><h2 style="color:#742a2a">⚠️ Je bent uitgelogd</h2><div style="margin:20px auto;width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#f56565;border-radius:50%;animation:spin 0.8s linear infinite"></div><p>Je bent uitgelogd door een beheerder.</p></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
             document.body.appendChild(overlay);
-            setTimeout(() => window.location.replace('../login.php?forced_logout=1'), 2000);
         }
+
+        function showTimeoutOverlay() {
+            const overlay = document.createElement('div');
+            overlay.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:999999"><div style="background:white;padding:40px;border-radius:12px;text-align:center"><h2 style="color:#742a2a">⚠️ Je bent uitgelogd</h2><div style="margin:20px auto;width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#f56565;border-radius:50%;animation:spin 0.8s linear infinite"></div><p>Je sessie is verlopen.</p></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+            document.body.appendChild(overlay);
+        }
+
+        function handleLogout(forced) {
+            if (isRedirecting) return;
+            isRedirecting = true;
+            try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
+
+            if (forced) {
+                showForcedLogoutOverlay();
+                setTimeout(() => window.location.replace('../login.php?forced_logout=1'), 2000);
+                return;
+            }
+
+            if (hasRememberToken()) {
+                window.location.reload();
+                return;
+            }
+
+            showTimeoutOverlay();
+            setTimeout(() => window.location.replace('../login.php'), 2000);
+        }
+
+        function checkSession() {
+            if (isRedirecting) return;
+            fetch(API_ENDPOINT, { credentials: 'same-origin' }).then(r => r.json()).then(data => {
+                if (!data.active) {
+                    if (data.forced_logout) {
+                        handleLogout(true);
+                    } else {
+                        handleLogout(false);
+                    }
+                }
+            }).catch(() => {});
+        }
+
+        function startChecker() {
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(checkSession, CHECK_INTERVAL);
+        }
+
+        function stopChecker() {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopChecker();
+            } else {
+                setTimeout(checkSession, 1000);
+                startChecker();
+            }
+        });
+
+        startChecker();
         checkSession();
-        setInterval(checkSession, CHECK_INTERVAL);
     })();
     </script>
 </body>

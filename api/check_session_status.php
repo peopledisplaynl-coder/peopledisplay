@@ -29,37 +29,48 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
-    // Check if this session is still active in database
-    $stmt = $db->prepare("
-        SELECT is_active
-        FROM user_sessions 
-        WHERE user_id = ? 
-        AND is_active = 1
-        LIMIT 1
-    ");
-    $stmt->execute([$_SESSION['user_id']]);
-    $active_session = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($active_session) {
-        // Session is still active
+    // Prefer the session cookie value to identify the session record.
+    $sessionId = session_id();
+    if (!empty($_COOKIE[session_name()])) {
+        $sessionId = $_COOKIE[session_name()];
+    }
+
+    $stmt = $db->prepare("SELECT is_active, last_activity FROM user_sessions WHERE session_id = ? LIMIT 1");
+    $stmt->execute([$sessionId]);
+    $sessionRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($sessionRow && (int)$sessionRow['is_active'] === 1) {
         echo json_encode([
             'active' => true,
             'forced_logout' => false,
             'message' => 'Session active'
         ]);
-    } else {
-        // Session is NOT active - force logout detected!
-        echo json_encode([
-            'active' => false,
-            'forced_logout' => true,
-            'message' => 'Force logout detected'
-        ]);
+        exit;
     }
-    
+
+    // Session is not active (or not found).
+    // Determine if this was a timeout (user idle) vs an explicit forced logout.
+    $forcedLogout = false;
+    if ($sessionRow) {
+        $lastActivity = strtotime($sessionRow['last_activity']);
+        $inactiveSeconds = time() - $lastActivity;
+        $sessionTimeoutSeconds = 15 * 60; // matches SessionTracker default
+        if ($inactiveSeconds < $sessionTimeoutSeconds) {
+            // Recent activity but session marked inactive → likely forced logout
+            $forcedLogout = true;
+        }
+    }
+
+    echo json_encode([
+        'active' => false,
+        'forced_logout' => $forcedLogout,
+        'message' => $forcedLogout ? 'Force logout detected' : 'Session inactive'
+    ]);
+
 } catch (PDOException $e) {
     // Error checking - assume active to not break user experience
     error_log("Session status check error: " . $e->getMessage());
-    
+
     echo json_encode([
         'active' => true,
         'forced_logout' => false,

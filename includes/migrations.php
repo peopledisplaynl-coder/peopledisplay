@@ -19,6 +19,10 @@ if (!in_array($role, ['admin', 'superadmin'], true)) {
     return;
 }
 
+// Expose a small status indicator for admin UI.
+$pd_migrations_status = 'Database schema gecontroleerd';
+$pd_migrations_changes = [];
+
 try {
     // Ensure the user_groups table exists.
     $db->exec("CREATE TABLE IF NOT EXISTS `user_groups` (
@@ -29,11 +33,13 @@ try {
         PRIMARY KEY (`id`),
         KEY `idx_name` (`name`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $pd_migrations_changes[] = 'user_groups table ensured';
 
     // Ensure users.group_id column exists.
     $col = $db->query("SHOW COLUMNS FROM `users` LIKE 'group_id'")->fetch();
     if (!$col) {
         $db->exec("ALTER TABLE `users` ADD COLUMN `group_id` int(11) DEFAULT NULL AFTER `role`");
+        $pd_migrations_changes[] = 'Added users.group_id column';
     }
 
     // Ensure foreign key constraint exists.
@@ -47,8 +53,14 @@ try {
 
     if ($fkExists === 0) {
         $db->exec("ALTER TABLE `users` ADD CONSTRAINT `fk_users_group_id` FOREIGN KEY (`group_id`) REFERENCES `user_groups` (`id`) ON DELETE SET NULL");
+        $pd_migrations_changes[] = 'Added fk_users_group_id constraint';
+    }
+
+    if (count($pd_migrations_changes) > 0) {
+        $pd_migrations_status = 'Migraties toegepast';
     }
 } catch (Throwable $e) {
     // Keep migrations silent for end users; log errors for debugging.
     error_log('migrations.php error: ' . $e->getMessage());
+    $pd_migrations_status = 'Migratie fout (zie logs)';
 }

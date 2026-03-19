@@ -47,42 +47,68 @@ if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['user_id'])) {
             $stmt->execute([$_SESSION['user_id']]);
             $active_session = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Geen actieve sessie gevonden → FORCE LOGOUT
+            // Geen actieve sessie gevonden → force logout of timeout
             if (!$active_session) {
-                
-                // Log de force logout
-                error_log("Session inactive (force logged out) for user_id: " . $_SESSION['user_id']);
-                
-                // Vernietig de sessie VOLLEDIG
-                $_SESSION = array();
-                
-                // Vernietig sessie cookie
-                if (isset($_COOKIE[session_name()])) {
-                    setcookie(session_name(), '', time()-3600, '/');
+
+                // Determine whether this was a forced logout or simply a session timeout.
+                $forcedLogout = false;
+                $timeoutSeconds = 15 * 60; // matches SessionTracker default
+                $sessionId = session_id();
+                if (!empty($_COOKIE[session_name()])) {
+                    $sessionId = $_COOKIE[session_name()];
                 }
-                
-                // Vernietig sessie
+
+                try {
+                    $stmt2 = $db->prepare("SELECT is_active, last_activity FROM user_sessions WHERE session_id = ? LIMIT 1");
+                    $stmt2->execute([$sessionId]);
+                    $row = $stmt2->fetch(PDO::FETCH_ASSOC);
+
+                    if ($row) {
+                        $lastActivity = strtotime($row['last_activity']);
+                        $inactiveSeconds = time() - $lastActivity;
+                        if ($inactiveSeconds < $timeoutSeconds) {
+                            // Recent activity but still inactive => likely forced logout
+                            $forcedLogout = true;
+                        }
+                    }
+                } catch (Exception $e) {
+                    // Ignore - we still want to log the session out.
+                }
+
+                // Log the event for debugging
+                error_log("Session inactive (force logged out) for user_id: " . $_SESSION['user_id'] . " (forced=" . ($forcedLogout ? 'yes' : 'no') . ")");
+
+                // Destroy session completely
+                $_SESSION = array();
+
+                // Destroy session cookie
+                if (isset($_COOKIE[session_name()])) {
+                    setcookie(session_name(), '', time() - 3600, '/');
+                }
+
+                // Destroy session
                 session_destroy();
-                
-                // CRITICAL: Stop ALL output en clear buffer
+
+                // Clear output buffer
                 if (ob_get_level()) {
                     ob_end_clean();
                 }
-                
-                // Probeer PHP redirect
+
+                // Redirect to login; only show forced-logout UI when explicitly forced.
+                $redirectUrl = '/login.php' . ($forcedLogout ? '?forced_logout=1' : '');
                 if (!headers_sent()) {
-                    header('Location: /login.php?forced_logout=1');
+                    header('Location: ' . $redirectUrl);
                     exit;
                 }
-                
-                // Fallback: Toon logout pagina met auto-redirect
+
+                // Fallback: Show a simple logout message with redirect
                 ?>
                 <!DOCTYPE html>
                 <html lang="nl">
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <meta http-equiv="refresh" content="0;url=/login.php?forced_logout=1">
+                    <meta http-equiv="refresh" content="0;url=<?= htmlspecialchars($redirectUrl) ?>">
                     <title>Uitgelogd...</title>
                     <style>
                         body {
@@ -138,15 +164,15 @@ if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['user_id'])) {
                     <div class="logout-box">
                         <h1>⚠️ Je bent uitgelogd</h1>
                         <div class="spinner"></div>
-                        <p>Je bent uitgelogd door een beheerder.</p>
+                        <p><?= $forcedLogout ? 'Je bent uitgelogd door een beheerder.' : 'Je sessie is verlopen.' ?></p>
                         <p>Je wordt doorgestuurd naar de login pagina...</p>
-                        <p><a href="/login.php?forced_logout=1" class="btn">→ Direct naar login</a></p>
+                        <p><a href="<?= htmlspecialchars($redirectUrl) ?>" class="btn">→ Direct naar login</a></p>
                     </div>
                     
                     <script>
                         // Force redirect after 2 seconds
                         setTimeout(function() {
-                            window.location.replace('/login.php?forced_logout=1');
+                            window.location.replace('<?= htmlspecialchars($redirectUrl) ?>');
                         }, 2000);
                         
                         // Clear all storage

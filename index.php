@@ -564,34 +564,84 @@ $user_id = $_SESSION['user_id'];
     (function() {
         const CHECK_INTERVAL = 10000;
         const API_ENDPOINT = '/api/check_session_status.php';
+        let intervalId = null;
         let isRedirecting = false;
-        
+
+        function hasRememberToken() {
+            return /(^|; )remember_selector=/.test(document.cookie) && /(^|; )remember_token=/.test(document.cookie);
+        }
+
+        function showForcedLogoutOverlay() {
+            const overlay = document.createElement('div');
+            overlay.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:999999;font-family:system-ui,sans-serif"><div style="background:white;padding:40px;border-radius:12px;text-align:center;max-width:400px"><h2 style="margin:0 0 20px 0;color:#742a2a;font-size:24px">⚠️ Je bent uitgelogd</h2><div style="margin:20px auto;width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#f56565;border-radius:50%;animation:spin 0.8s linear infinite"></div><p style="margin:0 0 20px 0;color:#718096">Je bent uitgelogd door een beheerder.</p><p style="margin:0;color:#718096;font-size:14px">Je wordt doorgestuurd...</p></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+            document.body.appendChild(overlay);
+        }
+
+        function showTimeoutOverlay() {
+            const overlay = document.createElement('div');
+            overlay.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:999999;font-family:system-ui,sans-serif"><div style="background:white;padding:40px;border-radius:12px;text-align:center;max-width:400px"><h2 style="margin:0 0 20px 0;color:#742a2a;font-size:24px">⚠️ Je bent uitgelogd</h2><div style="margin:20px auto;width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#f56565;border-radius:50%;animation:spin 0.8s linear infinite"></div><p style="margin:0 0 20px 0;color:#718096">Je sessie is verlopen.</p><p style="margin:0;color:#718096;font-size:14px">Je wordt doorgestuurd...</p></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+            document.body.appendChild(overlay);
+        }
+
+        function handleLogout(forced) {
+            if (isRedirecting) return;
+            isRedirecting = true;
+            try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
+
+            if (forced) {
+                showForcedLogoutOverlay();
+                setTimeout(() => window.location.replace('/login.php?forced_logout=1'), 2000);
+                return;
+            }
+
+            if (hasRememberToken()) {
+                window.location.reload();
+                return;
+            }
+
+            showTimeoutOverlay();
+            setTimeout(() => window.location.replace('/login.php'), 2000);
+        }
+
         function checkSession() {
             if (isRedirecting) return;
             fetch(API_ENDPOINT, { method: 'GET', credentials: 'same-origin' })
                 .then(r => r.json())
                 .then(data => {
-                    if (data.forced_logout || !data.active) {
-                        console.warn('🚨 Force logout detected!');
-                        handleLogout();
+                    if (!data.active) {
+                        if (data.forced_logout) {
+                            handleLogout(true);
+                        } else {
+                            handleLogout(false);
+                        }
                     }
                 })
                 .catch(err => console.error('Session check failed:', err));
         }
-        
-        function handleLogout() {
-            if (isRedirecting) return;
-            isRedirecting = true;
-            try { localStorage.clear(); sessionStorage.clear(); } catch(e) {}
-            
-            const overlay = document.createElement('div');
-            overlay.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:999999;font-family:system-ui,sans-serif"><div style="background:white;padding:40px;border-radius:12px;text-align:center;max-width:400px"><h2 style="margin:0 0 20px 0;color:#742a2a;font-size:24px">⚠️ Je bent uitgelogd</h2><div style="margin:20px auto;width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#f56565;border-radius:50%;animation:spin 0.8s linear infinite"></div><p style="margin:0 0 20px 0;color:#718096">Je bent uitgelogd door een beheerder.</p><p style="margin:0;color:#718096;font-size:14px">Je wordt doorgestuurd...</p></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
-            document.body.appendChild(overlay);
-            setTimeout(() => window.location.replace('/login.php?forced_logout=1'), 2000);
+
+        function startChecker() {
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(checkSession, CHECK_INTERVAL);
         }
-        
+
+        function stopChecker() {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopChecker();
+            } else {
+                setTimeout(checkSession, 1000);
+                startChecker();
+            }
+        });
+
+        startChecker();
         checkSession();
-        setInterval(checkSession, CHECK_INTERVAL);
     })();
     </script>
 	

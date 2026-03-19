@@ -124,6 +124,18 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
             font-weight: 600;
             margin-bottom: 12px;
         }
+
+        .migration-badge {
+            display: inline-block;
+            background: rgba(72, 187, 120, 0.12);
+            color: #2f855a;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(72, 187, 120, 0.3);
+            margin-top: 8px;
+        }
         
         .logout-btn {
             background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
@@ -308,6 +320,11 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <div class="user-badge">
                     <?php echo $userRole === 'superadmin' ? '⭐ SuperAdmin' : '🔧 Admin'; ?>
                 </div>
+                <?php if (!empty($pd_migrations_status)): ?>
+                    <div class="migration-badge" title="<?= htmlspecialchars($pd_migrations_status) ?>">
+                        ✅ <?= htmlspecialchars($pd_migrations_status) ?>
+                    </div>
+                <?php endif; ?>
                 <br>
                 <a href="../logout.php" class="logout-btn">🚪 Uitloggen</a>
             </div>
