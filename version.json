@@ -1,10 +1,18 @@
 {
-  "version": "2.0.11",
+  "version": "2.0.12",
   "critical": false,
-  "message": "Fix: Fatale PHP fouten door dubbele functiedeclaraties in auth.php opgelost",
+  "message": "Fix: Admin pagina's worden niet meer gecached in browser; PNG badge export toegevoegd",
   "download_url": "",
   "checksum": "",
   "changelog": [
+    {
+      "version": "2.0.12",
+      "date": "2026-03-20",
+      "changes": [
+        "Fix: Admin pagina's worden niet meer gecached door de browser — geen Ctrl+R meer nodig na wijzigingen",
+        "Nieuw: Badge export als PNG — individuele badge afbeeldingen per medewerker in ZIP bestand met QR/barcode"
+      ]
+    },
     {
       "version": "2.0.11",
       "date": "2026-03-20",
