@@ -544,9 +544,12 @@ try {
             </div>
             
             <!-- Generate Button -->
-            <div class="generate-section">
-                <button id="btn-generate" class="btn btn-primary" style="width: 100%;" onclick="generateBadges()" disabled>
+            <div class="generate-section" style="display: flex; gap: 10px;">
+                <button id="btn-generate" class="btn btn-primary" style="flex: 1;" onclick="generateBadges()" disabled>
                     🎫 Genereer Badges PDF
+                </button>
+                <button id="btn-generate-png" class="btn btn-primary" style="flex: 1; background: #10b981;" onclick="generateBadgesPNG()" disabled>
+                    📱 Exporteer als PNG
                 </button>
             </div>
         </div>
@@ -788,12 +791,7 @@ try {
                 document.body.removeChild(a);
                 
                 btn.textContent = '✅ PDF Gedownload!';
-                
-                setTimeout(() => {
-                    btn.textContent = '🎫 Genereer Badges PDF';
-                    btn.disabled = false;
-                }, 3000);
-                
+            
             } catch (error) {
                 console.error('Generate error:', error);
                 alert('Fout bij genereren PDF: ' + error.message);
@@ -801,7 +799,59 @@ try {
                 btn.disabled = false;
             }
         }
-        
+
+        async function generateBadgesPNG() {
+            if (selectedEmployees.size === 0) {
+                alert('Selecteer eerst employees!');
+                return;
+            }
+
+            const btn = document.getElementById('btn-generate-png');
+            btn.disabled = true;
+            btn.textContent = '⏳ Genereren...';
+
+            try {
+                const response = await fetch('/api/generate_badge_png.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        employee_ids: Array.from(selectedEmployees),
+                        code_type: codeType,
+                        template: selectedTemplate,
+                        logo: logoDataUrl
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `badges_png_${new Date().getTime()}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                btn.textContent = '✅ ZIP Gedownload!';
+
+                setTimeout(() => {
+                    btn.textContent = '📱 Exporteer als PNG';
+                    btn.disabled = false;
+                }, 3000);
+            } catch (error) {
+                console.error('Generate PNG error:', error);
+                alert('Fout bij genereren PNG: ' + error.message);
+                btn.textContent = '📱 Exporteer als PNG';
+                btn.disabled = false;
+            }
+        }
+
         // Event listeners
         document.getElementById('filter-location').addEventListener('change', filterEmployees);
         document.getElementById('filter-afdeling').addEventListener('change', filterEmployees);
