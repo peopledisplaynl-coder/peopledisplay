@@ -14,10 +14,11 @@ if (session_status() === PHP_SESSION_NONE) {
  * @param PDO $db
  * @return bool True when the session was restored, false otherwise.
  */
-function pd_try_remember_me_login(PDO $db): bool {
-    if (!empty($_SESSION['user_id'])) {
-        return false; // already logged in
-    }
+if (!function_exists('pd_try_remember_me_login')) {
+    function pd_try_remember_me_login(PDO $db): bool {
+        if (!empty($_SESSION['user_id'])) {
+            return false; // already logged in
+        }
 
     if (empty($_COOKIE['remember_selector']) || empty($_COOKIE['remember_token'])) {
         return false;
@@ -84,20 +85,25 @@ function pd_try_remember_me_login(PDO $db): bool {
         setcookie('remember_token', '', time() - 3600, '/', '', false, true);
         return false;
     }
+    }
 }
 
 // Authentication check function
-function requireAuth() {
-    if (!isset($_SESSION['user_id']) || !$_SESSION['user_id']) {
-        return false;
+if (!function_exists('requireAuth')) {
+    function requireAuth() {
+        if (!isset($_SESSION['user_id']) || !$_SESSION['user_id']) {
+            return false;
+        }
+        return true;
     }
-    return true;
 }
 
-// Admin check function  
-function requireAdmin() {
-    if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'superadmin'])) {
-        return false;
+// Admin check function
+if (!function_exists('requireAdmin')) {
+    function requireAdmin() {
+        if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'superadmin'])) {
+            return false;
+        }
+        return true;
     }
-    return true;
 }

@@ -19,11 +19,13 @@ if (session_status() === PHP_SESSION_NONE) {
  * Require user to be logged in
  * Redirects to login page if not authenticated
  */
-function requireLogin() {
-    if (!isset($_SESSION['user_id'])) {
-        // FIXED: Was login.html, now ../login.php
-        header('Location: ../login.php');
-        exit;
+if (!function_exists('requireLogin')) {
+    function requireLogin() {
+        if (!isset($_SESSION['user_id'])) {
+            // FIXED: Was login.html, now ../login.php
+            header('Location: ../login.php');
+            exit;
+        }
     }
 }
 
@@ -31,15 +33,17 @@ function requireLogin() {
  * Require user to have admin or superadmin role
  * Redirects to login page if not admin
  */
-function requireAdmin() {
-    requireLogin(); // First check if logged in
-    
-    $userRole = $_SESSION['role'] ?? 'user';
-    
-    if (!in_array($userRole, ['admin', 'superadmin'])) {
-        // User is logged in but not admin - redirect to frontpage
-        header('Location: ../frontpage.php');
-        exit;
+if (!function_exists('requireAdmin')) {
+    function requireAdmin() {
+        requireLogin(); // First check if logged in
+        
+        $userRole = $_SESSION['role'] ?? 'user';
+        
+        if (!in_array($userRole, ['admin', 'superadmin'])) {
+            // User is logged in but not admin - redirect to frontpage
+            header('Location: ../frontpage.php');
+            exit;
+        }
     }
 }
 
@@ -47,19 +51,21 @@ function requireAdmin() {
  * Require user to have superadmin role
  * Redirects appropriately if not superadmin
  */
-function requireSuperAdmin() {
-    requireLogin(); // First check if logged in
-    
-    $userRole = $_SESSION['role'] ?? 'user';
-    
-    if ($userRole !== 'superadmin') {
-        // Not superadmin - redirect based on role
-        if ($userRole === 'admin') {
-            header('Location: dashboard.php'); // Admin → dashboard
-        } else {
-            header('Location: ../frontpage.php'); // User → frontpage
+if (!function_exists('requireSuperAdmin')) {
+    function requireSuperAdmin() {
+        requireLogin(); // First check if logged in
+        
+        $userRole = $_SESSION['role'] ?? 'user';
+        
+        if ($userRole !== 'superadmin') {
+            // Not superadmin - redirect based on role
+            if ($userRole === 'admin') {
+                header('Location: dashboard.php'); // Admin → dashboard
+            } else {
+                header('Location: ../frontpage.php'); // User → frontpage
+            }
+            exit;
         }
-        exit;
     }
 }
 
@@ -67,63 +73,77 @@ function requireSuperAdmin() {
  * Check if user is logged in (without redirect)
  * @return bool
  */
-function isLoggedIn() {
-    return isset($_SESSION['user_id']);
+if (!function_exists('isLoggedIn')) {
+    function isLoggedIn() {
+        return isset($_SESSION['user_id']);
+    }
 }
 
 /**
  * Check if user is admin (without redirect)
  * @return bool
  */
-function isAdmin() {
-    if (!isLoggedIn()) {
-        return false;
+if (!function_exists('isAdmin')) {
+    function isAdmin() {
+        if (!isLoggedIn()) {
+            return false;
+        }
+        
+        $userRole = $_SESSION['role'] ?? 'user';
+        return in_array($userRole, ['admin', 'superadmin']);
     }
-    
-    $userRole = $_SESSION['role'] ?? 'user';
-    return in_array($userRole, ['admin', 'superadmin']);
 }
 
 /**
  * Check if user is superadmin (without redirect)
  * @return bool
  */
-function isSuperAdmin() {
-    if (!isLoggedIn()) {
-        return false;
+if (!function_exists('isSuperAdmin')) {
+    function isSuperAdmin() {
+        if (!isLoggedIn()) {
+            return false;
+        }
+        
+        return ($_SESSION['role'] ?? '') === 'superadmin';
     }
-    
-    return ($_SESSION['role'] ?? '') === 'superadmin';
 }
 
 /**
  * Get current user ID
  * @return int|null
  */
-function getCurrentUserId() {
-    return $_SESSION['user_id'] ?? null;
+if (!function_exists('getCurrentUserId')) {
+    function getCurrentUserId() {
+        return $_SESSION['user_id'] ?? null;
+    }
 }
 
 /**
  * Get current user role
  * @return string|null
  */
-function getCurrentUserRole() {
-    return $_SESSION['role'] ?? null;
+if (!function_exists('getCurrentUserRole')) {
+    function getCurrentUserRole() {
+        return $_SESSION['role'] ?? null;
+    }
 }
 
 /**
  * Get current username
  * @return string|null
  */
-function getCurrentUsername() {
-    return $_SESSION['username'] ?? null;
+if (!function_exists('getCurrentUsername')) {
+    function getCurrentUsername() {
+        return $_SESSION['username'] ?? null;
+    }
 }
 
 /**
  * Get current display name
  * @return string|null
  */
-function getCurrentDisplayName() {
-    return $_SESSION['display_name'] ?? null;
+if (!function_exists('getCurrentDisplayName')) {
+    function getCurrentDisplayName() {
+        return $_SESSION['display_name'] ?? null;
+    }
 }
