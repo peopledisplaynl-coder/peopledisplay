@@ -618,6 +618,7 @@ try {
             document.getElementById('selected-count').textContent = count;
             document.getElementById('pages-count').textContent = Math.ceil(count / 10);
             document.getElementById('btn-generate').disabled = count === 0;
+            document.getElementById('btn-generate-png').disabled = count === 0;
             
             updatePreview();
         }
