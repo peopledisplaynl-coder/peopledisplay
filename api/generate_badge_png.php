@@ -57,6 +57,8 @@ try {
         jsonError('Kan ZIP niet aanmaken', 500);
     }
 
+    $tempFiles = []; // Store temp file paths for cleanup after ZIP creation
+
     // Template colors
     $templateBackgrounds = [
         'professional' => [230, 236, 255],
@@ -190,10 +192,17 @@ try {
         imagedestroy($img);
 
         $zip->addFile($tmpPng, $fileName);
-        unlink($tmpPng);
+        $tempFiles[] = $tmpPng; // Store for cleanup after ZIP close
     }
 
     $zip->close();
+
+    // Clean up temp PNG files after ZIP is closed
+    foreach ($tempFiles as $tempFile) {
+        if (file_exists($tempFile)) {
+            unlink($tempFile);
+        }
+    }
 
     header('Content-Type: application/zip');
     header('Content-Disposition: attachment; filename="badges_png_' . date('Ymd_His') . '.zip"');
