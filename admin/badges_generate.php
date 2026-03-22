@@ -848,6 +848,16 @@ try {
                     ctx.fillStyle = `rgb(${colors.header[0]}, ${colors.header[1]}, ${colors.header[2]})`;
                     ctx.fillRect(0, 0, 600, 60);
 
+                    // Logo in header (if uploaded)
+                    if (logoDataUrl) {
+                        const logoImg = new Image();
+                        logoImg.src = logoDataUrl;
+                        await new Promise(resolve => {
+                            logoImg.onload = resolve;
+                        });
+                        ctx.drawImage(logoImg, 10, 10, 40, 40);
+                    }
+
                     // Employee name in header (centered white)
                     const name = (employee.voornaam + ' ' + employee.achternaam).trim() || employee.naam || 'Onbekend';
                     ctx.fillStyle = 'white';
@@ -864,10 +874,10 @@ try {
                         ctx.fillRect(0, 340, 600, 60);
                     }
 
-                    // Profile photo (circular 100x100, centered in left column at y:80 start)
+                    // Profile photo (circular 120x120px, centered in left column at y:80 start)
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(100, 130, 50, 0, 2 * Math.PI);
+                    ctx.arc(100, 130, 60, 0, 2 * Math.PI);
                     ctx.clip();
 
                     if (employee.foto_url) {
@@ -875,7 +885,7 @@ try {
                         await new Promise((resolve, reject) => {
                             img.crossOrigin = 'anonymous';
                             img.onload = () => {
-                                ctx.drawImage(img, 50, 80, 100, 100);
+                                ctx.drawImage(img, 40, 70, 120, 120);
                                 resolve();
                             };
                             img.onerror = () => {
@@ -894,11 +904,25 @@ try {
 
                     // Text fields (middle column, y:90,120,150)
                     ctx.fillStyle = 'black';
-                    ctx.font = '16px Arial';
                     ctx.textAlign = 'left';
-                    ctx.fillText('Functie: ' + (employee.functie || 'Onbekend'), 210, 90);
-                    ctx.fillText('Afdeling: ' + (employee.afdeling || 'Onbekend'), 210, 120);
-                    ctx.fillText('Locatie: ' + (employee.locatie || 'Onbekend'), 210, 150);
+                    
+                    // Functie
+                    ctx.font = 'bold 16px Arial';
+                    ctx.fillText('Functie: ', 210, 90);
+                    ctx.font = '16px Arial';
+                    ctx.fillText(employee.functie || 'Onbekend', 210 + ctx.measureText('Functie: ').width, 90);
+                    
+                    // Afdeling
+                    ctx.font = 'bold 16px Arial';
+                    ctx.fillText('Afdeling: ', 210, 120);
+                    ctx.font = '16px Arial';
+                    ctx.fillText(employee.afdeling || 'Onbekend', 210 + ctx.measureText('Afdeling: ').width, 120);
+                    
+                    // Locatie
+                    ctx.font = 'bold 16px Arial';
+                    ctx.fillText('Locatie: ', 210, 150);
+                    ctx.font = '16px Arial';
+                    ctx.fillText(employee.locatie || 'Onbekend', 210 + ctx.measureText('Locatie: ').width, 150);
 
                     // Codes
                     const employeeId = employee.employee_id || employee.id;
@@ -991,10 +1015,10 @@ try {
             const ctx = document.getElementById('badge-canvas').getContext('2d');
             ctx.fillStyle = '#e2e8f0';
             ctx.beginPath();
-            ctx.arc(100, 130, 50, 0, 2 * Math.PI);
+            ctx.arc(100, 130, 60, 0, 2 * Math.PI);
             ctx.fill();
             ctx.fillStyle = '#4a5568';
-            ctx.font = 'bold 30px Arial';
+            ctx.font = 'bold 36px Arial';
             ctx.textAlign = 'center';
             const initials = ((employee.voornaam || '')[0] || '') + ((employee.achternaam || '')[0] || '');
             ctx.fillText(initials.toUpperCase() || '?', 100, 140);
