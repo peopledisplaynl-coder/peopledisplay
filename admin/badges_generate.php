@@ -46,6 +46,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎫 Badge Generator - PeopleDisplay</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -555,6 +556,9 @@ try {
         </div>
     </div>
     
+    <!-- Hidden canvas for PNG generation -->
+    <canvas id="badge-canvas" style="display: none;"></canvas>
+    
     <script>
         let selectedEmployees = new Set();
         const allEmployees = <?= json_encode($employees) ?>;
@@ -812,32 +816,119 @@ try {
             btn.textContent = '⏳ Genereren...';
 
             try {
-                const response = await fetch('/api/generate_badge_png.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        employee_ids: Array.from(selectedEmployees),
-                        code_type: codeType,
-                        template: selectedTemplate,
-                        logo: logoDataUrl
-                    })
-                });
+                const zip = new JSZip();
+                const canvas = document.getElementById('badge-canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 600;
+                canvas.height = 400;
 
-                if (!response.ok) {
-                    throw new Error('Server error');
+                // Template colors
+                const templateColors = {
+                    professional: { header: [51, 102, 204], bg: [230, 236, 255] },
+                    colorful: { header: [252, 112, 156], bg: [255, 237, 241] },
+                    minimalist: { header: [40, 40, 40], bg: [255, 255, 255] },
+                    emergency: { header: [220, 38, 38], bg: [255, 236, 238] }
+                };
+
+                const selectedList = allEmployees.filter(emp => selectedEmployees.has(emp.id.toString()));
+
+                for (const employee of selectedList) {
+                    // Clear canvas
+                    ctx.clearRect(0, 0, 600, 400);
+
+                    const colors = templateColors[selectedTemplate] || templateColors.professional;
+
+                    // Background
+                    ctx.fillStyle = `rgb(${colors.bg[0]}, ${colors.bg[1]}, ${colors.bg[2]})`;
+                    ctx.fillRect(0, 0, 600, 400);
+
+                    // Header bar
+                    ctx.fillStyle = `rgb(${colors.header[0]}, ${colors.header[1]}, ${colors.header[2]})`;
+                    ctx.fillRect(0, 0, 600, 80);
+
+                    // Employee name in header
+                    const name = (employee.voornaam + ' ' + employee.achternaam).trim() || employee.naam || 'Onbekend';
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 24px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(name, 300, 50);
+
+                    // Profile photo or initials
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(80, 180, 60, 0, 2 * Math.PI);
+                    ctx.clip();
+
+                    if (employee.foto_url) {
+                        const img = new Image();
+                        await new Promise((resolve, reject) => {
+                            img.crossOrigin = 'anonymous';
+                            img.onload = () => {
+                                ctx.drawImage(img, 20, 120, 120, 120);
+                                resolve();
+                            };
+                            img.onerror = () => {
+                                // Fallback to initials
+                                ctx.restore();
+                                drawInitials(employee);
+                                resolve();
+                            };
+                            img.src = employee.foto_url;
+                        });
+                        ctx.restore();
+                    } else {
+                        ctx.restore();
+                        drawInitials(employee);
+                    }
+
+                    // Text fields
+                    ctx.fillStyle = 'black';
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText('Functie: ' + (employee.functie || 'Onbekend'), 180, 140);
+                    ctx.fillText('Afdeling: ' + (employee.afdeling || 'Onbekend'), 180, 170);
+                    ctx.fillText('Locatie: ' + (employee.locatie || 'Onbekend'), 180, 200);
+
+                    // QR code
+                    const qrUrl = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(employee.employee_id || employee.id)}`;
+                    const qrImg = new Image();
+                    await new Promise((resolve) => {
+                        qrImg.crossOrigin = 'anonymous';
+                        qrImg.onload = () => {
+                            ctx.drawImage(qrImg, 420, 120, 150, 150);
+                            resolve();
+                        };
+                        qrImg.src = qrUrl;
+                    });
+
+                    // BHV badge
+                    if (employee.bhv && employee.bhv.toLowerCase() === 'ja') {
+                        ctx.fillStyle = 'red';
+                        ctx.beginPath();
+                        ctx.arc(520, 60, 30, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 16px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('BHV', 520, 68);
+                    }
+
+                    // Convert to blob
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    const fileName = `badge_${name.replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
+                    zip.file(fileName, blob);
                 }
 
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
+                // Generate ZIP
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(zipBlob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `badges_png_${new Date().getTime()}.zip`;
                 document.body.appendChild(a);
                 a.click();
-                window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
+                URL.revokeObjectURL(url);
 
                 btn.textContent = '✅ ZIP Gedownload!';
 
@@ -851,6 +942,19 @@ try {
                 btn.textContent = '📱 Exporteer als PNG';
                 btn.disabled = false;
             }
+        }
+
+        function drawInitials(employee) {
+            const ctx = document.getElementById('badge-canvas').getContext('2d');
+            ctx.fillStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.arc(80, 180, 60, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#4a5568';
+            ctx.font = 'bold 36px Arial';
+            ctx.textAlign = 'center';
+            const initials = ((employee.voornaam || '')[0] || '') + ((employee.achternaam || '')[0] || '');
+            ctx.fillText(initials.toUpperCase() || '?', 80, 195);
         }
 
         // Event listeners
