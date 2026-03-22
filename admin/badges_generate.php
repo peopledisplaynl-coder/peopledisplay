@@ -844,21 +844,30 @@ try {
                     ctx.fillStyle = `rgb(${colors.bg[0]}, ${colors.bg[1]}, ${colors.bg[2]})`;
                     ctx.fillRect(0, 0, 600, 400);
 
-                    // Header bar
+                    // Header bar (0,0 to 600,60)
                     ctx.fillStyle = `rgb(${colors.header[0]}, ${colors.header[1]}, ${colors.header[2]})`;
-                    ctx.fillRect(0, 0, 600, 80);
+                    ctx.fillRect(0, 0, 600, 60);
 
-                    // Employee name in header
+                    // Employee name in header (centered white)
                     const name = (employee.voornaam + ' ' + employee.achternaam).trim() || employee.naam || 'Onbekend';
                     ctx.fillStyle = 'white';
-                    ctx.font = 'bold 24px Arial';
+                    ctx.font = 'bold 20px Arial';
                     ctx.textAlign = 'center';
-                    ctx.fillText(name, 300, 50);
+                    ctx.fillText(name, 300, 38);
 
-                    // Profile photo or initials
+                    // Footer bar (0,340 to 600,400) - slightly darker
+                    if (codeType === 'barcode' || codeType === 'both') {
+                        const footerR = Math.max(0, colors.header[0] - 30);
+                        const footerG = Math.max(0, colors.header[1] - 30);
+                        const footerB = Math.max(0, colors.header[2] - 30);
+                        ctx.fillStyle = `rgb(${footerR}, ${footerG}, ${footerB})`;
+                        ctx.fillRect(0, 340, 600, 60);
+                    }
+
+                    // Profile photo (circular 100x100, centered in left column at y:80 start)
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(50, 140, 50, 0, 2 * Math.PI);
+                    ctx.arc(100, 130, 50, 0, 2 * Math.PI);
                     ctx.clip();
 
                     if (employee.foto_url) {
@@ -866,7 +875,7 @@ try {
                         await new Promise((resolve, reject) => {
                             img.crossOrigin = 'anonymous';
                             img.onload = () => {
-                                ctx.drawImage(img, 0, 90, 100, 100);
+                                ctx.drawImage(img, 50, 80, 100, 100);
                                 resolve();
                             };
                             img.onerror = () => {
@@ -883,27 +892,27 @@ try {
                         drawInitials(employee);
                     }
 
-                    // Text fields
+                    // Text fields (middle column, y:90,120,150)
                     ctx.fillStyle = 'black';
                     ctx.font = '16px Arial';
                     ctx.textAlign = 'left';
-                    ctx.fillText('Functie: ' + (employee.functie || 'Onbekend'), 160, 120);
-                    ctx.fillText('Afdeling: ' + (employee.afdeling || 'Onbekend'), 160, 140);
-                    ctx.fillText('Locatie: ' + (employee.locatie || 'Onbekend'), 160, 160);
+                    ctx.fillText('Functie: ' + (employee.functie || 'Onbekend'), 210, 90);
+                    ctx.fillText('Afdeling: ' + (employee.afdeling || 'Onbekend'), 210, 120);
+                    ctx.fillText('Locatie: ' + (employee.locatie || 'Onbekend'), 210, 150);
 
-                    // Codes based on codeType
+                    // Codes
                     const employeeId = employee.employee_id || employee.id;
                     
                     if (codeType === 'qr' || codeType === 'both') {
-                        // QR code
+                        // QR code (120x120 at 450,80)
                         const qrDiv = document.createElement('div');
                         qrDiv.style.display = 'none';
                         document.body.appendChild(qrDiv);
                         
                         new QRCode(qrDiv, {
                             text: employeeId,
-                            width: 150,
-                            height: 150
+                            width: 120,
+                            height: 120
                         });
                         
                         // Wait for QR generation
@@ -912,8 +921,7 @@ try {
                         // Get the QR image
                         const qrImg = qrDiv.querySelector('img') || qrDiv.querySelector('canvas');
                         if (qrImg) {
-                            const qrY = codeType === 'both' ? 120 : 220;
-                            ctx.drawImage(qrImg, 400, qrY, 150, 150);
+                            ctx.drawImage(qrImg, 450, 80, 120, 120);
                         }
                         
                         // Remove temp div
@@ -921,32 +929,31 @@ try {
                     }
                     
                     if (codeType === 'barcode' || codeType === 'both') {
-                        // Barcode
+                        // Barcode in footer (centered, height 50px)
                         const tempCanvas = document.createElement('canvas');
-                        tempCanvas.width = 200;
-                        tempCanvas.height = 60;
+                        tempCanvas.width = 300;
+                        tempCanvas.height = 50;
                         JsBarcode(tempCanvas, employeeId, {
                             format: 'CODE128',
                             width: 2,
-                            height: 50,
+                            height: 40,
                             displayValue: true,
                             fontSize: 12
                         });
                         
-                        const barcodeY = codeType === 'both' ? 180 : 220;
-                        ctx.drawImage(tempCanvas, 400, barcodeY, 200, 60);
+                        ctx.drawImage(tempCanvas, 150, 340, 300, 50);
                     }
 
-                    // BHV badge
+                    // BHV badge (top-right of header, x:560, y:15, radius:20)
                     if (employee.bhv && employee.bhv.toLowerCase() === 'ja') {
                         ctx.fillStyle = 'red';
                         ctx.beginPath();
-                        ctx.arc(520, 60, 30, 0, 2 * Math.PI);
+                        ctx.arc(560, 15, 20, 0, 2 * Math.PI);
                         ctx.fill();
                         ctx.fillStyle = 'white';
-                        ctx.font = 'bold 16px Arial';
+                        ctx.font = 'bold 12px Arial';
                         ctx.textAlign = 'center';
-                        ctx.fillText('BHV', 520, 68);
+                        ctx.fillText('BHV', 560, 20);
                     }
 
                     // Convert to blob
@@ -984,13 +991,13 @@ try {
             const ctx = document.getElementById('badge-canvas').getContext('2d');
             ctx.fillStyle = '#e2e8f0';
             ctx.beginPath();
-            ctx.arc(50, 140, 50, 0, 2 * Math.PI);
+            ctx.arc(100, 130, 50, 0, 2 * Math.PI);
             ctx.fill();
             ctx.fillStyle = '#4a5568';
             ctx.font = 'bold 30px Arial';
             ctx.textAlign = 'center';
             const initials = ((employee.voornaam || '')[0] || '') + ((employee.achternaam || '')[0] || '');
-            ctx.fillText(initials.toUpperCase() || '?', 50, 150);
+            ctx.fillText(initials.toUpperCase() || '?', 100, 140);
         }
 
         // Event listeners
