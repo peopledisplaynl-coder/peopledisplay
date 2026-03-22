@@ -1,10 +1,17 @@
 {
-  "version": "2.0.13",
+  "version": "2.0.14",
   "critical": false,
   "message": "Fix: PNG badge export ZIP was leeg — tijdelijke bestanden worden nu correct opgeruimd na ZIP aanmaken",
   "download_url": "",
   "checksum": "",
   "changelog": [
+    {
+      "version": "2.0.14",
+      "date": "2026-03-22",
+      "changes": [
+        "Fix: PNG badge export ZIP was leeg — tijdelijke bestanden worden nu correct opgeruimd na ZIP aanmaken"
+      ]
+    },
     {
       "version": "2.0.13",
       "date": "2026-03-22",
