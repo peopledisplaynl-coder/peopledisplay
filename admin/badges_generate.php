@@ -921,7 +921,7 @@ try {
                         // Get the QR image
                         const qrImg = qrDiv.querySelector('img') || qrDiv.querySelector('canvas');
                         if (qrImg) {
-                            ctx.drawImage(qrImg, 450, 80, 120, 120);
+                            ctx.drawImage(qrImg, 460, 210, 120, 120);
                         }
                         
                         // Remove temp div
