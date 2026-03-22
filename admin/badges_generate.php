@@ -47,6 +47,8 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎫 Badge Generator - PeopleDisplay</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -856,7 +858,7 @@ try {
                     // Profile photo or initials
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(80, 180, 60, 0, 2 * Math.PI);
+                    ctx.arc(50, 140, 50, 0, 2 * Math.PI);
                     ctx.clip();
 
                     if (employee.foto_url) {
@@ -864,7 +866,7 @@ try {
                         await new Promise((resolve, reject) => {
                             img.crossOrigin = 'anonymous';
                             img.onload = () => {
-                                ctx.drawImage(img, 20, 120, 120, 120);
+                                ctx.drawImage(img, 0, 90, 100, 100);
                                 resolve();
                             };
                             img.onerror = () => {
@@ -885,21 +887,55 @@ try {
                     ctx.fillStyle = 'black';
                     ctx.font = '16px Arial';
                     ctx.textAlign = 'left';
-                    ctx.fillText('Functie: ' + (employee.functie || 'Onbekend'), 180, 140);
-                    ctx.fillText('Afdeling: ' + (employee.afdeling || 'Onbekend'), 180, 170);
-                    ctx.fillText('Locatie: ' + (employee.locatie || 'Onbekend'), 180, 200);
+                    ctx.fillText('Functie: ' + (employee.functie || 'Onbekend'), 160, 120);
+                    ctx.fillText('Afdeling: ' + (employee.afdeling || 'Onbekend'), 160, 140);
+                    ctx.fillText('Locatie: ' + (employee.locatie || 'Onbekend'), 160, 160);
 
-                    // QR code
-                    const qrUrl = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(employee.employee_id || employee.id)}`;
-                    const qrImg = new Image();
-                    await new Promise((resolve) => {
-                        qrImg.crossOrigin = 'anonymous';
-                        qrImg.onload = () => {
-                            ctx.drawImage(qrImg, 420, 120, 150, 150);
-                            resolve();
-                        };
-                        qrImg.src = qrUrl;
-                    });
+                    // Codes based on codeType
+                    const employeeId = employee.employee_id || employee.id;
+                    
+                    if (codeType === 'qr' || codeType === 'both') {
+                        // QR code
+                        const qrDiv = document.createElement('div');
+                        qrDiv.style.display = 'none';
+                        document.body.appendChild(qrDiv);
+                        
+                        new QRCode(qrDiv, {
+                            text: employeeId,
+                            width: 150,
+                            height: 150
+                        });
+                        
+                        // Wait for QR generation
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        
+                        // Get the QR image
+                        const qrImg = qrDiv.querySelector('img') || qrDiv.querySelector('canvas');
+                        if (qrImg) {
+                            const qrY = codeType === 'both' ? 120 : 220;
+                            ctx.drawImage(qrImg, 400, qrY, 150, 150);
+                        }
+                        
+                        // Remove temp div
+                        document.body.removeChild(qrDiv);
+                    }
+                    
+                    if (codeType === 'barcode' || codeType === 'both') {
+                        // Barcode
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = 200;
+                        tempCanvas.height = 60;
+                        JsBarcode(tempCanvas, employeeId, {
+                            format: 'CODE128',
+                            width: 2,
+                            height: 50,
+                            displayValue: true,
+                            fontSize: 12
+                        });
+                        
+                        const barcodeY = codeType === 'both' ? 180 : 220;
+                        ctx.drawImage(tempCanvas, 400, barcodeY, 200, 60);
+                    }
 
                     // BHV badge
                     if (employee.bhv && employee.bhv.toLowerCase() === 'ja') {
@@ -948,13 +984,13 @@ try {
             const ctx = document.getElementById('badge-canvas').getContext('2d');
             ctx.fillStyle = '#e2e8f0';
             ctx.beginPath();
-            ctx.arc(80, 180, 60, 0, 2 * Math.PI);
+            ctx.arc(50, 140, 50, 0, 2 * Math.PI);
             ctx.fill();
             ctx.fillStyle = '#4a5568';
-            ctx.font = 'bold 36px Arial';
+            ctx.font = 'bold 30px Arial';
             ctx.textAlign = 'center';
             const initials = ((employee.voornaam || '')[0] || '') + ((employee.achternaam || '')[0] || '');
-            ctx.fillText(initials.toUpperCase() || '?', 80, 195);
+            ctx.fillText(initials.toUpperCase() || '?', 50, 150);
         }
 
         // Event listeners
