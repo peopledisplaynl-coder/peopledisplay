@@ -35,6 +35,25 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     $pd_migrations_changes[] = 'user_groups table ensured';
 
+    // Ensure license_tiers table exists (used for tier-based licensing/configuration).
+    $db->exec("CREATE TABLE IF NOT EXISTS `license_tiers` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `tier_code` varchar(10) NOT NULL,
+        `tier_name` varchar(100) NOT NULL,
+        `tier_description` text DEFAULT NULL,
+        `max_users` int(11) NOT NULL DEFAULT 0,
+        `max_employees` int(11) NOT NULL DEFAULT 0,
+        `max_locations` int(11) NOT NULL DEFAULT 0,
+        `max_departments` int(11) NOT NULL DEFAULT 0,
+        `features` longtext DEFAULT NULL,
+        `price_eur` decimal(10,2) DEFAULT NULL,
+        `sort_order` int(11) DEFAULT 0,
+        `active` tinyint(1) NOT NULL DEFAULT 1,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `tier_code` (`tier_code`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $pd_migrations_changes[] = 'license_tiers table ensured';
+
     // Ensure users.group_id column exists.
     $col = $db->query("SHOW COLUMNS FROM `users` LIKE 'group_id'")->fetch();
     if (!$col) {
