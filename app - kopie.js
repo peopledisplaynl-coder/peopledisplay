@@ -1348,13 +1348,22 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
       // Als user features beschikbaar zijn, gebruik die
       if(userVisibleFields && userVisibleFields.length > 0) {
         visibleFields = userVisibleFields.slice();
+        // ✅ FIX: Forceer dat Foto altijd zichtbaar is
+        if (!visibleFields.includes("Foto")) {
+          visibleFields.push("Foto");
+        }
         console.log("✅ User visible fields loaded:", visibleFields);
         
         // Update checkboxes to match user settings
         checks.forEach(cb => {
           const fieldName = cb.value;
+          // Map FotoURL -> Foto voor compatibility
           const mappedName = fieldName === "FotoURL" ? "Foto" : fieldName;
           cb.checked = visibleFields.includes(mappedName) || visibleFields.includes(fieldName);
+          // ✅ FIX: Forceer Foto checkbox altijd checked
+          if (fieldName === "Foto" || fieldName === "FotoURL") {
+            cb.checked = true;
+          }
         });
       } else if(!checks.length){
         // Fallback als geen checkboxes
@@ -1367,6 +1376,10 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
       // Attach listeners
       checks.forEach(cb => cb.addEventListener("change", () => {
         visibleFields = Array.from(checks).filter(c => c.checked).map(c => c.value);
+        // ✅ FIX: Forceer dat Foto altijd in lijst blijft
+        if (!visibleFields.includes("Foto") && !visibleFields.includes("FotoURL")) {
+          visibleFields.push("Foto");
+        }
         applyCurrentFilters();
         if(typeof window.__labee_autoHideMenuReset === "function") window.__labee_autoHideMenuReset();
       }));
@@ -1553,49 +1566,11 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
 
         let html = '<div class="card-content">';
         
-        // Foto en/of pion kolom
-        const showFoto = (visibleFields.includes("Foto") || visibleFields.includes("FotoURL")) && photo;
-        const hasPion = emp.allow_manual_location_change == 1 && emp.visible_locations;
-
-        if (showFoto || hasPion) {
-          html += '<div class="emp-photo-side">';
-
-          // Foto alleen als feature aan staat
-          if (showFoto) {
-            html += `<img src="${photo}" alt="${emp.Naam||''}" onerror="this.src='${BASE_PHOTO_URL}/no-photo.png'"/>`;
-          }
-
-          // 📍 MANUAL LOCATION BUTTON — onder de foto
-          if (hasPion) {
-            try {
-              const visLocs = typeof emp.visible_locations === 'string' ? JSON.parse(emp.visible_locations) : emp.visible_locations;
-              if (visLocs && visLocs.includes('ALL')) {
-                const empData = JSON.stringify(emp).replace(/"/g, '&quot;');
-                html += `<button
-                    class="manual-location-btn"
-                    onclick="event.stopPropagation(); showManualLocationSelector(${empData})"
-                    title="Check-in op andere locatie"
-                    style="
-                        display: block;
-                        margin: ${showFoto ? '4px' : '0'} auto 0 auto;
-                        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-                        color: white;
-                        border: none;
-                        padding: 4px 10px;
-                        border-radius: 6px;
-                        font-size: 16px;
-                        cursor: pointer;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                        width: 100%;
-                    "
-                >📍</button>`;
-              }
-            } catch(e) {
-              console.warn('Failed to parse visible_locations for employee', emp.ID, e);
-            }
-          }
-
-          html += '</div>';
+        // Foto (check both "Foto" and "FotoURL")
+        if((visibleFields.includes("Foto") || visibleFields.includes("FotoURL")) && photo){
+          html += '<div class="emp-photo-side">' +
+                    `<img src="${photo}" alt="${emp.Naam||''}" onerror="this.src='${BASE_PHOTO_URL}/no-photo.png'"/>` +
+                  '</div>';
         }
 
         html += '<div class="emp-details">';
@@ -1620,6 +1595,40 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
           html += '</div>';
         }
 
+        // 📍 MANUAL LOCATION BUTTON
+        if (emp.allow_manual_location_change == 1 && emp.visible_locations) {
+            try {
+                const visLocs = typeof emp.visible_locations === 'string' ? JSON.parse(emp.visible_locations) : emp.visible_locations;
+                
+                if (visLocs && visLocs.includes('ALL')) {
+                    const empData = JSON.stringify(emp).replace(/"/g, '&quot;');
+                    
+                    html += `
+                        <button 
+                            class="manual-location-btn" 
+                            onclick="event.stopPropagation(); showManualLocationSelector(${empData})"
+                            title="Check-in op andere locatie"
+                            style="
+                                position: absolute;
+                                top: 8px;
+                                right: 80px;
+                                background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+                                color: white;
+                                border: none;
+                                padding: 6px 10px;
+                                border-radius: 6px;
+                                font-size: 16px;
+                                cursor: pointer;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                                z-index: 10;
+                            "
+                        >📍</button>
+                    `;
+                }
+            } catch(e) {
+                console.warn('Failed to parse visible_locations for employee', emp.ID, e);
+            }
+        }
 
         if(visibleFields.includes("BHV") && normalize(emp.BHV)==="ja"){
           html += '<div class="bhv-label">BHV</div>';

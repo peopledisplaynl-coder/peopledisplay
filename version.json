@@ -1,11 +1,24 @@
 {
-  "version": "2.0.17",
+  "version": "2.0.18",
   "critical": false,
-  "message": "Fix: Locatie pion toont nu altijd actuele locaties inclusief nieuw toegevoegde locaties",
+  "message": "Fix: Foto op medewerkerkaart kan nu weer uitgezet worden via featurebeheer",
   "changelog_url": "https://peopledisplay.nl/peopledisplay-changelog-versiehistorie/",
   "download_url": "",
   "checksum": "",
   "changelog": [
+    {
+      "version": "2.0.18",
+      "date": "2026-03-26",
+      "changes": [
+        "Fix: Foto op medewerkerkaart kan nu weer uitgezet worden via featurebeheer",
+        "Fix: Locatie pion staat nu netjes onder de profielfoto in plaats van over de naam",
+        "Fix: Locatie pion toont nu altijd actuele locaties inclusief nieuw toegevoegde locaties",
+        "Fix: Medewerker reset correct naar originele locatie bij uitchecken",
+        "Fix: Safari/iOS service worker redirect fout opgelost — niet meer onterecht uitgelogd",
+        "Fix: Audit log werkt nu correct op alle servers",
+        "Nieuw: Bezoekersregistratie formulier link toegevoegd aan admin dashboard"
+      ]
+    },
     {
       "version": "2.0.17",
       "date": "2026-03-25",
@@ -24,8 +37,8 @@
       "changes": [
         "Verbetering: Filters blijven bewaard na opslaan in medewerkers- en gebruikersbeheer",
         "Verbetering: Filterbalk kleurt groen als er een filter actief is",
-        "Fix: Pagina's in admin beheer laden altijd vers na een wijziging — geen Ctrl+R meer nodig",
-        "Fix: Update banner op dashboard blijft wegna wegklikken — ook na herladen",
+        "Fix: Paginas in admin beheer laden altijd vers na een wijziging — geen Ctrl+R meer nodig",
+        "Fix: Update banner op dashboard blijft weg na wegklikken — ook na herladen",
         "Fix: Versienummer in footer van dashboard klopt nu altijd"
       ]
     },
@@ -58,7 +71,7 @@
       "version": "2.0.12",
       "date": "2026-03-20",
       "changes": [
-        "Fix: Admin pagina's worden niet meer gecached door de browser — geen Ctrl+R meer nodig na wijzigingen",
+        "Fix: Admin paginas worden niet meer gecached door de browser — geen Ctrl+R meer nodig na wijzigingen",
         "Nieuw: Badge export als PNG — individuele badge afbeeldingen per medewerker in ZIP bestand met QR/barcode"
       ]
     },
@@ -73,7 +86,7 @@
       "version": "2.0.10",
       "date": "2026-03-19",
       "changes": [
-        "Fix: HTTP 500 op users_manage en employees_manage opgelost — migraties draaien nu automatisch op alle adminpagina's"
+        "Fix: HTTP 500 op users_manage en employees_manage opgelost — migraties draaien nu automatisch op alle adminpaginas"
       ]
     },
     {
@@ -150,7 +163,7 @@
       "changes": [
         "Eerste release: basis medewerker IN/UIT registratie",
         "Beheerpaneel met meerdere locaties",
-        "Initiële implementatie op Strato hosting"
+        "Initiele implementatie op Strato hosting"
       ]
     }
   ]
