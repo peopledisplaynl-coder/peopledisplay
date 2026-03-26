@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $db->prepare("INSERT INTO afdelingen (afdeling_name, afdeling_code, description) VALUES (?, ?, ?)");
             if ($stmt->execute([$name, $code, $description])) {
                 $_SESSION['pd_flash'] = "✅ Afdeling toegevoegd: $name";
-                header('Location: afdelingen_manage.php');
+                header('Location: afdelingen_manage.php?t=' . time());
                 exit;
             } else {
                 $error = "❌ Fout: Afdeling bestaat mogelijk al";
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $extra = $bijgewerkt > 0 ? " ($bijgewerkt medewerker(s) automatisch bijgewerkt)" : "";
                 $_SESSION['pd_flash'] = "✅ Afdeling bijgewerkt: $name$extra";
-                header('Location: afdelingen_manage.php');
+                header('Location: afdelingen_manage.php?t=' . time());
                 exit;
             } else {
                 $error = "❌ Fout bij updaten";
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $db->prepare("UPDATE afdelingen SET active = 0 WHERE id = ?");
         if ($stmt->execute([$id])) {
             $_SESSION['pd_flash'] = "✅ Afdeling gedeactiveerd";
-            header('Location: afdelingen_manage.php');
+            header('Location: afdelingen_manage.php?t=' . time());
             exit;
         } else {
             $error = "❌ Fout bij verwijderen";

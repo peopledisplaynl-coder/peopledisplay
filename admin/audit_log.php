@@ -58,13 +58,13 @@ if (!empty($employee_filter)) {
 }
 
 if ($period_filter === 'custom' && !empty($date_from) && !empty($date_to)) {
-    $where_clauses[] = "created_at >= ? AND created_at <= ?";
+    $where_clauses[] = "changed_at >= ? AND changed_at <= ?";
     $params[] = $date_from . ' 00:00:00';
     $params[] = $date_to . ' 23:59:59';
 } elseif ($period_filter !== 'all') {
     $intervals = ['24h' => '24 HOUR', '7d' => '7 DAY', '30d' => '30 DAY'];
     if (isset($intervals[$period_filter])) {
-        $where_clauses[] = "created_at >= DATE_SUB(NOW(), INTERVAL {$intervals[$period_filter]})";
+        $where_clauses[] = "changed_at >= DATE_SUB(NOW(), INTERVAL {$intervals[$period_filter]})";
     }
 }
 
@@ -78,7 +78,7 @@ $total_records = $stmt->fetchColumn();
 $total_pages = ceil($total_records / $per_page);
 
 // Get records
-$sql = "SELECT * FROM employee_audit $where_sql ORDER BY created_at DESC LIMIT ? OFFSET ?";
+$sql = "SELECT * FROM employee_audit $where_sql ORDER BY changed_at DESC LIMIT ? OFFSET ?";
 $params[] = $per_page;
 $params[] = $offset;
 $stmt = $db->prepare($sql);
@@ -267,7 +267,7 @@ function getUserName($user_id, $db) {
                 <tbody>
                     <?php foreach ($records as $r): ?>
                         <tr>
-                            <td class="timestamp"><?= date('Y-m-d H:i:s', strtotime($r['created_at'])) ?></td>
+                            <td class="timestamp"><?= date('Y-m-d H:i:s', strtotime($r['changed_at'])) ?></td>
                             <td><span class="employee-id"><?= htmlspecialchars($r['employee_id']) ?></span></td>
                             <td><?= htmlspecialchars(getEmployeeName($r['employee_id'], $db, $employee_cache)) ?></td>
                             <td><span class="action-badge action-<?= $r['action'] ?>"><?= $r['action'] ?></span></td>

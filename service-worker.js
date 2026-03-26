@@ -14,26 +14,25 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-const CACHE_VERSION = 'peopledisplay-v2.0.2'; // 🔧 FIXED: POST requests skip
+const CACHE_VERSION = 'peopledisplay-v2.0.3'; // 🔧 FIXED: Safari redirect issue
 const CACHE_NAME = CACHE_VERSION;
 
-// Files to cache for offline use
+// Files to cache for offline use — ALLEEN statische assets, GEEN PHP pagina's!
 const CACHE_URLS = [
-    '/',
-    '/index.php',
-    '/login.php',
     '/style.css',
     '/app.js',
     '/manifest.json',
-    // Icons
     '/images/icons/icon-192x192.png',
     '/images/icons/icon-512x512.png',
-    // Fallback pages
     '/offline.html'
 ];
 
-// API endpoints to cache (for offline queue)
-const API_CACHE = 'peopledisplay-api-v1';
+// PHP pagina's die NOOIT gecached mogen worden (authenticatie vereist)
+const NEVER_CACHE = [
+    '.php',
+    '/api/',
+    '/admin/'
+];
 
 // Install event - cache essential files
 self.addEventListener('install', (event) => {
@@ -82,96 +81,62 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Safari-safe implementatie
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
-    
-    // 🔧 FIX: Skip POST requests entirely (can't be cached)
-    if (request.method === 'POST') {
-        return; // Let POST requests pass through without caching
-    }
-    
+
     // Skip cross-origin requests
     if (url.origin !== location.origin) {
         return;
     }
-    
-    // API requests - network first, cache fallback (GET only)
-    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/api/')) {
+
+    // Skip POST requests
+    if (request.method !== 'GET') {
+        return;
+    }
+
+    // NOOIT cachen: PHP pagina's, API calls, admin pagina's
+    // Dit voorkomt de Safari "Response served by service worker has redirections" fout
+    const neverCache = NEVER_CACHE.some(pattern => url.pathname.includes(pattern));
+    if (neverCache || url.pathname === '/') {
+        // Altijd netwerk gebruiken, nooit cache
         event.respondWith(
-            fetch(request)
-                .then((response) => {
-                    // Clone response for cache
-                    const responseClone = response.clone();
-                    
-                    // Cache successful GET responses only
-                    if (response.status === 200 && request.method === 'GET') {
-                        caches.open(API_CACHE).then((cache) => {
-                            cache.put(request, responseClone);
-                        });
-                    }
-                    
-                    return response;
-                })
-                .catch(() => {
-                    // Network failed, try cache (GET only)
-                    if (request.method === 'GET') {
-                        return caches.match(request)
-                            .then((cachedResponse) => {
-                                if (cachedResponse) {
-                                    return cachedResponse;
-                                }
-                                
-                                // No cache, return offline page
-                                return caches.match('/offline.html');
-                            });
-                    }
-                    
-                    // POST failed and no cache possible
-                    return new Response('Network error', { status: 503 });
-                })
+            fetch(request).catch(() => {
+                return caches.match('/offline.html');
+            })
         );
         return;
     }
-    
-    // Static assets - cache first, network fallback (GET only)
+
+    // Statische assets — cache first, network fallback
     event.respondWith(
-        caches.match(request)
-            .then((cachedResponse) => {
-                if (cachedResponse) {
-                    // Return cached version
-                    return cachedResponse;
+        caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+
+            return fetch(request).then((response) => {
+                // Alleen succesvolle responses cachen
+                if (!response || response.status !== 200 || response.type === 'error') {
+                    return response;
                 }
-                
-                // Not in cache, fetch from network
-                return fetch(request)
-                    .then((response) => {
-                        // Don't cache non-successful responses
-                        if (!response || response.status !== 200 || response.type === 'error') {
-                            return response;
-                        }
-                        
-                        // Clone response for cache (GET only)
-                        if (request.method === 'GET') {
-                            const responseClone = response.clone();
-                            
-                            // Cache for future use
-                            caches.open(CACHE_NAME).then((cache) => {
-                                cache.put(request, responseClone);
-                            });
-                        }
-                        
-                        return response;
-                    })
-                    .catch(() => {
-                        // Network failed, show offline page (GET only)
-                        if (request.method === 'GET') {
-                            return caches.match('/offline.html');
-                        }
-                        return new Response('Network error', { status: 503 });
-                    });
-            })
+
+                // Nooit responses met redirects cachen (Safari fix)
+                if (response.redirected) {
+                    return response;
+                }
+
+                const responseClone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(request, responseClone);
+                });
+
+                return response;
+            }).catch(() => {
+                return caches.match('/offline.html');
+            });
+        })
     );
 });
 

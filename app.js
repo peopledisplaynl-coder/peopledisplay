@@ -643,6 +643,10 @@ console.log('BASE_PATH detected:', BASE_PATH);
       }
       
       console.log("🏢 Final locations to render:", orderedLocs);
+      
+      // 🆕 Sla alle locaties op voor gebruik door getAllLocations() (locatie pion modal)
+      window.__allLocations = [...orderedLocs];
+      
       menu.innerHTML = "";
       
       const allBtn = document.createElement("button");
@@ -2927,21 +2931,25 @@ function clearTempLocation(employeeId) {
 }
 
 /**
- * Helper: Haal alle locaties op
+ * Helper: Haal alle locaties op — altijd uit database via API
+ * Synchrone fallback op window.__allLocations als API nog niet geladen is
  */
 function getAllLocations() {
-    // Probeer eerst window.__allLocations
+    // Gebruik window.__allLocations — gevuld door renderBuildings() via get_locations_ordered.php
+    // Dit zijn de actuele locaties uit de database, niet uit medewerkerdata
     if (window.__allLocations && window.__allLocations.length > 0) {
-        return window.__allLocations;
+        console.log('📍 getAllLocations: using database locations:', window.__allLocations.length);
+        return [...window.__allLocations].sort();
     }
     
-    // Fallback: extract uit labeeApp employees
+    // Fallback: extract uit labeeApp employees (minder betrouwbaar — alleen locaties met medewerkers)
+    console.warn('getAllLocations: window.__allLocations not available, falling back to employee data');
     const employees = window.labeeApp && typeof window.labeeApp.getEmployees === 'function' 
         ? window.labeeApp.getEmployees() 
         : [];
     
     if (!employees || employees.length === 0) {
-        console.warn('getAllLocations: No employees found');
+        console.warn('getAllLocations: No employees found either');
         return [];
     }
     
@@ -2954,14 +2962,14 @@ function getAllLocations() {
     });
     
     const result = Array.from(locations).sort();
-    console.log('📍 getAllLocations found:', result.length, 'locations');
+    console.log('📍 getAllLocations fallback found:', result.length, 'locations');
     return result;
 }
 
 /**
  * Toon locatie selector modal
  */
-function showManualLocationSelector(employee) {
+async function showManualLocationSelector(employee) {
     console.log('📍 Showing manual location selector for:', employee);
     
     // Check of employee dit mag
@@ -2970,8 +2978,24 @@ function showManualLocationSelector(employee) {
         return;
     }
     
-    // Haal alle locaties op
-    const allLocations = getAllLocations();
+    // Haal locaties op — probeer eerst API als __allLocations leeg is
+    let allLocations = getAllLocations();
+    
+    if (!allLocations || allLocations.length === 0) {
+        console.log('📍 Fetching fresh locations from API...');
+        try {
+            const response = await fetch(BASE_PATH + '/admin/api/get_locations_ordered.php');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.locations && data.locations.length > 0) {
+                    window.__allLocations = data.locations;
+                    allLocations = [...data.locations].sort();
+                }
+            }
+        } catch(e) {
+            console.warn('📍 Could not fetch locations from API:', e);
+        }
+    }
     
     if (!allLocations || allLocations.length === 0) {
         alert('Geen locaties beschikbaar');
@@ -3072,8 +3096,12 @@ function showManualLocationSelector(employee) {
             return;
         }
         
-        // Sla tijdelijke locatie op (inclusief originele locatie voor reset)
-        setTempLocation(employee.ID, selectedLocation, employee.Locatie || employee.locatie);
+        // Sla tijdelijke locatie op
+        // Gebruik de originele locatie uit localStorage als die er al is (bijv. al eerder op andere locatie ingecheckt)
+        // Anders gebruik employee.Locatie als originele locatie
+        const existingOriginal = getOriginalLocation(employee.ID);
+        const originalLocation = existingOriginal || employee.Locatie || employee.locatie;
+        setTempLocation(employee.ID, selectedLocation, originalLocation);
         
         console.log('📍 Calling check-in with location:', selectedLocation);
         

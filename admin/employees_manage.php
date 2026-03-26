@@ -83,7 +83,7 @@ $stmt->execute([
 ]);
                 
                 $_SESSION['pd_flash'] = "Medewerker succesvol toegevoegd!";
-                header('Location: employees_manage.php');
+                header('Location: employees_manage.php?t=' . time());
                 exit;
             } catch (PDOException $e) {
                 $error = "Fout bij toevoegen: " . $e->getMessage();
@@ -141,7 +141,7 @@ $stmt->execute([
 ]);
                 
                 $_SESSION['pd_flash'] = "Medewerker bijgewerkt!";
-                header('Location: employees_manage.php');
+                header('Location: employees_manage.php?t=' . time());
                 exit;
             } catch (PDOException $e) {
                 $error = "Fout bij bijwerken: " . $e->getMessage();
@@ -157,7 +157,7 @@ $stmt->execute([
             $stmt->execute([$id]);
             
             $_SESSION['pd_flash'] = "Medewerker verwijderd (soft delete)";
-            header('Location: employees_manage.php');
+            header('Location: employees_manage.php?t=' . time());
             exit;
         } catch (PDOException $e) {
             $error = "Fout bij verwijderen: " . $e->getMessage();
@@ -1126,7 +1126,91 @@ function copyEmployeeId(employeeId, button) {
     
     document.body.removeChild(tempInput);
 }
-(function(){let a=[],f=[],s={field:'voornaam',direction:'asc'};function init(){const t=document.getElementById('employees-table');if(!t){console.error('Table not found');return}load();pop();listen();headers();apply()}function load(){const r=document.querySelectorAll('#employees-table tbody tr[data-employee-id]');a=Array.from(r).map(row=>{const c=row.querySelectorAll('td');const img=c[3]?.querySelector('img');let e=c[4]?.textContent?.trim()||'';const l=c[4]?.querySelector('a');if(l)e=l.textContent.trim();return{row:row,id:row.getAttribute('data-employee-id'),voornaam:c[0]?.textContent?.trim().split('\n')[0]||'',achternaam:c[1]?.textContent?.trim()||'',heeftFoto:img!==null,email:e,telefoon:c[5]?.textContent?.replace('📞','').trim()||'',afdeling:c[6]?.textContent?.trim()||'',locatie:c[7]?.textContent?.trim()||'',bhv:c[8]?.textContent?.includes('BHV')?'Ja':'Nee'}});console.log('Loaded '+a.length+' employees')}function pop(){const locs=[...new Set(a.map(e=>e.locatie).filter(Boolean))].sort();const sel=document.getElementById('filter-locatie');locs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l;sel.appendChild(o)});console.log('Filters populated: '+locs.length+' locations (afdelingen pre-populated by PHP)')}function listen(){let t;document.getElementById('search-input').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(apply,300)});document.getElementById('filter-locatie').addEventListener('change',apply);document.getElementById('filter-afdeling').addEventListener('change',apply);document.getElementById('filter-bhv').addEventListener('change',apply);document.getElementById('filter-foto').addEventListener('change',apply);document.getElementById('reset-filters-btn').addEventListener('click',reset)}function headers(){document.querySelectorAll('#employees-table th.sortable').forEach(h=>{h.addEventListener('click',function(){const field=this.getAttribute('data-sort');if(s.field===field){s.direction=s.direction==='asc'?'desc':'asc'}else{s.field=field;s.direction='asc'}updateInd();apply();console.log('Sorted by '+field+' '+s.direction)})})}function updateInd(){document.querySelectorAll('#employees-table th.sortable').forEach(h=>{const ind=h.querySelector('.sort-indicator');const field=h.getAttribute('data-sort');if(field===s.field){ind.textContent=s.direction==='asc'?'▲':'▼';ind.style.color='#007bff';h.style.background='#e3f2fd'}else{ind.textContent='⇅';ind.style.color='#999';h.style.background=''}})}function apply(){f=[...a];const sr=document.getElementById('search-input').value.toLowerCase().trim();if(sr)f=f.filter(e=>e.voornaam.toLowerCase().includes(sr)||e.achternaam.toLowerCase().includes(sr)||e.email.toLowerCase().includes(sr)||e.telefoon.includes(sr));const loc=document.getElementById('filter-locatie').value;if(loc)f=f.filter(e=>e.locatie===loc);const afd=document.getElementById('filter-afdeling').value;if(afd)f=f.filter(e=>e.afdeling===afd);const bhv=document.getElementById('filter-bhv').value;if(bhv)f=f.filter(e=>e.bhv===bhv);const foto=document.getElementById('filter-foto').value;if(foto==='heeft')f=f.filter(e=>e.heeftFoto);else if(foto==='geen')f=f.filter(e=>!e.heeftFoto);f.sort((x,y)=>{const av=(x[s.field]||'').toString().toLowerCase();const bv=(y[s.field]||'').toString().toLowerCase();return s.direction==='asc'?av.localeCompare(bv):bv.localeCompare(av)});display();counter();console.log('Showing '+f.length+' of '+a.length+' employees')}function display(){const tbody=document.querySelector('#employees-table tbody');a.forEach(e=>{e.row.style.display='none';const form=document.getElementById('edit-form-'+e.id);if(form)form.style.display='none'});f.forEach(e=>{e.row.style.display='';tbody.appendChild(e.row);const form=document.getElementById('edit-form-'+e.id);if(form)tbody.appendChild(form)})}function counter(){document.getElementById('filtered-count').textContent=f.length;document.getElementById('total-count').textContent=a.length}function reset(){document.getElementById('search-input').value='';document.getElementById('filter-locatie').value='';document.getElementById('filter-afdeling').value='';document.getElementById('filter-bhv').value='';document.getElementById('filter-foto').value='';s={field:'voornaam',direction:'asc'};updateInd();apply();console.log('Filters reset')}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init)}else{init()}})();
+(function(){
+  let a=[],f=[],s={field:'voornaam',direction:'asc'};
+  const STORE='pd_emp_filters';
+
+  function saveFilters(){
+    localStorage.setItem(STORE,JSON.stringify({
+      search:document.getElementById('search-input').value,
+      locatie:document.getElementById('filter-locatie').value,
+      afdeling:document.getElementById('filter-afdeling').value,
+      bhv:document.getElementById('filter-bhv').value,
+      foto:document.getElementById('filter-foto').value,
+      sort:s
+    }));
+    updateFilterBar();
+  }
+
+  function loadFilters(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(STORE));
+      if(!saved)return;
+      if(saved.search)document.getElementById('search-input').value=saved.search;
+      if(saved.locatie)document.getElementById('filter-locatie').value=saved.locatie;
+      if(saved.afdeling)document.getElementById('filter-afdeling').value=saved.afdeling;
+      if(saved.bhv)document.getElementById('filter-bhv').value=saved.bhv;
+      if(saved.foto)document.getElementById('filter-foto').value=saved.foto;
+      if(saved.sort)s=saved.sort;
+    }catch(e){}
+  }
+
+  function updateFilterBar(){
+    const bar=document.querySelector('.filter-toolbar');
+    if(!bar)return;
+    const hasFilter=
+      document.getElementById('search-input').value||
+      document.getElementById('filter-locatie').value||
+      document.getElementById('filter-afdeling').value||
+      document.getElementById('filter-bhv').value||
+      document.getElementById('filter-foto').value;
+    bar.style.borderLeft=hasFilter?'4px solid #27ae60':'4px solid transparent';
+    bar.style.background=hasFilter?'#f0fff4':'white';
+  }
+
+  function init(){
+    const t=document.getElementById('employees-table');
+    if(!t){console.error('Table not found');return}
+    load();pop();loadFilters();listen();headers();updateInd();apply();
+  }
+
+  function load(){const r=document.querySelectorAll('#employees-table tbody tr[data-employee-id]');a=Array.from(r).map(row=>{const c=row.querySelectorAll('td');const img=c[3]?.querySelector('img');let e=c[4]?.textContent?.trim()||'';const l=c[4]?.querySelector('a');if(l)e=l.textContent.trim();return{row:row,id:row.getAttribute('data-employee-id'),voornaam:c[0]?.textContent?.trim().split('\n')[0]||'',achternaam:c[1]?.textContent?.trim()||'',heeftFoto:img!==null,email:e,telefoon:c[5]?.textContent?.replace('📞','').trim()||'',afdeling:c[6]?.textContent?.trim()||'',locatie:c[7]?.textContent?.trim()||'',bhv:c[8]?.textContent?.includes('BHV')?'Ja':'Nee'}});console.log('Loaded '+a.length+' employees');}
+
+  function pop(){const locs=[...new Set(a.map(e=>e.locatie).filter(Boolean))].sort();const sel=document.getElementById('filter-locatie');locs.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l;sel.appendChild(o)});console.log('Filters populated: '+locs.length+' locations');}
+
+  function listen(){
+    let t;
+    document.getElementById('search-input').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(()=>{apply();saveFilters();},300);});
+    document.getElementById('filter-locatie').addEventListener('change',()=>{apply();saveFilters();});
+    document.getElementById('filter-afdeling').addEventListener('change',()=>{apply();saveFilters();});
+    document.getElementById('filter-bhv').addEventListener('change',()=>{apply();saveFilters();});
+    document.getElementById('filter-foto').addEventListener('change',()=>{apply();saveFilters();});
+    document.getElementById('reset-filters-btn').addEventListener('click',reset);
+  }
+
+  function headers(){document.querySelectorAll('#employees-table th.sortable').forEach(h=>{h.addEventListener('click',function(){const field=this.getAttribute('data-sort');if(s.field===field){s.direction=s.direction==='asc'?'desc':'asc'}else{s.field=field;s.direction='asc'}updateInd();apply();saveFilters();});});}
+
+  function updateInd(){document.querySelectorAll('#employees-table th.sortable').forEach(h=>{const ind=h.querySelector('.sort-indicator');const field=h.getAttribute('data-sort');if(field===s.field){ind.textContent=s.direction==='asc'?'▲':'▼';ind.style.color='#007bff';h.style.background='#e3f2fd'}else{ind.textContent='⇅';ind.style.color='#999';h.style.background=''}});}
+
+  function apply(){f=[...a];const sr=document.getElementById('search-input').value.toLowerCase().trim();if(sr)f=f.filter(e=>e.voornaam.toLowerCase().includes(sr)||e.achternaam.toLowerCase().includes(sr)||e.email.toLowerCase().includes(sr)||e.telefoon.includes(sr));const loc=document.getElementById('filter-locatie').value;if(loc)f=f.filter(e=>e.locatie===loc);const afd=document.getElementById('filter-afdeling').value;if(afd)f=f.filter(e=>e.afdeling===afd);const bhv=document.getElementById('filter-bhv').value;if(bhv)f=f.filter(e=>e.bhv===bhv);const foto=document.getElementById('filter-foto').value;if(foto==='heeft')f=f.filter(e=>e.heeftFoto);else if(foto==='geen')f=f.filter(e=>!e.heeftFoto);f.sort((x,y)=>{const av=(x[s.field]||'').toString().toLowerCase();const bv=(y[s.field]||'').toString().toLowerCase();return s.direction==='asc'?av.localeCompare(bv):bv.localeCompare(av)});display();counter();updateFilterBar();}
+
+  function display(){const tbody=document.querySelector('#employees-table tbody');a.forEach(e=>{e.row.style.display='none';const form=document.getElementById('edit-form-'+e.id);if(form)form.style.display='none'});f.forEach(e=>{e.row.style.display='';tbody.appendChild(e.row);const form=document.getElementById('edit-form-'+e.id);if(form)tbody.appendChild(form)});}
+
+  function counter(){document.getElementById('filtered-count').textContent=f.length;document.getElementById('total-count').textContent=a.length;}
+
+  function reset(){
+    document.getElementById('search-input').value='';
+    document.getElementById('filter-locatie').value='';
+    document.getElementById('filter-afdeling').value='';
+    document.getElementById('filter-bhv').value='';
+    document.getElementById('filter-foto').value='';
+    s={field:'voornaam',direction:'asc'};
+    localStorage.removeItem(STORE);
+    updateInd();apply();updateFilterBar();
+  }
+
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init)}else{init()}
+})();
 </script>
 
 </body>

@@ -1411,7 +1411,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         window.addEventListener('pageshow', function(event) {
             if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
                 console.log('🔄 Page loaded from cache - forcing reload');
-                window.location.reload();
+                window.location.href = window.location.pathname + '?t=' + Date.now();
             }
         });
         
@@ -1880,7 +1880,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                     // Reload page to reflect changes
                     setTimeout(() => {
                         console.log('🔄 Reloading page...');
-                        window.location.reload();
+                        window.location.href = window.location.pathname + '?t=' + Date.now();
                     }, 1000);
                 } else {
                     console.error('❌ Save failed:', data.error);
@@ -1922,7 +1922,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                     
                     // Reload page
                     setTimeout(() => {
-                        window.location.reload();
+                        window.location.href = window.location.pathname + '?t=' + Date.now();
                     }, 1000);
                 } else {
                     showToast(data.error, 'error');
@@ -2029,7 +2029,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
 
                 if (data.success) {
                     showToast(data.message, 'success');
-                    setTimeout(() => window.location.reload(), 800);
+                    setTimeout(() => { window.location.href = window.location.pathname + '?t=' + Date.now(); }, 800);
                 } else {
                     showToast(data.error, 'error');
                 }
@@ -2049,7 +2049,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
 
                 if (data.success) {
                     showToast(data.message, 'success');
-                    setTimeout(() => window.location.reload(), 800);
+                    setTimeout(() => { window.location.href = window.location.pathname + '?t=' + Date.now(); }, 800);
                 } else {
                     showToast(data.error, 'error');
                 }
@@ -2074,7 +2074,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                     
                     // Remove row from table
                     setTimeout(() => {
-                        window.location.reload();
+                        window.location.href = window.location.pathname + '?t=' + Date.now();
                     }, 1000);
                 } else {
                     showToast(data.error, 'error');
@@ -2092,11 +2092,53 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 btn.classList.toggle('active', btn.dataset.groupId === groupId);
             });
             applyFilters();
+            saveUserFilters();
         }
 
-        document.getElementById('search-input').addEventListener('input', applyFilters);
-        document.getElementById('filter-role').addEventListener('change', applyFilters);
-        document.getElementById('filter-active').addEventListener('change', applyFilters);
+        // Filter persistentie via localStorage
+        const USR_STORE = 'pd_usr_filters';
+
+        function saveUserFilters() {
+            localStorage.setItem(USR_STORE, JSON.stringify({
+                search: document.getElementById('search-input').value,
+                role: document.getElementById('filter-role').value,
+                active: document.getElementById('filter-active').checked,
+                group: currentGroupFilter
+            }));
+            updateUserFilterBar();
+        }
+
+        function loadUserFilters() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(USR_STORE));
+                if (!saved) return;
+                if (saved.search) document.getElementById('search-input').value = saved.search;
+                if (saved.role) document.getElementById('filter-role').value = saved.role;
+                if (typeof saved.active !== 'undefined') document.getElementById('filter-active').checked = saved.active;
+                if (saved.group !== undefined) {
+                    currentGroupFilter = saved.group;
+                    document.querySelectorAll('.group-filter-button').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.groupId === saved.group);
+                    });
+                }
+            } catch(e) {}
+        }
+
+        function updateUserFilterBar() {
+            const bar = document.querySelector('.filter-toolbar') || document.querySelector('.search-box')?.closest('div');
+            if (!bar) return;
+            const hasFilter =
+                document.getElementById('search-input').value ||
+                document.getElementById('filter-role').value ||
+                !document.getElementById('filter-active').checked ||
+                currentGroupFilter !== '';
+            bar.style.borderLeft = hasFilter ? '4px solid #27ae60' : '4px solid transparent';
+            bar.style.background = hasFilter ? '#f0fff4' : '';
+        }
+
+        document.getElementById('search-input').addEventListener('input', () => { applyFilters(); saveUserFilters(); });
+        document.getElementById('filter-role').addEventListener('change', () => { applyFilters(); saveUserFilters(); });
+        document.getElementById('filter-active').addEventListener('change', () => { applyFilters(); saveUserFilters(); });
 
         document.querySelectorAll('.group-filter-button').forEach(btn => {
             btn.addEventListener('click', () => setGroupFilter(btn.dataset.groupId));
@@ -2121,6 +2163,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         });
         
         // Initial sort
+        loadUserFilters();
         sortTable('display_name');
     </script>
 </body>

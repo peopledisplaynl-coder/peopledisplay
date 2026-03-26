@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             
             $_SESSION['pd_flash'] = '✅ Locatie toegevoegd!';
-            header('Location: locations_manage.php');
+            header('Location: locations_manage.php?t=' . time());
             exit;
             } // end canAddLocation else
 
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $extra = $bijgewerkt > 0 ? " ($bijgewerkt medewerker(s) automatisch bijgewerkt)" : "";
             $_SESSION['pd_flash'] = "✅ Locatie bijgewerkt!$extra";
-            header('Location: locations_manage.php');
+            header('Location: locations_manage.php?t=' . time());
             exit;
             
         } elseif ($action === 'delete') {
@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$_POST['id']]);
             
             $_SESSION['pd_flash'] = '✅ Locatie verwijderd!';
-            header('Location: locations_manage.php');
+            header('Location: locations_manage.php?t=' . time());
             exit;
             
         } elseif ($action === 'test_ip') {

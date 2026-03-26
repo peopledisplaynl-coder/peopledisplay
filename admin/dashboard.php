@@ -8,6 +8,11 @@
  * ============================================================================
  */
 
+// Voorkom browser caching van het dashboard
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 require_once __DIR__ . '/../includes/db.php'; // db.php calls session_start() after setting session path
 require_once __DIR__ . '/../includes/license_check.php';
 require_once __DIR__ . '/../includes/version.php';
@@ -342,6 +347,19 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
             <a href="<?= htmlspecialchars($updateInfo['download_url']) ?>" class="ub-btn" target="_blank">Download</a>
             <button class="ub-dismiss" title="Verberg melding" onclick="dismissUpdateBanner('<?= htmlspecialchars($updateInfo['version']) ?>')">&#x2715;</button>
         </div>
+        <script>
+        // Verberg banner direct als deze versie al dismissed is — voorkomt flits
+        (function() {
+            try {
+                var dismissed = localStorage.getItem('pd_dismissed_update');
+                var current = '<?= htmlspecialchars($updateInfo['version'] ?? '') ?>';
+                if (dismissed === current) {
+                    var el = document.getElementById('updateBanner');
+                    if (el) el.style.display = 'none';
+                }
+            } catch(e) {}
+        })();
+        </script>
         <?php endif; ?>
 
         <div class="section-header">📍 Navigatie</div>
@@ -405,6 +423,12 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <div class="menu-icon">📧</div>
                 <h3>Bezoeker Emails</h3>
                 <p>Configureer email notificaties</p>
+            </a>
+
+            <a href="../visitor_register.php" class="menu-card visitors" target="_blank">
+                <div class="menu-icon">🔗</div>
+                <h3>Registratieformulier</h3>
+                <p>Open het bezoekersregistratie formulier</p>
             </a>
             <?php else: ?>
             <div class="menu-card visitors" style="opacity:0.5;cursor:not-allowed;" title="Niet beschikbaar in uw pakket">
@@ -497,21 +521,19 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
 
 <script>
 function dismissUpdateBanner(version) {
+    // Direct verbergen in UI
+    var el = document.getElementById('updateBanner');
+    if (el) el.style.display = 'none';
+
+    // Opslaan in localStorage zodat banner wegblijft ook na cache
+    try { localStorage.setItem('pd_dismissed_update', version); } catch(e) {}
+
+    // Ook server-side opslaan (best effort)
     fetch('api/dismiss_update.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ version: version })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            const el = document.getElementById('updateBanner');
-            if (el) el.style.display = 'none';
-        }
-    })
-    .catch(() => {
-        // Fail silently — banner will reappear next load
-    });
+    }).catch(() => {});
 }
 </script>
 </body>
