@@ -1,11 +1,22 @@
 {
-  "version": "2.0.18",
+  "version": "2.0.19",
   "critical": false,
-  "message": "Fix: Foto op medewerkerkaart kan nu weer uitgezet worden via featurebeheer",
+  "message": "Nieuw: Medewerker Beheerder en Gebruiker Beheerder rollen toegevoegd",
   "changelog_url": "https://peopledisplay.nl/peopledisplay-changelog-versiehistorie/",
   "download_url": "",
   "checksum": "",
   "changelog": [
+    {
+      "version": "2.0.19",
+      "date": "2026-03-30",
+      "changes": [
+        "Nieuw: Rol Medewerker Beheerder — kan alleen medewerkers beheren",
+        "Nieuw: Rol Gebruiker Beheerder — kan medewerkers en gebruikers beheren",
+        "Nieuw: Dashboard toont alleen relevante menu-items per rol",
+        "Fix: Alle 6 licentietiers worden nu correct aangemaakt bij installatie",
+        "Fix: Bestaande installaties krijgen ontbrekende licentietiers automatisch via migratie"
+      ]
+    },
     {
       "version": "2.0.18",
       "date": "2026-03-26",

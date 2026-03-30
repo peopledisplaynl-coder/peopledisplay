@@ -37,7 +37,7 @@ if (!$user) {
 }
 
 $userName = $user['display_name'] ?: $user['username'];
-$isAdmin = in_array($user['role'], ['admin', 'superadmin']);
+$isAdmin = in_array($user['role'], ['admin', 'superadmin', 'employee_manager', 'user_manager']);
 $canUseScanner = (bool)($user['can_use_scanner'] ?? false);
 ?>
 <!DOCTYPE html>
@@ -215,9 +215,14 @@ $canUseScanner = (bool)($user['can_use_scanner'] ?? false);
             <?php if ($isAdmin): ?>
             <a href="admin/dashboard.php" class="menu-card admin">
                 <div class="menu-card-icon">🔧</div>
-                <div class="menu-card-title">Admin Dashboard</div>
+                <div class="menu-card-title">Beheer</div>
                 <div class="menu-card-description">
-                    Beheer het systeem (alleen admins)
+                    <?php
+                    if ($user['role'] === 'superadmin') echo 'Volledige toegang tot het systeem';
+                    elseif ($user['role'] === 'admin') echo 'Beheer het systeem';
+                    elseif ($user['role'] === 'employee_manager') echo 'Medewerkers beheren';
+                    elseif ($user['role'] === 'user_manager') echo 'Medewerkers en gebruikers beheren';
+                    ?>
                 </div>
             </a>
             <?php endif; ?>

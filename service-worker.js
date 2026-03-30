@@ -14,24 +14,33 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-const CACHE_VERSION = 'peopledisplay-v2.0.3'; // 🔧 FIXED: Safari redirect issue
+const CACHE_VERSION = 'peopledisplay-v2.0.4'; // 🔧 FIXED: app.js/style.css network-first
 const CACHE_NAME = CACHE_VERSION;
 
-// Files to cache for offline use — ALLEEN statische assets, GEEN PHP pagina's!
+// Alleen ECHT statische assets cachen — iconen en manifest
 const CACHE_URLS = [
-    '/style.css',
-    '/app.js',
     '/manifest.json',
     '/images/icons/icon-192x192.png',
     '/images/icons/icon-512x512.png',
     '/offline.html'
 ];
 
+// Bestanden die ALTIJD via netwerk worden opgehaald (nooit cachen)
+const ALWAYS_NETWORK = [
+    '.php',
+    '/api/',
+    '/admin/',
+    'app.js',
+    'style.css'
+];
+
 // PHP pagina's die NOOIT gecached mogen worden (authenticatie vereist)
 const NEVER_CACHE = [
     '.php',
     '/api/',
-    '/admin/'
+    '/admin/',
+    'app.js',
+    'style.css'
 ];
 
 // Install event - cache essential files
@@ -96,8 +105,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // NOOIT cachen: PHP pagina's, API calls, admin pagina's
-    // Dit voorkomt de Safari "Response served by service worker has redirections" fout
+    // NOOIT cachen: PHP pagina's, API calls, admin pagina's, app.js, style.css
     const neverCache = NEVER_CACHE.some(pattern => url.pathname.includes(pattern));
     if (neverCache || url.pathname === '/') {
         // Altijd netwerk gebruiken, nooit cache

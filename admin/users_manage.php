@@ -716,6 +716,16 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
             color: white;
         }
         
+        .role-employee-manager {
+            background: #ed8936;
+            color: white;
+        }
+
+        .role-user-manager {
+            background: #9f7aea;
+            color: white;
+        }
+        
         .role-user {
             background: #48bb78;
             color: white;
@@ -1225,6 +1235,8 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                     <option value="">Alle rollen</option>
                     <option value="superadmin">👑 SuperAdmin</option>
                     <option value="admin">🔧 Admin</option>
+                    <option value="employee_manager">👷 Medewerker Beheerder</option>
+                    <option value="user_manager">👥 Gebruiker Beheerder</option>
                     <option value="user">👤 User</option>
                 </select>
                 
@@ -1274,6 +1286,10 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                 <span class="user-role role-superadmin">👑 SuperAdmin</span>
                             <?php elseif ($user['role'] === 'admin'): ?>
                                 <span class="user-role role-admin">🔧 Admin</span>
+                            <?php elseif ($user['role'] === 'employee_manager'): ?>
+                                <span class="user-role role-employee-manager">👷 Medewerker Beheerder</span>
+                            <?php elseif ($user['role'] === 'user_manager'): ?>
+                                <span class="user-role role-user-manager">👥 Gebruiker Beheerder</span>
                             <?php else: ?>
                                 <span class="user-role role-user">👤 User</span>
                             <?php endif; ?>
@@ -1353,6 +1369,8 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                     <label>Rol</label>
                     <select name="role">
                         <option value="user">👤 User</option>
+                        <option value="employee_manager">👷 Medewerker Beheerder</option>
+                        <option value="user_manager">👥 Gebruiker Beheerder</option>
                         <option value="admin">🔧 Admin</option>
                         <?php if ($isSuperAdmin): ?>
                         <option value="superadmin">👑 SuperAdmin</option>
@@ -1638,6 +1656,8 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                 <label>Rol</label>
                                 <select name="role">
                                     <option value="user" ${user.role === 'user' ? 'selected' : ''}>👤 User</option>
+                                    <option value="employee_manager" ${user.role === 'employee_manager' ? 'selected' : ''}>👷 Medewerker Beheerder</option>
+                                    <option value="user_manager" ${user.role === 'user_manager' ? 'selected' : ''}>👥 Gebruiker Beheerder</option>
                                     <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>🔧 Admin</option>
                                     ${isSuperAdmin ? `<option value="superadmin" ${user.role === 'superadmin' ? 'selected' : ''}>👑 SuperAdmin</option>` : ''}
                                 </select>

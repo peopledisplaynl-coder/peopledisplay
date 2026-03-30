@@ -44,7 +44,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Check if user is admin or superadmin
 $userRole = $_SESSION['role'] ?? 'user';
-if (!in_array($userRole, ['admin', 'superadmin'])) {
+if (!in_array($userRole, ['admin', 'superadmin', 'employee_manager', 'user_manager'])) {
     header('Location: ../frontpage.php');
     exit;
 }
@@ -323,7 +323,13 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
             </div>
             <div class="user-info">
                 <div class="user-badge">
-                    <?php echo $userRole === 'superadmin' ? '⭐ SuperAdmin' : '🔧 Admin'; ?>
+                    <?php
+                    if ($userRole === 'superadmin') echo '⭐ SuperAdmin';
+                    elseif ($userRole === 'admin') echo '🔧 Admin';
+                    elseif ($userRole === 'employee_manager') echo '👷 Medewerker Beheerder';
+                    elseif ($userRole === 'user_manager') echo '👥 Gebruiker Beheerder';
+                    else echo '🔧 Admin';
+                    ?>
                 </div>
                 <?php if (!empty($pd_migrations_status)): ?>
                     <div class="migration-badge" title="<?= htmlspecialchars($pd_migrations_status) ?>">
@@ -391,12 +397,15 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <p>Beheer medewerkers en hun gegevens</p>
             </a>
             
+            <?php if (in_array($userRole, ['admin', 'superadmin', 'user_manager'])): ?>
             <a href="users_manage.php" class="menu-card users">
                 <div class="menu-icon">🔐</div>
                 <h3>Gebruikers</h3>
                 <p>Beheer admin gebruikers en rechten</p>
             </a>
+            <?php endif; ?>
             
+            <?php if (in_array($userRole, ['admin', 'superadmin'])): ?>
             <a href="badges_generate.php" class="menu-card badges">
                 <div class="menu-icon">🎫</div>
                 <h3>Badge Generator</h3>
@@ -408,8 +417,10 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <h3>Bulk Acties</h3>
                 <p>Zet alle medewerkers op UIT</p>
             </a>
+            <?php endif; ?>
         </div>
         
+        <?php if (in_array($userRole, ['admin', 'superadmin'])): ?>
         <div class="section-header">🏢 Bezoekers & Locaties</div>
         <div class="menu-grid">
             <?php if (hasFeature('visitor_management')): ?>
@@ -509,6 +520,8 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <p>Licentiestatus, gebruik en pakketten</p>
             </a>
         </div>
+
+        <?php endif; ?>
 
         <div class="dashboard-footer">
             <span>PeopleDisplay v<?= PEOPLEDISPLAY_VERSION ?></span>

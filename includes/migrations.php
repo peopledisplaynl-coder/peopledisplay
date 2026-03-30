@@ -92,6 +92,29 @@ try {
         }
     }
 
+    // Ensure all 6 license tiers exist in the database
+    $existingTiers = $db->query("SELECT tier_code FROM `license_tiers`")->fetchAll(\PDO::FETCH_COLUMN);
+    $requiredTiers = [
+        'enterprise' => ['Enterprise', 'Voor grote organisaties met veel locaties', 50, 300, 25, 50, 250.00, 4],
+        'corporate'  => ['Corporate', 'Voor grote organisaties met veel locaties en gebruikers', 100, 500, 50, 100, 500.00, 5],
+        'unlimited'  => ['Unlimited', 'Onbeperkt gebruik voor alle functionaliteit', 9999, 9999, 9999, 9999, 999.00, 6],
+    ];
+    $allFeatures = '{"visitor_management":true,"bhv_print":true,"sub_status":true,"kiosk_mode":true,"badge_generator":true,"bulk_actions":true,"audit_log":true}';
+    foreach ($requiredTiers as $code => $tier) {
+        if (!in_array($code, $existingTiers)) {
+            $stmt = $db->prepare("INSERT INTO `license_tiers` (tier_code, tier_name, tier_description, max_users, max_employees, max_locations, max_departments, features, price_eur, sort_order, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
+            $stmt->execute([$code, $tier[0], $tier[1], $tier[2], $tier[3], $tier[4], $tier[5], $allFeatures, $tier[6], $tier[7]]);
+            $pd_migrations_changes[] = "Added license tier: $code";
+        }
+    }
+
+    // Ensure users.role ENUM includes employee_manager and user_manager
+    $roleCol = $db->query("SHOW COLUMNS FROM `users` LIKE 'role'")->fetch();
+    if ($roleCol && strpos($roleCol['Type'], 'employee_manager') === false) {
+        $db->exec("ALTER TABLE `users` MODIFY `role` ENUM('user','admin','superadmin','employee_manager','user_manager') NOT NULL DEFAULT 'user'");
+        $pd_migrations_changes[] = 'Added employee_manager and user_manager roles to users.role ENUM';
+    }
+
     if (count($pd_migrations_changes) > 0) {
         $pd_migrations_status = 'Migraties toegepast';
     }

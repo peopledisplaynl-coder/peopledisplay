@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `display_name`             varchar(150)                      DEFAULT NULL,
   `email`                    varchar(255)                      DEFAULT NULL,
   `profile_photo`            varchar(255)                      DEFAULT NULL,
-  `role`                     enum('user','admin','superadmin') NOT NULL DEFAULT 'user',
+  `role`                     enum('user','admin','superadmin','employee_manager','user_manager') NOT NULL DEFAULT 'user',
   `group_id`                 int(11)                           DEFAULT NULL,
   `features`                 longtext                          DEFAULT NULL,
   `active`                   tinyint(1)                        NOT NULL DEFAULT 1,
@@ -644,9 +644,12 @@ CREATE TABLE IF NOT EXISTS `license_tiers` (
 INSERT INTO `license_tiers`
   (`tier_code`, `tier_name`, `tier_description`, `max_users`, `max_employees`, `max_locations`, `max_departments`, `features`, `price_eur`, `sort_order`, `active`)
 VALUES
-  ('starter',      'Starter',      'Ideaal voor kleine organisaties met één locatie',          3,  10, 1, 3,  '{"visitor_management":false,"bhv_print":true,"sub_status":true,"location_override":false,"kiosk_mode":false,"api_access":false}', 25.00,  1, 1),
-  ('professional', 'Professional', 'Voor organisaties met meerdere locaties',                  5,  25, 3, 6,  '{"visitor_management":true,"bhv_print":true,"sub_status":true,"location_override":true,"kiosk_mode":false,"api_access":false}', 75.00,  2, 1),
-  ('business',     'Business',     'Volledige functionaliteit voor grote organisaties',        10, 60, 6, 10, '{"visitor_management":true,"bhv_print":true,"sub_status":true,"location_override":true,"kiosk_mode":true,"api_access":true}',  125.00, 3, 1)
+  ('starter',      'Starter',      'Ideaal voor kleine organisaties met één locatie',          3,   10,   1,   3,  '{"visitor_management":false,"bhv_print":true,"sub_status":true,"kiosk_mode":false,"badge_generator":true,"bulk_actions":false,"audit_log":false}',  25.00,  1, 1),
+  ('professional', 'Professional', 'Voor organisaties met meerdere locaties',                  5,   25,   3,   6,  '{"visitor_management":true,"bhv_print":true,"sub_status":true,"kiosk_mode":false,"badge_generator":true,"bulk_actions":true,"audit_log":true}',   75.00,  2, 1),
+  ('business',     'Business',     'Volledige functionaliteit voor grote organisaties',        10,  60,   6,  10,  '{"visitor_management":true,"bhv_print":true,"sub_status":true,"kiosk_mode":true,"badge_generator":true,"bulk_actions":true,"audit_log":true}',   125.00, 3, 1),
+  ('enterprise',   'Enterprise',   'Voor grote organisaties met veel locaties',                50,  300,  25,  50,  '{"visitor_management":true,"bhv_print":true,"sub_status":true,"kiosk_mode":true,"badge_generator":true,"bulk_actions":true,"audit_log":true}',   250.00, 4, 1),
+  ('corporate',    'Corporate',    'Voor grote organisaties met veel locaties en gebruikers',  100, 500,  50, 100,  '{"visitor_management":true,"bhv_print":true,"sub_status":true,"kiosk_mode":true,"badge_generator":true,"bulk_actions":true,"audit_log":true}',   500.00, 5, 1),
+  ('unlimited',    'Unlimited',    'Onbeperkt gebruik voor alle functionaliteit',              9999,9999,9999,9999, '{"visitor_management":true,"bhv_print":true,"sub_status":true,"kiosk_mode":true,"badge_generator":true,"bulk_actions":true,"audit_log":true}',   999.00, 6, 1)
 ON DUPLICATE KEY UPDATE `tier_code` = `tier_code`;
 
 -- ============================================================
