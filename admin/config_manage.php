@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * FIX: Verberg Google Script URL en Sheet ID (v1 legacy velden)
  * v2.0 gebruikt alleen MySQL, geen Google Sheets meer
  */

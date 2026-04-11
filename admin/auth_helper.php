@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * ============================================================================
  * BESTANDSNAAM:  auth_helper.php
  * UPLOAD NAAR:   /admin/auth_helper.php (OVERSCHRIJF)
@@ -39,7 +46,7 @@ if (!function_exists('requireAdmin')) {
         
         $userRole = $_SESSION['role'] ?? 'user';
         
-        if (!in_array($userRole, ['admin', 'superadmin'])) {
+        if (!in_array($userRole, ['admin', 'superadmin', 'employee_manager', 'user_manager'])) {
             // User is logged in but not admin - redirect to frontpage
             header('Location: ../frontpage.php');
             exit;
@@ -50,6 +57,31 @@ if (!function_exists('requireAdmin')) {
         header('Cache-Control: post-check=0, pre-check=0', false);
         header('Pragma: no-cache');
         header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+
+        // Heartbeat — registreer activiteit voor online gebruikers overzicht
+        // Alleen bij GET requests om dubbele pings bij POST te vermijden
+        if (isset($_SESSION['user_id']) && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+            try {
+                global $db;
+                if ($db instanceof PDO) {
+                    $sid = session_id();
+                    $uid = $_SESSION['user_id'];
+                    $ip  = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+                    $ua  = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+                    $url = $_SERVER['REQUEST_URI'] ?? null;
+                    $browser = 'Unknown';
+                    if (str_contains($ua, 'Edg')) $browser = 'Edge';
+                    elseif (str_contains($ua, 'Chrome')) $browser = 'Chrome';
+                    elseif (str_contains($ua, 'Firefox')) $browser = 'Firefox';
+                    elseif (str_contains($ua, 'Safari')) $browser = 'Safari';
+                    $device = preg_match('/mobile/i', $ua) ? 'Mobile' : (preg_match('/tablet|ipad/i', $ua) ? 'Tablet' : 'Desktop');
+                    $stmt = $db->prepare("INSERT INTO user_sessions (user_id, session_id, ip_address, user_agent, browser, device, page_url, login_time, last_activity, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1) ON DUPLICATE KEY UPDATE last_activity = NOW(), page_url = VALUES(page_url), is_active = 1");
+                    $stmt->execute([$uid, $sid, $ip, $ua, $browser, $device, $url]);
+                }
+            } catch (Throwable $e) {
+                // Nooit de admin pagina blokkeren door heartbeat fout
+            }
+        }
     }
 }
 

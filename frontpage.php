@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * Filename: frontpage.php
  * Location: /frontpage.php
  * Version: v2.0 - With anti-cache headers
@@ -342,5 +349,16 @@ $canUseScanner = (bool)($user['can_use_scanner'] ?? false);
         checkSession();
     })();
     </script>
+
+<script>
+// Heartbeat — houdt sessie actief in online gebruikers overzicht
+(function() {
+    function heartbeat() {
+        fetch('/api/heartbeat.php', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+    }
+    heartbeat();
+    setInterval(heartbeat, 60000); // Elke minuut
+})();
+</script>
 </body>
 </html>

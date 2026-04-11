@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * Kiosk Token Actions API
  * Handles CRUD operations for kiosk auto-login tokens
  * 

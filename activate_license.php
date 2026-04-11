@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * PeopleDisplay License Activation
  * Accessible WITHOUT a valid license — exempt from license_check.php
  * File: /activate_license.php

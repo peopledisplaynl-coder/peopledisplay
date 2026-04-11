@@ -1,4 +1,11 @@
 <?php
+/**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
 // includes/config.php
 // Dit bestand wordt geladen door admin bestanden die __DIR__ . '/../includes/config.php' doen
 

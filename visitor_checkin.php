@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * BESTANDSNAAM: visitor_checkin.php
  * LOCATIE: /visitor_checkin.php (ROOT)
  * BESCHRIJVING: Handle check-in via email token

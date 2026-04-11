@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * ═══════════════════════════════════════════════════════════════════
  * BESTANDSNAAM: update_status.php
  * LOCATIE:      /admin/api/update_status.php
@@ -43,6 +50,12 @@ try {
     }
     
     // Update employee status
+    // Haal oude status op voor audit log
+    $oldStmt = $db->prepare("SELECT status, naam FROM employees WHERE employee_id = ?");
+    $oldStmt->execute([$employee_id]);
+    $oldData = $oldStmt->fetch(PDO::FETCH_ASSOC);
+    $oldStatus = $oldData['status'] ?? 'UNKNOWN';
+
     $stmt = $db->prepare("
         UPDATE employees 
         SET status = ?, 
@@ -54,6 +67,22 @@ try {
     
     if ($stmt->rowCount() === 0) {
         throw new Exception('Employee not found or no change');
+    }
+
+    // Audit log
+    try {
+        $auditStmt = $db->prepare("INSERT INTO employee_audit (employee_id, action, field_changed, old_value, new_value, changed_by, ip_address, user_agent) VALUES (?, 'STATUS_CHANGE', 'status', ?, ?, ?, ?, ?)");
+        $auditStmt->execute([
+            $employee_id,
+            $oldStatus,
+            $new_status,
+            $_SESSION['user_id'] ?? null,
+            $_SERVER['REMOTE_ADDR'] ?? null,
+            $_SERVER['HTTP_USER_AGENT'] ?? null
+        ]);
+    } catch (Exception $ae) {
+        // Audit log failure mag de status update niet blokkeren
+        error_log('Audit log failed: ' . $ae->getMessage());
     }
     
     // Get updated employee data

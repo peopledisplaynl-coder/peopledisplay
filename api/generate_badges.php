@@ -1,4 +1,11 @@
 <?php
+/**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
 // Badge Generator v2.1 FINAL - All templates fixed + logo support
 // Upload naar: /api/generate_badges.php
 

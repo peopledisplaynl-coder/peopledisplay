@@ -1,0 +1,43 @@
+PeopleDisplay — Open Core License
+
+Copyright (c) 2024 Ton Labee
+Website: https://peopledisplay.nl
+Contact: ton@labee.eu
+
+=======================================================================
+GRATIS STARTER VERSIE (Open Source)
+=======================================================================
+
+De Starter versie van PeopleDisplay is vrij beschikbaar onder de
+GNU Affero General Public License v3 (GNU AGPL v3).
+
+Dit betekent:
+- Je mag de software gratis gebruiken voor de Starter limieten
+  (max 10 medewerkers, 1 locatie, 3 gebruikers)
+- Je mag de code bekijken, aanpassen en delen
+- Aanpassingen die je deelt moeten ook onder AGPL v3 vallen
+- Commercieel gebruik boven de Starter limieten is niet toegestaan
+  zonder een commerciële licentie
+
+=======================================================================
+COMMERCIËLE LICENTIES (Professional t/m Unlimited)
+=======================================================================
+
+Gebruik boven de Starter limieten vereist een commerciële licentie.
+Deze licenties zijn beschikbaar via: https://peopledisplay.nl/prijzen
+
+- Professional  — max 25 medewerkers, 3 locaties
+- Business      — max 60 medewerkers, 6 locaties
+- Enterprise    — max 300 medewerkers, 25 locaties
+- Corporate     — max 500 medewerkers, 50 locaties
+- Unlimited     — onbeperkt
+
+=======================================================================
+HANDHAVING
+=======================================================================
+
+Ongeautoriseerde verwijdering of omzeiling van de licentiecontrole
+is een schending van deze licentie en het auteursrecht van de auteur.
+
+De volledige tekst van de GNU AGPL v3 is beschikbaar op:
+https://www.gnu.org/licenses/agpl-3.0.html

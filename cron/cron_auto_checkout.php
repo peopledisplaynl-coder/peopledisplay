@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * BESTANDSNAAM: cron_auto_checkout.php
  * LOCATIE: /cron/cron_auto_checkout.php
  * BESCHRIJVING: Auto checkout visitors einde van dag (behalve multi-day)

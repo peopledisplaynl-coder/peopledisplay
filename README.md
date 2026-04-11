@@ -1,6 +1,34 @@
-# PeopleDisplay v2.0
+# PeopleDisplay v2.1
+
+![Starter: Free & Open Source](https://img.shields.io/badge/Starter-Free%20%26%20Open%20Source-brightgreen)
+![Professional+: Commercial License](https://img.shields.io/badge/Professional%2B-Commercial%20License-blue)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20development-orange)](https://ko-fi.com/tonlabee)
 
 Real-time employee presence tracking for schools, childcare organizations, and offices.
+
+---
+
+## Open Core Model
+
+PeopleDisplay werkt op een **Open Core** model:
+
+| Tier | Prijs | Medewerkers | Locaties | Gebruikers |
+|------|-------|-------------|----------|------------|
+| **Starter** | **Gratis** | max 10 | max 1 | max 3 |
+| Professional | Betaald | max 25 | max 3 | max 5 |
+| Business | Betaald | max 60 | max 6 | max 10 |
+| Enterprise | Betaald | max 300 | max 25 | max 25 |
+| Corporate | Betaald | max 500 | max 50 | max 50 |
+| Unlimited | Betaald | onbeperkt | onbeperkt | onbeperkt |
+
+**Starter is volledig gratis.** Geen registratie nodig, geen licentiesleutel vereist.
+Voor grotere organisaties zijn betaalde pakketten beschikbaar via licentiesleutel.
+
+Volledige feature vergelijking: [peopledisplay.nl/prijzen](https://peopledisplay.nl/prijzen)
+
+> Vind je PeopleDisplay nuttig? [Steun de ontwikkeling via Ko-fi ☕](https://ko-fi.com/tonlabee)
+
+---
 
 ## Features
 
@@ -9,8 +37,8 @@ Real-time employee presence tracking for schools, childcare organizations, and o
 - **Department management** — organize employees by team
 - **BHV tracking** — emergency response personnel always visible
 - **Sub-status buttons** — configurable extra states (Pause, Working from Home, Vacation, etc.)
-- **Visitor registration** — digital visitor logbook with email notifications
-- **Token-based kiosk check-in** — unattended devices with secure auto-login
+- **Visitor registration** — digital visitor logbook with email notifications *(Professional+)*
+- **Token-based kiosk check-in** — unattended devices with secure auto-login *(Business+)*
 - **Role-based access control** — superadmin, admin, user roles
 - **Presentation mode** — auto-start Google Slides after idle period
 - **WiFi auto check-in** — detect location by IP range
@@ -20,45 +48,26 @@ Real-time employee presence tracking for schools, childcare organizations, and o
 - **Name display options** — first name, last name, or full name
 - **Sort by name or status** — IN employees shown first
 
-## 🔐 Licentie Systeem
+---
 
-PeopleDisplay v2.0 vereist een geldige licentie voor gebruik.
+## Gratis Starten (Starter Versie)
 
-### Beschikbare Pakketten
+De Starter versie werkt zonder licentiesleutel:
 
-**Starter** — 
-- 3 admin gebruikers, 10 medewerkers, 1 locatie, 3 afdelingen
-- Basis features: IN/OUT tracking, BHV overzicht, sub-status
+1. Upload bestanden naar je webserver
+2. Open `https://yoursite.com/install.php`
+3. Volg de wizard — sla de licentiestap over voor Starter
+4. Log in op `https://yoursite.com/login.php`
 
-**Professional** — 
-- 5 admin gebruikers, 25 medewerkers, 3 locaties, 6 afdelingen
-- Inclusief: Bezoekersbeheer, locatie override
+**Starter limieten:** max 10 medewerkers, 1 locatie, 3 admin-gebruikers.
 
-**Business** — 
-- 10 admin gebruikers, 60 medewerkers, 6 locaties, 10 afdelingen
-- Inclusief: Kiosk modus, API-toegang, alle Professional features
+---
 
-
-**Enterprise**
-- 25 admin gebruikers, 	120	medewerkers,  locaties,  afdelingen
-Inclusief: Kiosk modus, API-toegang, alle Professional features
-
-**Corporate**
-- 50 admin gebruikers,	250 medewerkers,  locaties,  afdelingen
-Inclusief: Kiosk modus, API-toegang, alle Professional features
-
-**Unlimited**
-- Onbeperkt admin gebruikers, 	Onbeperkt medewerkers,  locaties,  afdelingen
-Inclusief: Kiosk modus, API-toegang, alle Professional features
-
-
-Volledige feature vergelijking: [peopledisplay.nl/prijzen](https://peopledisplay.nl/prijzen)
-
-### Licentie Activatie
+## Licentiesleutel Activeren (Professional t/m Unlimited)
 
 1. Koop een pakket via [peopledisplay.nl/prijzen](https://peopledisplay.nl/prijzen)
 2. Ontvang licentiecode via e-mail (format: `PDIS-XXXX-XXXX-XXXX`)
-3. Voer code in tijdens installatie stap 3
+3. Voer code in tijdens installatie stap 3, of later via `activate_license.php`
 4. Licentie wordt gebonden aan uw domein
 
 **Belangrijk:**
@@ -81,7 +90,7 @@ Volledige feature vergelijking: [peopledisplay.nl/prijzen](https://peopledisplay
 
 1. Upload all files to your web server
 2. Open `https://yoursite.com/install.php`
-3. Follow the 8-step wizard (license key required at step 3)
+3. Follow the 8-step wizard (license key optional — Starter is free)
 4. Log in at `https://yoursite.com/login.php`
 
 > The installer locks itself automatically after completion.
@@ -115,7 +124,7 @@ https://yoursite.com/install.php
 The wizard will guide you through 8 steps:
 1. **Systeemcheck** — PHP version and required extensions
 2. **Gebruiksvoorwaarden** — Accept EULA (NL/EN)
-3. **Licentie** — Enter and validate your license key
+3. **Licentie** — Enter license key, or skip for free Starter tier
 4. **Database** — Configure database connection
 5. **Schema** — Import 30 database tables
 6. **Admin Account** — Create administrator credentials
@@ -158,7 +167,7 @@ Tested and working on:
 ```
 peopledisplay/
 ├── install.php              ← Web installer wizard
-├── install.sql              ← Database schema (28 tables)
+├── install.sql              ← Database schema (30 tables)
 ├── config.example.php       ← Configuration template
 ├── index.php                ← Main employee display
 ├── login.php                ← Authentication
@@ -206,6 +215,8 @@ define('DB_NAME',     'your_database');
 define('DB_USER',     'your_username');
 define('DB_PASS',     'your_password');
 define('DB_CHARSET',  'utf8mb4');
+// Optioneel: licentie salt (voor betaalde pakketten)
+// define('PD_LICENSE_SALT', 'JOUW_GEHEIME_SALT_HIER');
 ```
 
 The application auto-detects its base path and site URL from the server environment. No manual URL configuration is required.
@@ -261,19 +272,19 @@ Navigate to `https://yoursite.com/install.php` — it will show a "locked" page 
 
 ## License
 
-PeopleDisplay v2.0.0 is commercial software. A valid license key is required for installation and use.
+PeopleDisplay v2.1 is **Open Core** software:
 
-- License terms: see `eula_nl.txt` (Dutch) or `eula_en.txt` (English)
-- Each license is bound to a single domain
-- Licenses are non-transferable without deactivation on the original domain
-- Redistribution, resale, or sublicensing is strictly prohibited
+- **Starter tier** — free, open source under [GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html)
+- **Professional tier and above** — commercial license required
+
+See `/LICENSE` for full license terms.
 
 For licensing questions: support@peopledisplay.nl
 Purchase a license: [peopledisplay.nl/prijzen](https://peopledisplay.nl/prijzen)
 
-© 2026 PeopleDisplay — All rights reserved
+© 2024 Ton Labee — https://peopledisplay.nl
 
 ## Version
 
-**Version 2.0.0** — License System Release
+**Version 2.1.0** — Open Core Release
 Compatible with: Strato, Mijndomein, cPanel, Plesk

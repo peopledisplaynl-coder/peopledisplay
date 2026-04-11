@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * BESTANDSNAAM: get_visitors_inside.php
  * LOCATIE: /api/get_visitors_inside.php
  * BESCHRIJVING: Get visitors with status BINNEN (checked in)

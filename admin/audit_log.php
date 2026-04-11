@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * ============================================================
  * EMPLOYEE AUDIT LOG - SIMPLE VERSION (NO JOIN)
  * ============================================================
@@ -25,6 +32,13 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!in_array($user['role'], ['admin', 'superadmin'])) {
     die('Access denied.');
 }
+
+// Detecteer welke tijdstempel kolom bestaat
+$timeCol = 'created_at'; // standaard
+try {
+    $cols = $db->query("SHOW COLUMNS FROM employee_audit LIKE 'changed_at'")->fetch();
+    if ($cols) $timeCol = 'changed_at';
+} catch (Exception $e) {}
 
 // Get filters
 $action_filter = $_GET['action'] ?? 'all';
@@ -58,13 +72,13 @@ if (!empty($employee_filter)) {
 }
 
 if ($period_filter === 'custom' && !empty($date_from) && !empty($date_to)) {
-    $where_clauses[] = "changed_at >= ? AND changed_at <= ?";
+    $where_clauses[] = "$timeCol >= ? AND $timeCol <= ?";
     $params[] = $date_from . ' 00:00:00';
     $params[] = $date_to . ' 23:59:59';
 } elseif ($period_filter !== 'all') {
     $intervals = ['24h' => '24 HOUR', '7d' => '7 DAY', '30d' => '30 DAY'];
     if (isset($intervals[$period_filter])) {
-        $where_clauses[] = "changed_at >= DATE_SUB(NOW(), INTERVAL {$intervals[$period_filter]})";
+        $where_clauses[] = "$timeCol >= DATE_SUB(NOW(), INTERVAL {$intervals[$period_filter]})";
     }
 }
 
@@ -78,7 +92,7 @@ $total_records = $stmt->fetchColumn();
 $total_pages = ceil($total_records / $per_page);
 
 // Get records
-$sql = "SELECT * FROM employee_audit $where_sql ORDER BY changed_at DESC LIMIT ? OFFSET ?";
+$sql = "SELECT * FROM employee_audit $where_sql ORDER BY $timeCol DESC LIMIT ? OFFSET ?";
 $params[] = $per_page;
 $params[] = $offset;
 $stmt = $db->prepare($sql);
@@ -267,7 +281,7 @@ function getUserName($user_id, $db) {
                 <tbody>
                     <?php foreach ($records as $r): ?>
                         <tr>
-                            <td class="timestamp"><?= date('Y-m-d H:i:s', strtotime($r['changed_at'])) ?></td>
+                            <td class="timestamp"><?= date('Y-m-d H:i:s', strtotime($r[$timeCol])) ?></td>
                             <td><span class="employee-id"><?= htmlspecialchars($r['employee_id']) ?></span></td>
                             <td><?= htmlspecialchars(getEmployeeName($r['employee_id'], $db, $employee_cache)) ?></td>
                             <td><span class="action-badge action-<?= $r['action'] ?>"><?= $r['action'] ?></span></td>

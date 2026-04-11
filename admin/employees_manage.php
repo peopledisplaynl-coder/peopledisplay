@@ -1,4 +1,11 @@
 <?php
+/**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
 // 🔄 CACHE BUSTER - Force reload (if opcache is available)
 if (function_exists('opcache_invalidate')) {
     opcache_invalidate(__FILE__, true);
@@ -149,12 +156,57 @@ $stmt->execute([
         }
     }
     
+    if ($action === 'restore') {
+        $id = $_POST['id'];
+        try {
+            $empStmt = $db->prepare("SELECT employee_id, naam FROM employees WHERE id = ?");
+            $empStmt->execute([$id]);
+            $empInfo = $empStmt->fetch(PDO::FETCH_ASSOC);
+
+            $stmt = $db->prepare("UPDATE employees SET actief = 1 WHERE id = ?");
+            $stmt->execute([$id]);
+
+            // Audit log
+            if ($empInfo) {
+                $auditStmt = $db->prepare("INSERT INTO employee_audit (employee_id, action, field_changed, old_value, new_value, changed_by, ip_address, user_agent) VALUES (?, 'UPDATE', 'actief', '0', '1', ?, ?, ?)");
+                $auditStmt->execute([
+                    $empInfo['employee_id'],
+                    $_SESSION['user_id'] ?? null,
+                    $_SERVER['REMOTE_ADDR'] ?? null,
+                    $_SERVER['HTTP_USER_AGENT'] ?? null
+                ]);
+            }
+
+            $_SESSION['pd_flash'] = "Medewerker hersteld!";
+            header('Location: employees_manage.php?inactive=1&t=' . time());
+            exit;
+        } catch (PDOException $e) {
+            $error = "Fout bij herstellen: " . $e->getMessage();
+        }
+    }
+
     if ($action === 'delete') {
         $id = $_POST['id'];
         
         try {
+            // Haal medewerker info op voor audit log
+            $empStmt = $db->prepare("SELECT employee_id, naam FROM employees WHERE id = ?");
+            $empStmt->execute([$id]);
+            $empInfo = $empStmt->fetch(PDO::FETCH_ASSOC);
+
             $stmt = $db->prepare("UPDATE employees SET actief = 0 WHERE id = ?");
             $stmt->execute([$id]);
+
+            // Audit log
+            if ($empInfo) {
+                $auditStmt = $db->prepare("INSERT INTO employee_audit (employee_id, action, field_changed, old_value, new_value, changed_by, ip_address, user_agent) VALUES (?, 'DELETE', 'actief', '1', '0', ?, ?, ?)");
+                $auditStmt->execute([
+                    $empInfo['employee_id'],
+                    $_SESSION['user_id'] ?? null,
+                    $_SERVER['REMOTE_ADDR'] ?? null,
+                    $_SERVER['HTTP_USER_AGENT'] ?? null
+                ]);
+            }
             
             $_SESSION['pd_flash'] = "Medewerker verwijderd (soft delete)";
             header('Location: employees_manage.php?t=' . time());
@@ -165,10 +217,12 @@ $stmt->execute([
     }
 }
 
-// Get all employees
+// Get all employees — inclusief inactieven als filter aan staat
+$showInactive = isset($_GET['inactive']) && $_GET['inactive'] === '1';
+$activeFilter = $showInactive ? '' : 'WHERE actief = 1';
 $employees = $db->query("
     SELECT * FROM employees 
-    WHERE actief = 1 
+    $activeFilter
     ORDER BY Voornaam, Achternaam
 ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -539,6 +593,10 @@ $afdelingen = $db->query("
                 </select>
                 <select id="filter-bhv" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px;"><option value="">🚨 BHV</option><option value="Ja">Alleen BHV</option><option value="Nee">Geen BHV</option></select>
                 <select id="filter-foto" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px;"><option value="">📷 Foto</option><option value="heeft">Heeft foto</option><option value="geen">Geen foto</option></select>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; cursor: pointer;" onclick="toggleInactive()">
+                    <input type="checkbox" id="show-inactive" <?= $showInactive ? 'checked' : '' ?> onclick="event.stopPropagation(); toggleInactive()" style="cursor:pointer;">
+                    <label for="show-inactive" style="cursor:pointer; font-weight:600; color:#856404; white-space:nowrap;">👁 Toon inactief</label>
+                </div>
                 <div style="margin-left: auto; display: flex; gap: 10px;">
                     <div style="padding: 8px 15px; background: #e8f5e9; border: 2px solid #4caf50; border-radius: 6px; font-weight: bold; color: #2e7d32;"><span id="filtered-count">0</span> / <span id="total-count">0</span></div>
                     <button type="button" id="reset-filters-btn" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">🔄</button>
@@ -567,7 +625,7 @@ $afdelingen = $db->query("
                 </thead>
                 <tbody>
                     <?php foreach ($employees as $emp): ?>
-                        <tr data-employee-id="<?= $emp['id'] ?>">
+                        <tr data-employee-id="<?= $emp['id'] ?>" style="<?= !$emp['actief'] ? 'opacity:0.6;background:#fff8f8;' : '' ?>">
                             <td>
                                 <strong><?= htmlspecialchars($emp['voornaam'] ?: '') ?></strong>
                                 <?php if ($emp['functie']): ?>
@@ -620,13 +678,21 @@ $afdelingen = $db->query("
                                 <?php endif; ?>
                             </td>
                             <td>
+                                <?php if ($emp['actief']): ?>
                                 <button onclick="editEmployee(<?= $emp['id'] ?>)" class="btn-primary" style="font-size: 12px; padding: 6px 12px; margin-right: 5px;">✏️ Bewerken</button>
-                                
                                 <form method="POST" style="display: inline;" onsubmit="return confirm('Medewerker verwijderen?')">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= $emp['id'] ?>">
                                     <button type="submit" class="btn-danger">🗑️ Verwijderen</button>
                                 </form>
+                                <?php else: ?>
+                                <span style="color:#999;font-size:12px;margin-right:8px;">⚠️ Inactief</span>
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('Medewerker herstellen?')">
+                                    <input type="hidden" name="action" value="restore">
+                                    <input type="hidden" name="id" value="<?= $emp['id'] ?>">
+                                    <button type="submit" class="btn-primary" style="background:#28a745;border-color:#28a745;font-size:12px;padding:6px 12px;">♻️ Herstellen</button>
+                                </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         
@@ -1211,6 +1277,19 @@ function copyEmployeeId(employeeId, button) {
 
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init)}else{init()}
 })();
+</script>
+
+<script>
+function toggleInactive() {
+    const cb = document.getElementById('show-inactive');
+    const url = new URL(window.location.href);
+    if (cb.checked) {
+        url.searchParams.set('inactive', '1');
+    } else {
+        url.searchParams.delete('inactive');
+    }
+    window.location.href = url.toString();
+}
 </script>
 
 </body>

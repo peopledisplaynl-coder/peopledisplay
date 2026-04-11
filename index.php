@@ -1,5 +1,12 @@
 <?php
 /**
+ * PeopleDisplay
+ * Copyright (c) 2024 Ton Labee — https://peopledisplay.nl
+ *
+ * Starter versie: GNU AGPL v3 (zie /LICENSE)
+ * Commercieel gebruik boven Starter limieten vereist een licentie.
+ */
+/**
  * ═══════════════════════════════════════════════════════════════════
  * BESTANDSNAAM: index_with_visitors.php
  * LOCATIE:      ROOT (/)
@@ -645,4 +652,15 @@ $user_id = $_SESSION['user_id'];
     })();
     </script>
 	
+
+<script>
+// Heartbeat — houdt sessie actief in online gebruikers overzicht
+(function() {
+    function heartbeat() {
+        fetch('/api/heartbeat.php', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+    }
+    heartbeat();
+    setInterval(heartbeat, 60000); // Elke minuut
+})();
+</script>
 </body></html>
