@@ -71,11 +71,20 @@ $DB_PASS = 'your_database_password';
  * ============================================================
  *
  * ============================================================
- * FUTURE: License Configuration (not yet active)
+ * LICENSE SALT (voor betaalde licenties — Professional t/m Unlimited)
  * ============================================================
- * When the licensing system is implemented, these fields will
- * be added to the config table and read from here.
+ * Voor betaalde licenties: voeg onderstaande regel toe aan
+ * admin/db_config.php met een willekeurige, geheime string.
+ * Dit bestand staat NIET in git — de salt is veilig.
  *
+ * // define('PD_LICENSE_SALT', 'JOUW_GEHEIME_SALT_HIER');
+ *
+ * Starter (gratis): de salt is NIET nodig. Sla dit over.
+ * ============================================================
+ *
+ * ============================================================
+ * LEGACY (niet meer van toepassing)
+ * ============================================================
  * // define('LICENSE_KEY', '');
  * // define('LICENSE_TYPE', 'free'); // free|starter|professional|business|enterprise|unlimited
  * // define('LICENSE_EXPIRES', '');  // YYYY-MM-DD or empty for never

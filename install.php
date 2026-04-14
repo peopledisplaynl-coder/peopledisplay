@@ -104,14 +104,16 @@ if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ============================================================
-// STEP 3 — Validate license key
+// STEP 3 — Validate license key (optional — Starter is free)
 // ============================================================
 if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $licenseKey = strtoupper(trim($_POST['license_key'] ?? ''));
 
     if (empty($licenseKey)) {
-        $errors[] = 'Voer een licentiecode in.';
-        $step = 3;
+        // No key: proceed as Starter (free tier — max 10 employees, 1 location, 3 users)
+        $_SESSION['pd_install']['license_key']  = '';
+        $_SESSION['pd_install']['license_tier'] = 'starter';
+        $step = 4;
     } else {
         $validation = validateLicenseKey($licenseKey);
         if ($validation['valid']) {
@@ -419,7 +421,7 @@ pre { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; paddin
 
     <div class="header">
         <h1>PeopleDisplay Installatie</h1>
-        <p>Versie 2.0 &mdash; Aanwezigheidsregistratie systeem</p>
+        <p>Versie 2.1 &mdash; Aanwezigheidsregistratie systeem</p>
     </div>
 
     <!-- Step indicators -->
@@ -555,26 +557,27 @@ pre { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; paddin
         </script>
 
     <?php // =========================================================
-    // STEP 3: LICENSE ACTIVATION
+    // STEP 3: LICENSE (OPTIONAL)
     // =========================================================
     elseif ($step === 3): ?>
 
-        <h2>Licentie Activatie</h2>
-        <p class="subtitle">Voer uw licentiecode in om PeopleDisplay te activeren.</p>
+        <h2>Licentie</h2>
+        <p class="subtitle">Voer uw licentiecode in, of ga gratis door als Starter.</p>
 
         <?php foreach ($errors as $e): ?>
         <div class="alert alert-error"><?php echo htmlspecialchars($e); ?></div>
         <?php endforeach; ?>
 
-        <div class="alert alert-info">
-            Uw licentiecode heeft u ontvangen via e-mail na aankoop.<br>
-            Formaat: <strong>PDIS-XXXX-XXXX-XXXX</strong>
+        <div class="alert alert-success">
+            <strong>Starter versie is gratis</strong> &mdash; geen licentiecode nodig.<br>
+            Limieten: max <strong>10 medewerkers</strong>, <strong>1 locatie</strong>, <strong>3 gebruikers</strong>.<br>
+            <a href="https://ko-fi.com/tonlabee" target="_blank" style="color:#276749;">Vond je PeopleDisplay nuttig? Steun de ontwikkeling via Ko-fi ☕</a>
         </div>
 
         <form method="POST" action="install.php" id="licenseForm">
             <input type="hidden" name="step" value="3">
             <div class="form-group">
-                <label for="license_key">Licentiecode</label>
+                <label for="license_key">Licentiecode <span style="font-weight:400;color:#a0aec0;">(optioneel — voor Professional t/m Unlimited)</span></label>
                 <input
                     type="text"
                     id="license_key"
@@ -585,23 +588,30 @@ pre { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; paddin
                     autocomplete="off"
                     spellcheck="false"
                     value="<?php echo htmlspecialchars($_POST['license_key'] ?? ''); ?>"
-                    required
                 >
-                <div class="form-hint">Formaat: PDIS-T001-RAND-HASH (19 tekens inclusief streepjes)</div>
+                <div class="form-hint">Formaat: PDIS-T001-RAND-HASH &mdash; ontvangen via e-mail na aankoop</div>
             </div>
-            <button type="submit" class="btn btn-primary" id="licenseSubmit" disabled>
-                Valideer &amp; Verder &rarr;
-            </button>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <button type="submit" class="btn btn-primary" id="licenseSubmit" style="flex:1">
+                    Valideer &amp; Verder &rarr;
+                </button>
+                <button type="submit" class="btn btn-secondary" id="starterBtn" style="flex:1"
+                    onclick="document.getElementById('license_key').value='';">
+                    Doorgaan als Starter (gratis) &rarr;
+                </button>
+            </div>
         </form>
 
         <p style="margin-top:20px; font-size:13px; color:#718096; text-align:center">
-            Nog geen licentie? <a href="https://peopledisplay.nl/prijzen" target="_blank" style="color:#667eea;">Koop een pakket</a>
+            Meer capaciteit nodig? <a href="https://peopledisplay.nl/prijzen" target="_blank" style="color:#667eea;">Bekijk de pakketten</a>
         </p>
 
         <script>
         (function () {
-            const input  = document.getElementById('license_key');
-            const btn    = document.getElementById('licenseSubmit');
+            const input      = document.getElementById('license_key');
+            const licBtn     = document.getElementById('licenseSubmit');
+            const starterBtn = document.getElementById('starterBtn');
             if (!input) return;
 
             function validate() {
@@ -612,14 +622,17 @@ pre { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; paddin
                     fmt += raw[i];
                 }
                 input.value = fmt;
-                const ok = /^PDIS-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(fmt);
+                const ok     = /^PDIS-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(fmt);
+                const empty  = fmt.length === 0;
                 input.classList.toggle('valid',   ok);
-                input.classList.toggle('invalid', fmt.length === 19 && !ok);
-                btn.disabled = !ok;
+                input.classList.toggle('invalid', fmt.length > 0 && !ok);
+                // Activate button states
+                licBtn.disabled     = !ok;
+                starterBtn.disabled = !empty && !ok;
             }
 
             input.addEventListener('input', validate);
-            validate(); // Run on load (handles back-button pre-fill)
+            validate(); // Run on load
         })();
         </script>
 

@@ -49,7 +49,8 @@ if (!in_array($_pd_current, $_pd_exempt, true)) {
 
         // Determine the redirect reason
         if (!$licenseInfo || empty($licenseInfo['license_key'])) {
-            $reason = 'not_activated';
+            // No key: Starter limits exceeded → prompt upgrade
+            $reason = 'starter_limit_exceeded';
         } elseif ($licenseInfo['license_status'] === 'expired') {
             $reason = 'expired';
         } elseif ($licenseInfo['license_status'] === 'revoked') {

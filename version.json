@@ -1,11 +1,37 @@
 {
-  "version": "2.0.19",
+  "version": "2.1.0",
   "critical": false,
-  "message": "Nieuw: Medewerker Beheerder en Gebruiker Beheerder rollen toegevoegd",
+  "message": "Nieuw: Open Core model — Starter tier gratis zonder licentiesleutel",
   "changelog_url": "https://peopledisplay.nl/peopledisplay-changelog-versiehistorie/",
   "download_url": "",
   "checksum": "",
   "changelog": [
+    {
+      "version": "2.1.0",
+      "date": "2026-04-11",
+      "changes": [
+        "Nieuw: Open Core model — Starter tier volledig gratis zonder licentiesleutel",
+        "Nieuw: Installer stap 3 (Licentie) is nu optioneel — doorgaan als Starter zonder code",
+        "Nieuw: activate_license.php toont 'Doorgaan als Starter' knop",
+        "Nieuw: LICENSE bestand toegevoegd (GNU AGPL v3 voor Starter, commercieel voor Professional+)",
+        "Nieuw: Copyright headers toegevoegd aan alle PHP bestanden",
+        "Nieuw: PD_LICENSE_SALT verplaatst naar db_config.php — niet meer in publieke code",
+        "Verbetering: README herschreven met Open Core uitleg, badges en Ko-fi link"
+      ]
+    },
+    {
+      "version": "2.0.20",
+      "date": "2026-03-31",
+      "changes": [
+        "Nieuw: Online gebruikers overzicht toont nu actieve sessies correct",
+        "Nieuw: Heartbeat systeem — kiosk en aanmeldschermen blijven zichtbaar in online overzicht",
+        "Nieuw: Toon inactieve medewerkers met herstel functie in medewerkersbeheer",
+        "Fix: Audit logging voor status wijzigingen IN/UIT volledig werkend",
+        "Fix: Audit logging voor verwijderen medewerkers",
+        "Fix: Alle 6 licentietiers correct aangemaakt bij nieuwe installatie",
+        "Fix: Nieuwe rollen employee_manager en user_manager correct toegankelijk in admin"
+      ]
+    },
     {
       "version": "2.0.19",
       "date": "2026-03-30",
@@ -177,5 +203,6 @@
         "Initiele implementatie op Strato hosting"
       ]
     }
-  ]
+  ],
+  "release_date": "2026-04-11"
 }

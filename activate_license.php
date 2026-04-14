@@ -25,11 +25,12 @@ $success = '';
 // ── Reason messages from redirect ────────────────────────────
 $reason = htmlspecialchars($_GET['reason'] ?? '');
 $reasonMessages = [
-    'not_activated'  => 'Geen actieve licentie gevonden. Voer uw licentiecode in om te activeren.',
-    'expired'        => 'Uw licentie is verlopen. Neem contact op voor verlenging.',
-    'revoked'        => 'Deze licentie is ingetrokken. Neem contact op met support.',
-    'domain_mismatch'=> 'Deze licentie is geregistreerd voor een ander domein: <strong>' . htmlspecialchars($_GET['registered'] ?? 'onbekend') . '</strong>',
-    'invalid'        => 'Ongeldige licentie. Activeer opnieuw.',
+    'not_activated'         => 'Geen actieve licentie gevonden. Voer uw licentiecode in om te activeren.',
+    'expired'               => 'Uw licentie is verlopen. Neem contact op voor verlenging.',
+    'revoked'               => 'Deze licentie is ingetrokken. Neem contact op met support.',
+    'domain_mismatch'       => 'Deze licentie is geregistreerd voor een ander domein: <strong>' . htmlspecialchars($_GET['registered'] ?? 'onbekend') . '</strong>',
+    'invalid'               => 'Ongeldige licentie. Activeer opnieuw.',
+    'starter_limit_exceeded'=> 'U heeft de gratis Starter limieten overschreden (max 10 medewerkers, 1 locatie, 3 gebruikers). Activeer een licentiecode om door te gaan, of verwijder overtollige records om binnen de Starter limieten te blijven.',
 ];
 if ($reason !== '' && isset($reasonMessages[$reason])) {
     $error = $reasonMessages[$reason];
@@ -265,8 +266,20 @@ $alreadyActivated  = $currentLicense
             </button>
         </form>
 
+        <?php if ($reason !== 'starter_limit_exceeded'): ?>
+        <div style="margin-top:20px; padding:16px; background:#f0fff4; border:1px solid #9ae6b4; border-radius:8px; text-align:center;">
+            <p style="font-size:14px; color:#276749; margin-bottom:10px;">
+                <strong>Geen licentiecode?</strong><br>
+                De Starter versie is gratis voor max 10 medewerkers, 1 locatie en 3 gebruikers.
+            </p>
+            <a href="admin/dashboard.php" class="btn btn-green" style="display:inline-block; width:auto; padding:10px 24px;">
+                Doorgaan als Starter (gratis) &rarr;
+            </a>
+        </div>
+        <?php endif; ?>
+
         <div class="footer">
-            <p>Geen licentiecode? <a href="https://peopledisplay.nl/prijzen" target="_blank">Koop een pakket</a></p>
+            <p>Meer capaciteit nodig? <a href="https://peopledisplay.nl/prijzen" target="_blank">Bekijk de pakketten</a></p>
             <p style="margin-top:8px">Vragen? <a href="mailto:support@peopledisplay.nl">support@peopledisplay.nl</a></p>
         </div>
 

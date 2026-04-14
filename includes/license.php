@@ -17,7 +17,12 @@ if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
 }
 
-define('PD_LICENSE_SALT', 'PEOPLEDISPLAY_SALT_2024');
+// Salt for license key checksum validation.
+// On production: define PD_LICENSE_SALT in admin/db_config.php (stays out of git).
+// Starter installs without a license key don't use the salt.
+if (!defined('PD_LICENSE_SALT')) {
+    define('PD_LICENSE_SALT', 'PEOPLEDISPLAY_SALT_2024');
+}
 
 // ============================================================
 // 1. isLicenseValid()
@@ -37,9 +42,12 @@ function isLicenseValid(): bool {
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // No key: allow if within free Starter limits
         if (!$row || empty($row['license_key'])) {
-            return false;
+            return isWithinStarterLimits();
         }
+
+        // Key present: full commercial license validation
         if ($row['license_status'] !== 'active') {
             return false;
         }
@@ -53,6 +61,87 @@ function isLicenseValid(): bool {
     } catch (Exception $e) {
         error_log('[PD License] isLicenseValid: ' . $e->getMessage());
         return false;
+    }
+}
+
+/**
+ * Check whether the current usage is within the free Starter limits.
+ * Starter: max 10 active employees, 1 active location, 3 active users.
+ * @return bool
+ */
+function isWithinStarterLimits(): bool {
+    global $db;
+    try {
+        $empCount = (int)$db->query("SELECT COUNT(*) FROM employees WHERE actief = 1")->fetchColumn();
+        $locCount = (int)$db->query("SELECT COUNT(*) FROM locations WHERE active = 1")->fetchColumn();
+        $usrCount = (int)$db->query("SELECT COUNT(*) FROM users WHERE active = 1")->fetchColumn();
+        return ($empCount <= 10 && $locCount <= 1 && $usrCount <= 3);
+    } catch (Exception $e) {
+        error_log('[PD License] isWithinStarterLimits: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Return a synthesized license info array for Starter (no key) installs.
+ * Reads limits from the license_tiers table (tier_code='starter').
+ * @return array|null
+ */
+function getStarterTierInfo(): ?array {
+    global $db;
+    try {
+        $stmt = $db->prepare("SELECT * FROM license_tiers WHERE tier_code = 'starter' AND active = 1 LIMIT 1");
+        $stmt->execute();
+        $tier = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $info = [
+            'license_key'          => null,
+            'license_tier'         => 'starter',
+            'license_domain'       => getCurrentDomain(),
+            'license_activated_at' => null,
+            'license_expires_at'   => null,
+            'license_status'       => 'active',
+            'license_notes'        => null,
+            'tier_name'            => $tier['tier_name']        ?? 'Starter',
+            'tier_description'     => $tier['tier_description'] ?? 'Gratis versie',
+            'max_users'            => (int)($tier['max_users']       ?? 3),
+            'max_employees'        => (int)($tier['max_employees']   ?? 10),
+            'max_locations'        => (int)($tier['max_locations']   ?? 1),
+            'max_departments'      => (int)($tier['max_departments'] ?? 3),
+            'features'             => $tier['features'] ?? '{}',
+            'price_eur'            => 0.00,
+            'features_array'       => [],
+        ];
+
+        if (!empty($tier['features'])) {
+            $decoded = json_decode($tier['features'], true);
+            if (is_array($decoded)) {
+                $info['features_array'] = $decoded;
+            }
+        }
+
+        return $info;
+    } catch (Exception $e) {
+        error_log('[PD License] getStarterTierInfo: ' . $e->getMessage());
+        // Hardcoded fallback if license_tiers table is unavailable
+        return [
+            'license_key'          => null,
+            'license_tier'         => 'starter',
+            'license_domain'       => getCurrentDomain(),
+            'license_activated_at' => null,
+            'license_expires_at'   => null,
+            'license_status'       => 'active',
+            'license_notes'        => null,
+            'tier_name'            => 'Starter',
+            'tier_description'     => 'Gratis versie',
+            'max_users'            => 3,
+            'max_employees'        => 10,
+            'max_locations'        => 1,
+            'max_departments'      => 3,
+            'features'             => '{}',
+            'price_eur'            => 0.00,
+            'features_array'       => [],
+        ];
     }
 }
 
@@ -84,8 +173,9 @@ function getLicenseInfo(): ?array {
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // No key: return Starter tier info if within limits
         if (!$row || empty($row['license_key'])) {
-            return null;
+            return isWithinStarterLimits() ? getStarterTierInfo() : null;
         }
 
         $row['features_array'] = [];
@@ -120,6 +210,7 @@ function getTierLimits(): array {
     ];
     $info = getLicenseInfo();
     if (!$info) {
+        // No valid license and over Starter limits — return zero to block additions
         return $zero;
     }
     return [
