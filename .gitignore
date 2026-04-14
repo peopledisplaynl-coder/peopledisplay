@@ -1,0 +1,49 @@
+# ============================================================
+# PeopleDisplay .gitignore
+# ============================================================
+
+# Database Configuration (contains sensitive credentials)
+/admin/db_config.php
+/includes/db_config.php
+/includes/config.php
+
+# User Data
+/uploads/
+/uploads/**/*
+/logs/
+/logs/**/*
+/backups/
+/backups/**/*
+
+# Runtime directories
+/tmp/
+/tmp/**/*
+
+# Development / Tools
+/tools/
+/tools/**/*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.env
+.env.local
+.env.*.local
+
+# Archive (if accidentally added)
+*.zip
+*.tar.gz
+*.rar
+
+# PHP Cache
+*.php.cache
+
+# System permissions log
+.claude/
