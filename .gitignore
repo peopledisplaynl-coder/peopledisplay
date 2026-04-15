@@ -45,5 +45,8 @@ Thumbs.db
 # PHP Cache
 *.php.cache
 
-# System permissions log
+# System / Local
 .claude/
+desktop.ini
+app\ -\ kopie.js
+
