@@ -22,6 +22,8 @@
 # Development / Tools
 /tools/
 /tools/**/*
+tools/deploy_changes.*
+tools/check_500.php
 
 # IDE / Editor
 .vscode/
@@ -33,6 +35,7 @@
 
 # OS
 Thumbs.db
+desktop.ini
 .env
 .env.local
 .env.*.local
@@ -47,6 +50,6 @@ Thumbs.db
 
 # System / Local
 .claude/
-desktop.ini
-app\ -\ kopie.js
+*kopie*
+
 
