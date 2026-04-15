@@ -182,12 +182,57 @@ if (!function_exists('getCurrentUsername')) {
     }
 }
 
+
 /**
- * Get current display name
- * @return string|null
+ * Check if the logged-in admin has a specific feature right.
+ * SuperAdmins always have access.
+ * Admins only if the feature is in their admin_features JSON, or if admin_features is empty (all allowed).
+ * @param string $feature Feature key, e.g. 'manage_locations'
+ * @return bool
  */
-if (!function_exists('getCurrentDisplayName')) {
-    function getCurrentDisplayName() {
-        return $_SESSION['display_name'] ?? null;
+if (!function_exists('hasAdminFeature')) {
+    function hasAdminFeature(string $feature): bool {
+        global $db;
+        $role = $_SESSION['role'] ?? '';
+
+        // SuperAdmin mag altijd alles
+        if ($role === 'superadmin') return true;
+
+        // Geen admin = geen toegang
+        if (!in_array($role, ['admin', 'employee_manager', 'user_manager'])) return false;
+
+        $userId = $_SESSION['user_id'] ?? null;
+        if (!$userId) return false;
+
+        try {
+            $stmt = $db->prepare("SELECT features FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([$userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row || empty($row['features'])) return true; // Leeg = alles toegestaan
+
+            $features = json_decode($row['features'], true) ?? [];
+
+            // Als admin_features niet bestaat = alles toegestaan (backward compatible)
+            if (!isset($features['admin_features'])) return true;
+
+            return !empty($features['admin_features'][$feature]);
+        } catch (Exception $e) {
+            return true; // Bij fout: toegang verlenen (fail open)
+        }
+    }
+}
+
+/**
+ * Redirect naar dashboard als admin de feature niet heeft.
+ * @param string $feature Feature key, e.g. 'manage_locations'
+ * @return void
+ */
+if (!function_exists('requireAdminFeature')) {
+    function requireAdminFeature(string $feature): void {
+        if (!hasAdminFeature($feature)) {
+            header('Location: dashboard.php?error=no_permission');
+            exit;
+        }
     }
 }
