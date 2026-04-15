@@ -1,16 +1,28 @@
 {
-  "version": "2.1.0",
+  "version": "2.1.1",
   "critical": false,
-  "message": "Nieuw: Open Core model — Starter tier gratis zonder licentiesleutel",
+  "message": "Nieuw: Instelbare admin-rechten per admin — SuperAdmins bepalen welke functies per admin beschikbaar zijn",
   "changelog_url": "https://peopledisplay.nl/peopledisplay-changelog-versiehistorie/",
   "download_url": "",
   "checksum": "",
   "changelog": [
     {
+      "version": "2.1.1",
+      "date": "2026-04-15",
+      "changes": [
+        "Nieuw: Admin feature rechten systeem — SuperAdmins kunnen per admin instellen welke beheerfuncties beschikbaar zijn",
+        "Nieuw: 12 instelbare admin features: locaties, afdelingen, kiosk tokens, bezoekers, badges, bulk acties, audit log, configuratie, datum instellingen, en gebruikersbeheer",
+        "Nieuw: Admin features UI in gebruikersbeheer — checkboxen om rechten in/uit te schakelen",
+        "Verbetering: Dashboard tegels verbergen automatisch als admin geen rechten heeft voor die functie",
+        "Fix: Foutmelding op dashboard als admin poging doet pagina te openen waarvoor geen rechten",
+        "Backward compatible: Bestaande admins zonder rechten ingesteld krijgen overal toegang — niets breekt"
+      ]
+    },
+    {
       "version": "2.1.0",
       "date": "2026-04-11",
       "changes": [
-        "Nieuw: Open Core model — Starter tier volledig gratis zonder licentiesleutel",
+        "Nieuw: Open Core model — Starter tier gratis zonder licentiesleutel",
         "Nieuw: Installer stap 3 (Licentie) is nu optioneel — doorgaan als Starter zonder code",
         "Nieuw: activate_license.php toont 'Doorgaan als Starter' knop",
         "Nieuw: LICENSE bestand toegevoegd (GNU AGPL v3 voor Starter, commercieel voor Professional+)",

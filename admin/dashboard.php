@@ -57,6 +57,20 @@ if (!in_array($userRole, ['admin', 'superadmin', 'employee_manager', 'user_manag
 }
 
 $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
+
+// Admin feature checks voor dashboard tegels
+$canManageLocations      = hasAdminFeature('manage_locations');
+$canManageDepartments    = hasAdminFeature('manage_departments');
+$canManageLocationsOrder = hasAdminFeature('manage_locations_order');
+$canManageDepartmentsOrder = hasAdminFeature('manage_departments_order');
+$canManageKiosk          = hasAdminFeature('manage_kiosk_tokens');
+$canManageVisitors       = hasAdminFeature('manage_visitors');
+$canManageBadges         = hasAdminFeature('manage_badges');
+$canBulkActions          = hasAdminFeature('manage_bulk_actions');
+$canViewAuditLog         = hasAdminFeature('view_audit_log');
+$canManageConfig         = hasAdminFeature('manage_system_config');
+$canManageSubstatus      = hasAdminFeature('manage_substatus_dates');
+$canManageUsers          = hasAdminFeature('manage_users');
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -348,6 +362,13 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
             </div>
         </div>
 
+        <?php if (isset($_GET['error']) && $_GET['error'] === 'no_permission'): ?>
+        <div class="alert alert-error" style="margin-bottom: 20px; background: #fff5f5; border: 1px solid #feb2b2; padding: 12px 16px; border-radius: 8px; color: #c53030;">
+            <strong style="display: block; margin-bottom: 6px;">⛔ Geen Toegang</strong>
+            Je hebt geen rechten voor deze functie. Neem contact op met de SuperAdmin als je denkt dat dit een fout is.
+        </div>
+        <?php endif; ?>
+
         <?php if (!empty($updateInfo) && $updateInfo['available']): ?>
         <div class="update-banner" id="updateBanner">
             <span class="ub-icon">🚀</span>
@@ -411,14 +432,16 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <p>Beheer admin gebruikers en rechten</p>
             </a>
             <?php endif; ?>
-            
-            <?php if (in_array($userRole, ['admin', 'superadmin'])): ?>
+
+            <?php if ($canManageBadges): ?>
             <a href="badges_generate.php" class="menu-card badges">
                 <div class="menu-icon">🎫</div>
                 <h3>Badge Generator</h3>
                 <p>Genereer employee badges met QR codes</p>
             </a>
-            
+            <?php endif; ?>
+
+            <?php if ($canBulkActions): ?>
             <a href="bulk_actions.php" class="menu-card bulk">
                 <div class="menu-icon">🌙</div>
                 <h3>Bulk Acties</h3>
@@ -437,11 +460,13 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <p>Beheer bezoekers en aanmeldingen</p>
             </a>
 
+            <?php if ($canManageVisitors): ?>
             <a href="visitor_email_config.php" class="menu-card visitors">
                 <div class="menu-icon">📧</div>
                 <h3>Bezoeker Emails</h3>
                 <p>Configureer email notificaties</p>
             </a>
+            <?php endif; ?>
 
             <a href="../visitor_register.php" class="menu-card visitors" target="_blank">
                 <div class="menu-icon">🔗</div>
@@ -455,30 +480,38 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <p>Upgrade naar Professional voor bezoekersbeheer</p>
             </div>
             <?php endif; ?>
-            
+
+            <?php if ($canManageLocations): ?>
             <a href="locations_manage.php" class="menu-card locations">
                 <div class="menu-icon">📍</div>
                 <h3>Locaties</h3>
                 <p>Beheer locaties en vestigingen</p>
             </a>
-            
+            <?php endif; ?>
+
+            <?php if ($canManageLocationsOrder): ?>
             <a href="locations_order.php" class="menu-card locations">
                 <div class="menu-icon">🔢</div>
                 <h3>Locatie Volgorde</h3>
                 <p>Sorteer locaties in menu</p>
             </a>
-            
+            <?php endif; ?>
+
+            <?php if ($canManageDepartments): ?>
             <a href="afdelingen_manage.php" class="menu-card departments">
                 <div class="menu-icon">🏢</div>
                 <h3>Afdelingen</h3>
                 <p>Beheer afdelingen en teams</p>
             </a>
-            
+            <?php endif; ?>
+
+            <?php if ($canManageDepartmentsOrder): ?>
             <a href="afdelingen_order.php" class="menu-card departments">
                 <div class="menu-icon">🔢</div>
                 <h3>Afdelingen Volgorde</h3>
                 <p>Sorteer afdelingen in menu</p>
             </a>
+            <?php endif; ?>
         </div>
         
         <div class="section-header">⚙️ Systeem Configuratie</div>
@@ -488,14 +521,16 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <h3>Online Gebruikers</h3>
                 <p>Bekijk wie er nu online is</p>
             </a>
-            
+
+            <?php if ($canManageConfig): ?>
             <a href="config_manage.php" class="menu-card config">
                 <div class="menu-icon">⚙️</div>
                 <h3>Systeemconfiguratie</h3>
                 <p>Algemene systeem instellingen</p>
             </a>
-            
-            <?php if (hasFeature('kiosk_mode')): ?>
+            <?php endif; ?>
+
+            <?php if ($canManageKiosk && hasFeature('kiosk_mode')): ?>
             <a href="kiosk_tokens_manage.php" class="menu-card config">
                 <div class="menu-icon">🖥️</div>
                 <h3>Kiosk Tokens</h3>
@@ -508,18 +543,22 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <p>Upgrade naar Business voor kiosk modus</p>
             </div>
             <?php endif; ?>
-            
+
+            <?php if ($canViewAuditLog): ?>
             <a href="audit_log.php" class="menu-card config">
                 <div class="menu-icon">📝</div>
                 <h3>Audit Log</h3>
                 <p>Bekijk systeem activiteiten</p>
             </a>
-            
+            <?php endif; ?>
+
+            <?php if ($canManageSubstatus): ?>
             <a href="substatus_date_settings.php" class="menu-card config">
                 <div class="menu-icon">📅</div>
                 <h3>Sub-Status Datum Settings</h3>
                 <p>Configureer datum/tijd per button</p>
             </a>
+            <?php endif; ?>
 
             <a href="license_management.php" class="menu-card config">
                 <div class="menu-icon">🔑</div>

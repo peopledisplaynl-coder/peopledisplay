@@ -266,15 +266,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $logData .= "extraButtons array: " . json_encode($extraButtons) . "\n";
     
     $locations = $_POST['locations'] ?? [];
-    
+
     // ✨ Sorteer Toggle Feature
     $sorteerFunctie = isset($_POST['can_toggle_sort']) ? true : false;
-    
+
+    // 🔐 Admin features (alleen voor admins)
+    $adminFeatures = [];
+    if ($role === 'admin') {
+        $adminFeatureKeys = [
+            'manage_locations', 'manage_departments', 'manage_locations_order',
+            'manage_departments_order', 'manage_kiosk_tokens', 'manage_visitors',
+            'manage_badges', 'manage_bulk_actions', 'view_audit_log',
+            'manage_system_config', 'manage_substatus_dates', 'manage_users'
+        ];
+        foreach ($adminFeatureKeys as $key) {
+            $adminFeatures[$key] = isset($_POST['admin_feature_' . $key]);
+        }
+    }
+
     $features = json_encode([
         'visibleFields' => $visibleFields,
         'extraButtons' => $extraButtons,
         'locations' => $locations,
-        'sorteerFunctie' => $sorteerFunctie  // ← CORRECT FIELD NAME!
+        'sorteerFunctie' => $sorteerFunctie,  // ← CORRECT FIELD NAME!
+        'admin_features' => $adminFeatures    // ← NEW: Admin feature permissions
     ]);
     $logData .= "features JSON: " . $features . "\n";
     $logData .= "sorteerFunctie: " . ($sorteerFunctie ? 'TRUE' : 'FALSE') . "\n";
@@ -1445,6 +1460,39 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         const allGroups = <?= json_encode($groups) ?>;
         const isSuperAdmin = <?= json_encode($isSuperAdmin) ?>;
 
+        // Admin features beschikbaar voor admin rechten
+        const adminFeatures = [
+            { key: 'manage_locations',         label: 'Locaties beheren' },
+            { key: 'manage_departments',       label: 'Afdelingen beheren' },
+            { key: 'manage_locations_order',   label: 'Locatie volgorde sorteren' },
+            { key: 'manage_departments_order', label: 'Afdeling volgorde sorteren' },
+            { key: 'manage_kiosk_tokens',      label: 'Kiosk tokens beheren' },
+            { key: 'manage_visitors',          label: 'Bezoekersbeheer' },
+            { key: 'manage_badges',            label: 'Badge generator' },
+            { key: 'manage_bulk_actions',      label: 'Bulk acties' },
+            { key: 'view_audit_log',           label: 'Audit log inzien' },
+            { key: 'manage_system_config',     label: 'Systeemconfiguratie' },
+            { key: 'manage_substatus_dates',   label: 'Sub-status datum instellingen' },
+            { key: 'manage_users',             label: 'Gebruikersbeheer' },
+        ];
+
+        /**
+         * Get admin feature status for a user
+         * @param {Object} user User object
+         * @param {string} key Feature key
+         * @returns {boolean} True if feature is enabled
+         */
+        function getAdminFeature(user, key) {
+            try {
+                const f = typeof user.features === 'string'
+                    ? JSON.parse(user.features) : (user.features || {});
+                if (!f.admin_features) return true; // Standaard alles aan (backward compatible)
+                return !!f.admin_features[key];
+            } catch(e) {
+                return true; // Bij parse error: alles aanstaan
+            }
+        }
+
         let currentGroupFilter = '';
         
         let currentSort = { column: 'display_name', order: 'asc' };
@@ -1774,6 +1822,27 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                 💡 Als geen afdelingen geselecteerd: alle afdelingen worden getoond
                             </p>
                         </div>
+
+                        <!-- Admin Features - Alleen zichtbaar voor admins -->
+                        ${user.role === 'admin' ? `
+                        <div style="margin-top: 24px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+                            <label style="font-weight: 600; margin-bottom: 8px; display: block;">
+                                🔐 Admin Rechten
+                                <small style="font-weight: 400; color: #718096;">
+                                    — welke beheerfuncties mag deze admin gebruiken?
+                                </small>
+                            </label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                ${adminFeatures.map(f => `
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                                        <input type="checkbox" name="admin_feature_${f.key}"
+                                               ${getAdminFeature(user, f.key) ? 'checked' : ''}>
+                                        ${f.label}
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                     
                     <!-- TAB 3: PRESENTATION -->
