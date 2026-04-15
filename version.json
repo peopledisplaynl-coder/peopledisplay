@@ -1,7 +1,7 @@
 {
   "version": "2.1.1",
   "critical": false,
-  "message": "Nieuw: Instelbare admin-rechten per admin — SuperAdmins bepalen welke functies per admin beschikbaar zijn",
+  "message": "Nieuw: Instelbare admin rechten en vaste header bij scrollen",
   "changelog_url": "https://peopledisplay.nl/peopledisplay-changelog-versiehistorie/",
   "download_url": "",
   "checksum": "",
@@ -10,49 +10,10 @@
       "version": "2.1.1",
       "date": "2026-04-15",
       "changes": [
-        "Nieuw: Admin feature rechten systeem — SuperAdmins kunnen per admin instellen welke beheerfuncties beschikbaar zijn",
-        "Nieuw: 12 instelbare admin features: locaties, afdelingen, kiosk tokens, bezoekers, badges, bulk acties, audit log, configuratie, datum instellingen, en gebruikersbeheer",
-        "Nieuw: Admin features UI in gebruikersbeheer — checkboxen om rechten in/uit te schakelen",
-        "Verbetering: Dashboard tegels verbergen automatisch als admin geen rechten heeft voor die functie",
-        "Fix: Foutmelding op dashboard als admin poging doet pagina te openen waarvoor geen rechten",
-        "Backward compatible: Bestaande admins zonder rechten ingesteld krijgen overal toegang — niets breekt"
-      ]
-    },
-    {
-      "version": "2.1.0",
-      "date": "2026-04-11",
-      "changes": [
-        "Nieuw: Open Core model — Starter tier gratis zonder licentiesleutel",
-        "Nieuw: Installer stap 3 (Licentie) is nu optioneel — doorgaan als Starter zonder code",
-        "Nieuw: activate_license.php toont 'Doorgaan als Starter' knop",
-        "Nieuw: LICENSE bestand toegevoegd (GNU AGPL v3 voor Starter, commercieel voor Professional+)",
-        "Nieuw: Copyright headers toegevoegd aan alle PHP bestanden",
-        "Nieuw: PD_LICENSE_SALT verplaatst naar db_config.php — niet meer in publieke code",
-        "Verbetering: README herschreven met Open Core uitleg, badges en Ko-fi link"
-      ]
-    },
-    {
-      "version": "2.0.20",
-      "date": "2026-03-31",
-      "changes": [
-        "Nieuw: Online gebruikers overzicht toont nu actieve sessies correct",
-        "Nieuw: Heartbeat systeem — kiosk en aanmeldschermen blijven zichtbaar in online overzicht",
-        "Nieuw: Toon inactieve medewerkers met herstel functie in medewerkersbeheer",
-        "Fix: Audit logging voor status wijzigingen IN/UIT volledig werkend",
-        "Fix: Audit logging voor verwijderen medewerkers",
-        "Fix: Alle 6 licentietiers correct aangemaakt bij nieuwe installatie",
-        "Fix: Nieuwe rollen employee_manager en user_manager correct toegankelijk in admin"
-      ]
-    },
-    {
-      "version": "2.0.19",
-      "date": "2026-03-30",
-      "changes": [
-        "Nieuw: Rol Medewerker Beheerder — kan alleen medewerkers beheren",
-        "Nieuw: Rol Gebruiker Beheerder — kan medewerkers en gebruikers beheren",
-        "Nieuw: Dashboard toont alleen relevante menu-items per rol",
-        "Fix: Alle 6 licentietiers worden nu correct aangemaakt bij installatie",
-        "Fix: Bestaande installaties krijgen ontbrekende licentietiers automatisch via migratie"
+        "Nieuw: Instelbare admin rechten per feature — SuperAdmin bepaalt wat een admin mag",
+        "Nieuw: Admins kunnen per functie worden beperkt (locaties, kiosk, badges, audit log etc.)",
+        "Fix: Header staat nu altijd vast bovenaan tijdens scrollen — sorteerknop altijd zichtbaar",
+        "Fix: Locatiemenu plakt direct onder de vaste header bij scrollen"
       ]
     },
     {
@@ -216,5 +177,5 @@
       ]
     }
   ],
-  "release_date": "2026-04-11"
+  "release_date": "2026-04-15"
 }

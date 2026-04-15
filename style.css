@@ -35,6 +35,9 @@ header {
   padding: 10px;
   gap: 8px;
   flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 /* Compacter op mobiel */
@@ -422,6 +425,10 @@ header div[id^="count-"] {
   gap: 8px;
   padding: 10px;
   background-color: #f0f0f0;
+  position: sticky;
+  top: var(--header-height, 52px);
+  z-index: 999;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
 /* Mobiel: kleinere gap */

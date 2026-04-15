@@ -663,4 +663,21 @@ $user_id = $_SESSION['user_id'];
     setInterval(heartbeat, 60000); // Elke minuut
 })();
 </script>
+
+<script>
+// Sticky header hoogte dynamisch bijhouden
+// Zorgt dat building-menu precies onder de header plakt
+function updateHeaderHeight() {
+    var header = document.querySelector('header');
+    if (header) {
+        var h = header.getBoundingClientRect().height;
+        document.documentElement.style.setProperty('--header-height', Math.round(h) + 'px');
+    }
+}
+updateHeaderHeight();
+window.addEventListener('resize', updateHeaderHeight);
+// Ook na laden van app.js (badges kunnen hoogte aanpassen)
+setTimeout(updateHeaderHeight, 500);
+setTimeout(updateHeaderHeight, 1500);
+</script>
 </body></html>
