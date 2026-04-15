@@ -21,6 +21,7 @@ header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/auth_helper.php';
 requireAdmin();
+requireAdminFeature('manage_system_config');
 
 $message = '';
 $justSaved = false;

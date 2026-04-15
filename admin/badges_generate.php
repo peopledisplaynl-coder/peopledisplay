@@ -21,6 +21,7 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/auth_helper.php';
 
 requireAdmin();
+requireAdminFeature('manage_badges');
 
 // Get all active employees
 $stmt = $db->query("

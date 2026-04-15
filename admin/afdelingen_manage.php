@@ -20,6 +20,7 @@ require_once __DIR__ . '/../includes/license_check.php';
 require_once __DIR__ . '/auth_helper.php';
 
 requireAdmin();
+requireAdminFeature('manage_departments');
 
 $message = '';
 if (!empty($_SESSION['pd_flash'])) {

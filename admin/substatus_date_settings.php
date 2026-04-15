@@ -20,6 +20,7 @@
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/auth_helper.php';
 requireAdmin();
+requireAdminFeature('manage_substatus_dates');
 
 // Save settings
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {

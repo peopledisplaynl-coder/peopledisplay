@@ -16,12 +16,11 @@
 
 session_start();
 
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin','superadmin'], true)) {
-    header('Location: ../login.php');
-    exit;
-}
-
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/auth_helper.php';
+
+requireAdmin();
+requireAdminFeature('manage_locations_order');
 
 $message = '';
 $error = '';

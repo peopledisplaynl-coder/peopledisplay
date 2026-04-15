@@ -32,6 +32,7 @@
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/auth_helper.php';
 requireAdmin();
+requireAdminFeature('manage_bulk_actions');
 
 // Get employee counts by main status
 $empStmt = $db->query("

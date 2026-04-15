@@ -17,6 +17,10 @@
 
 session_start();
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/auth_helper.php';
+
+requireAdmin();
+requireAdminFeature('manage_departments_order');
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {

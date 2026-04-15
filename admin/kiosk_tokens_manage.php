@@ -27,6 +27,10 @@ try {
 
 require_once __DIR__ . '/../includes/license_check.php';
 requireFeature('kiosk_mode');
+require_once __DIR__ . '/auth_helper.php';
+
+requireAdmin();
+requireAdminFeature('manage_kiosk_tokens');
 
 // Security check
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'superadmin'])) {

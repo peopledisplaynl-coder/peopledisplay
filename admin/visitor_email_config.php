@@ -12,6 +12,7 @@
 require_once '../includes/db.php';
 require_once 'auth_helper.php';
 requireAdmin();
+requireAdminFeature('manage_visitors');
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
