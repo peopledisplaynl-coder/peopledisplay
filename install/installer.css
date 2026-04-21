@@ -1,0 +1,462 @@
+/* ============================================================
+   PEOPLE DISPLAY - INSTALLER STYLING
+   WordPress-Inspired Modern Design
+   ============================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    background: #f0f0f1;
+    color: #3c434a;
+    line-height: 1.6;
+}
+
+/* ========== CONTAINER ========== */
+
+.installer-container {
+    max-width: 720px;
+    margin: 40px auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* ========== HEADER ========== */
+
+.installer-header {
+    background: linear-gradient(135deg, #2271b1 0%, #135e96 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.installer-logo {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.installer-header h1 {
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.installer-header p {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+/* ========== PROGRESS BAR ========== */
+
+.progress-bar-container {
+    background: #e5e5e5;
+    height: 8px;
+    position: relative;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #2271b1 0%, #00a0d2 100%);
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* ========== STEPS INDICATOR ========== */
+
+.steps-indicator {
+    display: flex;
+    justify-content: space-between;
+    padding: 30px 40px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+    opacity: 0.4;
+}
+
+.step-item.active {
+    opacity: 1;
+}
+
+.step-item.completed {
+    opacity: 0.7;
+}
+
+.step-number {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #e5e5e5;
+    color: #3c434a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin-bottom: 8px;
+    transition: all 0.3s;
+}
+
+.step-item.active .step-number {
+    background: #2271b1;
+    color: white;
+    transform: scale(1.1);
+}
+
+.step-item.completed .step-number {
+    background: #00a32a;
+    color: white;
+}
+
+.step-name {
+    font-size: 13px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* ========== CONTENT ========== */
+
+.installer-content {
+    padding: 40px;
+}
+
+.step-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1d2327;
+    margin-bottom: 12px;
+}
+
+.step-description {
+    font-size: 15px;
+    color: #646970;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+/* ========== FORM ELEMENTS ========== */
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #1d2327;
+    font-size: 14px;
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus,
+.form-select:focus {
+    outline: none;
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.form-help {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #646970;
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* ========== MESSAGES ========== */
+
+.message {
+    padding: 16px 20px;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.message-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.message-success {
+    background: #d7f0d7;
+    border-left: 4px solid #00a32a;
+    color: #1e4620;
+}
+
+.message-error {
+    background: #f7dcdc;
+    border-left: 4px solid #d63638;
+    color: #5a1e1e;
+}
+
+.message-warning {
+    background: #fcf3cd;
+    border-left: 4px solid #f0b849;
+    color: #4d3c00;
+}
+
+.message-info {
+    background: #d5e7f7;
+    border-left: 4px solid #2271b1;
+    color: #1e3a5c;
+}
+
+/* ========== REQUIREMENTS TABLE ========== */
+
+.requirements-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.requirements-table th,
+.requirements-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.requirements-table th {
+    background: #f6f7f7;
+    font-weight: 600;
+    color: #1d2327;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.requirements-table td {
+    font-size: 14px;
+}
+
+.status-icon {
+    font-size: 18px;
+    margin-right: 8px;
+}
+
+.status-pass {
+    color: #00a32a;
+}
+
+.status-fail {
+    color: #d63638;
+}
+
+.status-warning {
+    color: #f0b849;
+}
+
+/* ========== BUTTONS ========== */
+
+.installer-footer {
+    padding: 24px 40px;
+    background: #f6f7f7;
+    border-top: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #2271b1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #135e96;
+}
+
+.btn-primary:disabled {
+    background: #c3c4c7;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: white;
+    color: #2271b1;
+    border: 1px solid #2271b1;
+}
+
+.btn-secondary:hover {
+    background: #f0f0f1;
+}
+
+.btn-success {
+    background: #00a32a;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #008a24;
+}
+
+/* ========== LOADING SPINNER ========== */
+
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+    .installer-container {
+        margin: 20px;
+    }
+    
+    .installer-header {
+        padding: 30px 20px;
+    }
+    
+    .installer-header h1 {
+        font-size: 24px;
+    }
+    
+    .installer-content {
+        padding: 30px 20px;
+    }
+    
+    .installer-footer {
+        padding: 20px;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .steps-indicator {
+        padding: 20px;
+        overflow-x: auto;
+    }
+    
+    .step-name {
+        font-size: 11px;
+    }
+}
+
+/* ========== DATABASE TEST ========== */
+
+.test-result {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.test-result.success {
+    background: #d7f0d7;
+    color: #1e4620;
+}
+
+.test-result.error {
+    background: #f7dcdc;
+    color: #5a1e1e;
+}
+
+/* ========== FINISH PAGE ========== */
+
+.finish-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 30px;
+}
+
+.action-card {
+    padding: 24px;
+    border: 2px solid #e5e5e5;
+    border-radius: 8px;
+    text-align: center;
+    transition: all 0.3s;
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-card:hover {
+    border-color: #2271b1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.action-card-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.action-card-title {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.action-card-desc {
+    font-size: 13px;
+    color: #646970;
+}
+
+/* ========== HIDDEN ========== */
+
+.hidden {
+    display: none !important;
+}

@@ -1,0 +1,48 @@
+# ============================================
+# PeopleDisplay Install .htaccess
+# Location: /install/.htaccess
+# ============================================
+
+# ⚠️ UNCOMMENT THE LINES BELOW AFTER INSTALLATION IS COMPLETE
+# This will block all access to the installer
+
+# <RequireAll>
+#     Require all denied
+# </RequireAll>
+
+# ============================================
+# TEMPORARY ACCESS DURING INSTALLATION
+# ============================================
+
+# While installing, allow access but add security
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "DENY"
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Disable directory listing
+Options -Indexes
+
+# ============================================
+# RATE LIMITING TO PREVENT BRUTE FORCE
+# ============================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Block suspicious patterns
+    RewriteCond %{QUERY_STRING} (union|select|insert|drop) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ============================================
+# AFTER INSTALLATION INSTRUCTIONS
+# ============================================
+# 
+# Option 1: Delete the entire /install/ folder (recommended)
+# 
+# Option 2: Rename folder to /install_backup_YYYYMMDD/
+# 
+# Option 3: Uncomment the <RequireAll> block at the top of this file
+#
+# ============================================
