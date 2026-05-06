@@ -21,6 +21,7 @@ header('Pragma: no-cache');
 header('Expires: 0');
 
 require_once __DIR__ . '/../includes/db.php'; // db.php calls session_start() after setting session path
+require_once __DIR__ . '/auth_helper.php';
 require_once __DIR__ . '/../includes/license_check.php';
 require_once __DIR__ . '/../includes/version.php';
 require_once __DIR__ . '/../includes/update_check.php';
@@ -71,6 +72,7 @@ $canViewAuditLog         = hasAdminFeature('view_audit_log');
 $canManageConfig         = hasAdminFeature('manage_system_config');
 $canManageSubstatus      = hasAdminFeature('manage_substatus_dates');
 $canManageUsers          = hasAdminFeature('manage_users');
+$canCreateBackup         = ($userRole === 'superadmin') || hasAdminFeature('create_backup');
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -565,7 +567,17 @@ $canManageUsers          = hasAdminFeature('manage_users');
                 <h3>Licentiebeheer</h3>
                 <p>Licentiestatus, gebruik en pakketten</p>
             </a>
-        </div>
+
+            <?php if ($canCreateBackup): ?>
+            <a href="backup.php" class="menu-card config">
+                <div class="menu-icon">🗄️</div>
+                <h3>Backup aanmaken</h3>
+                <p>Database, bestanden of volledige backup</p>
+                <?php if ($userRole === 'superadmin'): ?>
+                <span style="position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;letter-spacing:.3px;">SuperAdmin</span>
+                <?php endif; ?>
+            </a>
+            <?php endif; ?>
 
         <?php endif; ?>
 

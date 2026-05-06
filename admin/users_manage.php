@@ -277,7 +277,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'manage_locations', 'manage_departments', 'manage_locations_order',
             'manage_departments_order', 'manage_kiosk_tokens', 'manage_visitors',
             'manage_badges', 'manage_bulk_actions', 'view_audit_log',
-            'manage_system_config', 'manage_substatus_dates', 'manage_users'
+            'manage_system_config', 'manage_substatus_dates', 'manage_users',
+            'create_backup'
         ];
         foreach ($adminFeatureKeys as $key) {
             $adminFeatures[$key] = isset($_POST['admin_feature_' . $key]);
@@ -1474,6 +1475,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
             { key: 'manage_system_config',     label: 'Systeemconfiguratie' },
             { key: 'manage_substatus_dates',   label: 'Sub-status datum instellingen' },
             { key: 'manage_users',             label: 'Gebruikersbeheer' },
+            { key: 'create_backup',            label: '🗄️ Backup aanmaken' },
         ];
 
         /**
