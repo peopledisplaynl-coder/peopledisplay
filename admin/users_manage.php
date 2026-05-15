@@ -270,6 +270,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // ✨ Sorteer Toggle Feature
     $sorteerFunctie = isset($_POST['can_toggle_sort']) ? true : false;
 
+    // 📋 IN/UIT Bord weergave feature
+    $inuitBord = isset($_POST['can_inuitbord']) ? true : false;
+
     // 🔐 Admin features (alleen voor admins)
     $adminFeatures = [];
     if ($role === 'admin') {
@@ -290,6 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'extraButtons' => $extraButtons,
         'locations' => $locations,
         'sorteerFunctie' => $sorteerFunctie,  // ← CORRECT FIELD NAME!
+        'inuitBord' => $inuitBord,            // ← IN/UIT Bord weergave
         'admin_features' => $adminFeatures    // ← NEW: Admin feature permissions
     ]);
     $logData .= "features JSON: " . $features . "\n";
@@ -1792,6 +1796,15 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                         <strong style="display: block; margin-bottom: 4px;">🔄 Sorteer Toggle Knop</strong>
                                         <span style="font-size: 12px; color: #718096; line-height: 1.4;">
                                             User kan zelf switchen tussen voornaam/achternaam sortering via header knop
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="checkbox-item" style="align-items: flex-start; margin-top: 10px;">
+                                    <input type="checkbox" id="can-inuitbord-${userId}" name="can_inuitbord" value="1" ${features.inuitBord ? 'checked' : ''}>
+                                    <label for="can-inuitbord-${userId}" style="flex: 1;">
+                                        <strong style="display: block; margin-bottom: 4px;">📋 IN/UIT Bord weergave</strong>
+                                        <span style="font-size: 12px; color: #718096; line-height: 1.4;">
+                                            Toont een klassiek IN/UIT bord met uitsluitend namen en BHV-indicatie, in plaats van de normale kaartweergave
                                         </span>
                                     </label>
                                 </div>

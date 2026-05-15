@@ -40,6 +40,18 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// IN/UIT bord redirect — leest inuitBord uit users.features JSON
+$_stmtIB = $db->prepare("SELECT features FROM users WHERE id = ? LIMIT 1");
+$_stmtIB->execute([(int)$_SESSION['user_id']]);
+$_ibRow  = $_stmtIB->fetch(PDO::FETCH_ASSOC);
+$_ibFeat = json_decode($_ibRow['features'] ?? '{}', true);
+$toonInuitBordKnop = !empty($_ibFeat['inuitBord']);
+if ($toonInuitBordKnop) {
+    header('Location: /inuitbord.php');
+    exit;
+}
+unset($_stmtIB, $_ibRow, $_ibFeat);
+
 // ✅ CHECK FOR FORCED LOGOUT
 require_once __DIR__ . '/includes/logout_checker.php';
 
@@ -305,6 +317,9 @@ $user_id = $_SESSION['user_id'];
             </div>
             
             <button onclick="window.location.href='overzicht.php'" class="btn btn-secondary">📋 Overzicht</button>
+            <?php if ($toonInuitBordKnop): ?>
+            <button onclick="window.location.href='/inuitbord.php'" class="btn btn-secondary">📋 IN/UIT Bord</button>
+            <?php endif; ?>
             <button id="fullscreen-btn-header" class="btn btn-primary">🖥️ FULLSCREEN</button>
         </div>
     </header>

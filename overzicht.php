@@ -22,6 +22,17 @@ if (!$role) {
 // ✅ CHECK FOR FORCED LOGOUT
 require_once __DIR__ . '/includes/logout_checker.php';
 
+// IN/UIT bord knop — alleen tonen voor gebruikers met inuitBord feature
+$toonInuitBordKnop = false;
+if (isset($_SESSION['user_id'])) {
+    $_stmtIB = $db->prepare("SELECT features FROM users WHERE id = ? LIMIT 1");
+    $_stmtIB->execute([(int)$_SESSION['user_id']]);
+    $_ibRow  = $_stmtIB->fetch(PDO::FETCH_ASSOC);
+    $_ibFeat = json_decode($_ibRow['features'] ?? '{}', true);
+    $toonInuitBordKnop = !empty($_ibFeat['inuitBord']);
+    unset($_stmtIB, $_ibRow, $_ibFeat);
+}
+
 // ✅ Iedereen kan overzicht zien (users, admins, superadmins)
 ?>
 <!DOCTYPE html>
@@ -56,6 +67,22 @@ require_once __DIR__ . '/includes/logout_checker.php';
         <div id="count-in" class="badge badge-in">IN: 0</div>
         <div id="count-bhv" class="badge badge-bhv">BHV: 0</div>
       </div>
+      <?php if ($toonInuitBordKnop): ?>
+      <a href="/inuitbord.php" style="
+          margin-left:10px;
+          font-size:12px;
+          color:#fff;
+          background:rgba(255,255,255,0.2);
+          border:1px solid rgba(255,255,255,0.35);
+          border-radius:20px;
+          padding:4px 12px;
+          text-decoration:none;
+          white-space:nowrap;
+          display:inline-flex;
+          align-items:center;
+          gap:5px;
+      ">📋 IN/UIT Bord</a>
+      <?php endif; ?>
     </div>
   </header>
 
