@@ -1,4 +1,4 @@
-# PeopleDisplay v2.1
+# PeopleDisplay v2.1.x
 
 ![Starter: Free & Open Source](https://img.shields.io/badge/Starter-Free%20%26%20Open%20Source-brightgreen)
 ![Professional+: Commercial License](https://img.shields.io/badge/Professional%2B-Commercial%20License-blue)
