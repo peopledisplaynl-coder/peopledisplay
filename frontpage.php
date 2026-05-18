@@ -178,6 +178,7 @@ $canUseScanner = (bool)($user['can_use_scanner'] ?? false);
     </style>
 </head>
 <body>
+    <?php if (file_exists(__DIR__ . '/includes/demo_banner.php')) include __DIR__ . '/includes/demo_banner.php'; ?>
     <div class="container">
         <div class="header">
             <h1>👋 Welkom, <?php echo htmlspecialchars($userName); ?>!</h1>

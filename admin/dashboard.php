@@ -338,6 +338,7 @@ $canCreateBackup         = ($userRole === 'superadmin') || hasAdminFeature('crea
     </style>
 </head>
 <body>
+    <?php if (file_exists(__DIR__ . '/../includes/demo_banner.php')) include __DIR__ . '/../includes/demo_banner.php'; ?>
     <div class="container">
         <div class="header">
             <div class="header-left">

@@ -1,19 +1,20 @@
 {
   "version": "2.1.1",
   "critical": false,
-  "message": "Nieuw: Instelbare admin rechten en vaste header bij scrollen",
+  "message": "Fix: Vaste header bij scrollen en instelbare admin rechten",
   "changelog_url": "https://peopledisplay.nl/peopledisplay-changelog-versiehistorie/",
   "download_url": "",
   "checksum": "",
   "changelog": [
     {
       "version": "2.1.1",
-      "date": "2026-04-15",
+      "date": "2026-04-16",
       "changes": [
+        "Fix: Header staat nu altijd vast bovenaan tijdens scrollen — sorteerknop altijd zichtbaar",
+        "Fix: Locatiemenu plakt direct onder de vaste header bij scrollen",
         "Nieuw: Instelbare admin rechten per feature — SuperAdmin bepaalt wat een admin mag",
         "Nieuw: Admins kunnen per functie worden beperkt (locaties, kiosk, badges, audit log etc.)",
-        "Fix: Header staat nu altijd vast bovenaan tijdens scrollen — sorteerknop altijd zichtbaar",
-        "Fix: Locatiemenu plakt direct onder de vaste header bij scrollen"
+        "Fix: auth_helper.php include volgorde gecorrigeerd in alle admin pagina's"
       ]
     },
     {
@@ -177,5 +178,5 @@
       ]
     }
   ],
-  "release_date": "2026-04-15"
+  "release_date": "2026-04-16"
 }
