@@ -15,18 +15,14 @@ PeopleDisplay werkt op een **Open Core** model:
 | Tier | Prijs | Medewerkers | Locaties | Gebruikers |
 |------|-------|-------------|----------|------------|
 | **Starter** | **Gratis** | max 10 | max 1 | max 3 |
-| Professional | Betaald | max 25 | max 3 | max 5 |
-| Business | Betaald | max 60 | max 6 | max 10 |
-| Enterprise | Betaald | max 300 | max 25 | max 25 |
-| Corporate | Betaald | max 500 | max 50 | max 50 |
 | Unlimited | Betaald | onbeperkt | onbeperkt | onbeperkt |
 
 **Starter is volledig gratis.** Geen registratie nodig, geen licentiesleutel vereist.
-Voor grotere organisaties zijn betaalde pakketten beschikbaar via licentiesleutel.
+Voor grotere organisaties is de Unlimited versie beschikbaar via licentiesleutel.
 
 Volledige feature vergelijking: [peopledisplay.nl/prijzen](https://peopledisplay.nl/prijzen)
 
-> Vind je PeopleDisplay nuttig? [Steun de ontwikkeling via Ko-fi ☕](https://ko-fi.com/tonlabee)
+> Vind je PeopleDisplay nuttig? [Steun de ontwikkeling via Ko-fi ☕][(https://ko-fi.com/peopledisplay)]
 
 ---
 
@@ -63,7 +59,7 @@ De Starter versie werkt zonder licentiesleutel:
 
 ---
 
-## Licentiesleutel Activeren (Professional t/m Unlimited)
+## Licentiesleutel Activeren (Unlimited)
 
 1. Koop een pakket via [peopledisplay.nl/prijzen](https://peopledisplay.nl/prijzen)
 2. Ontvang licentiecode via e-mail (format: `PDIS-XXXX-XXXX-XXXX`)
@@ -282,7 +278,7 @@ See `/LICENSE` for full license terms.
 For licensing questions: support@peopledisplay.nl
 Purchase a license: [peopledisplay.nl/prijzen](https://peopledisplay.nl/prijzen)
 
-© 2024 Ton Labee — https://peopledisplay.nl
+© 2026 Ton Labee — https://peopledisplay.nl
 
 ## Version
 
