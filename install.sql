@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS `employees` (
   `sub_status_type`             varchar(50)                  DEFAULT NULL,
   `sub_status_until`            datetime                     DEFAULT NULL,
   `locatie`                     varchar(100)                 DEFAULT NULL,
+  `home_locatie`                varchar(100)                 DEFAULT NULL,
   `visible_locations`           text                         DEFAULT NULL,
   `allow_manual_location_change` tinyint(1)                 DEFAULT 0,
   `foto_url`                    varchar(500)                 DEFAULT NULL,

@@ -74,18 +74,18 @@ $allow_manual_location_change = isset($_POST['allow_manual_location_change']) &&
 $stmt = $db->prepare("
     INSERT INTO employees (
         employee_id, naam, voornaam, achternaam, 
-        email, telefoon, functie, bhv, afdeling, locatie,
+        email, telefoon, functie, bhv, afdeling, locatie, home_locatie,
         foto_url, notities, status, actief, visible_locations, allow_manual_location_change
     ) VALUES (
         ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?,
         ?, ?, 'OUT', 1, ?, ?
     )
 ");
 
 $stmt->execute([
     $employee_id, $naam, $voornaam, $achternaam,
-    $email, $telefoon, $functie, $bhv, $afdeling, $locatie,
+    $email, $telefoon, $functie, $bhv, $afdeling, $locatie, $locatie,
     $foto_url, $notities, $visible_locations_json, $allow_manual_location_change
 ]);
                 
@@ -135,7 +135,7 @@ $stmt = $db->prepare("
     UPDATE employees SET
         naam = ?, voornaam = ?, achternaam = ?,
         email = ?, telefoon = ?, functie = ?,
-        bhv = ?, afdeling = ?, locatie = ?,
+        bhv = ?, afdeling = ?, locatie = ?, home_locatie = ?,
         foto_url = ?, notities = ?, visible_locations = ?, allow_manual_location_change = ?
     WHERE id = ?
 ");
@@ -143,7 +143,7 @@ $stmt = $db->prepare("
 $stmt->execute([
     $naam, $voornaam, $achternaam,
     $email, $telefoon, $functie,
-    $bhv, $afdeling, $locatie,
+    $bhv, $afdeling, $locatie, $locatie,
     $foto_url, $notities, $visible_locations_json, $allow_manual_location_change, $id
 ]);
                 

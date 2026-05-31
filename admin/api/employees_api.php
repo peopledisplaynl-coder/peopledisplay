@@ -93,9 +93,31 @@ try {
         // Normalize status to uppercase
         $status = strtoupper($status);
         
-        // 🔧 Business rule: Als OUT → clear sub_status
+        // 🔧 Business rule: Als OUT → clear sub_status + reset naar thuislocatie
         if ($status === 'OUT') {
             $subStatus = null;
+            // Server-side reset: locatie terug naar home_locatie (ongeacht wat de client stuurt)
+            // home_locatie is de vaste locatie ingesteld door de beheerder
+            $stmt = $db->prepare("
+                UPDATE employees 
+                SET status = ?, 
+                    sub_status = NULL,
+                    locatie = COALESCE(home_locatie, locatie),
+                    tijdstip = NOW() 
+                WHERE employee_id = ? AND actief = 1
+            ");
+            $stmt->execute([$status, $id]);
+            
+            echo json_encode([
+                'success' => true,
+                'id' => $id,
+                'status' => $status,
+                'subStatus' => null,
+                'tempLocation' => null,
+                'timestamp' => date('Y-m-d H:i:s'),
+                'rowsAffected' => $stmt->rowCount()
+            ]);
+            exit;
         }
         
         // 🔧 Als alleen sub_status verandert (zonder status parameter expliciet)
@@ -121,8 +143,8 @@ try {
             }
         }
         
-        // 🔧 Update query - met OPTIONELE locatie override voor manual check-in OF reset bij checkout
-        // temp_location kan meegegeven worden bij IN (nieuwe locatie) OF OUT (reset naar origineel)
+        // 🔧 Update query - pion wisselt alleen locatie (NIET home_locatie!)
+        // home_locatie blijft altijd de vaste thuislocatie van de medewerker
         if ($tempLocation !== null) {
             $stmt = $db->prepare("
                 UPDATE employees 
@@ -132,7 +154,6 @@ try {
                     tijdstip = NOW() 
                 WHERE employee_id = ? AND actief = 1
             ");
-
             $stmt->execute([$status, $subStatus, $tempLocation, $id]);
         } else {
             // Normale update zonder locatie wijziging
@@ -171,6 +192,7 @@ try {
             sub_status as SubStatus,
             sub_status_until,
             locatie as Locatie,
+            home_locatie as HomeLocatie,
             foto_url as FotoURL,
             functie as Functie,
             afdeling as Afdeling,

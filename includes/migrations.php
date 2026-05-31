@@ -89,6 +89,7 @@ try {
         'sub_status' => "VARCHAR(100) DEFAULT NULL",
         'sub_status_type' => "VARCHAR(100) DEFAULT NULL",
         'sub_status_until' => "DATETIME DEFAULT NULL",
+        'home_locatie' => "VARCHAR(100) DEFAULT NULL COMMENT 'Vaste thuislocatie — locatie wordt hiernaar teruggezet bij uitchecken'",
     ];
 
     foreach ($empCols as $colName => $definition) {
@@ -98,6 +99,10 @@ try {
             $pd_migrations_changes[] = "Added employees.$colName column";
         }
     }
+
+    // Vul home_locatie voor bestaande medewerkers die het nog niet hebben
+    $db->exec("UPDATE `employees` SET `home_locatie` = `locatie` WHERE `home_locatie` IS NULL AND `locatie` IS NOT NULL AND `locatie` != ''");
+    $pd_migrations_changes[] = 'Backfilled employees.home_locatie from locatie';
 
     // Ensure all 6 license tiers exist in the database
     $existingTiers = $db->query("SELECT tier_code FROM `license_tiers`")->fetchAll(\PDO::FETCH_COLUMN);
