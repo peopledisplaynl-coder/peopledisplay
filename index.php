@@ -544,6 +544,10 @@ $user_id = $_SESSION['user_id'];
     </footer>
     
     <!-- SCRIPTS -->
+    <script>
+        // Versienummer bij laden — app.js vergelijkt dit met de server
+        window.PD_LOADED_VERSION = '<?= defined("PD_CURRENT_VERSION") ? PD_CURRENT_VERSION : "0.0.0" ?>';
+    </script>
     <script src="app.js"></script>
     <script src="index-refresh.js"></script>
     
