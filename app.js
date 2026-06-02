@@ -15,11 +15,11 @@
  * 5. Sla op als app.js
  * 6. Upload naar /app.js
  * 
- * âš ï¸ BELANGRIJK: Verwijder DEZE comment header VOOR het samenvoegen!
- * âš ï¸ Start met de regel die begint met: (function()...
+ * ⚠️ BELANGRIJK: Verwijder DEZE comment header VOOR het samenvoegen!
+ * ⚠️ Start met de regel die begint met: (function()...
  * 
  * WIJZIGINGEN IN DIT BESTAND:
- * - ðŸ“ Manual location button toegevoegd in renderEmployees (regel ~1340)
+ * - 📍 Manual location button toegevoegd in renderEmployees (regel ~1340)
  * - updateStatus functie uitgebreid met tempLocation parameter (regel ~710)
  * - Manual Location Selector module toegevoegd aan einde (regel ~2250)
  * 
@@ -29,23 +29,23 @@
  */
 
 /**
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════════
  * APP.JS - DEEL 1 VAN 3
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════════
  * INSTALLATIE: Plak DEEL 1 + DEEL 2 + DEEL 3 achter elkaar
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════════
  */
 /**
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════════
  * BESTANDSNAAM: app.js
  * VERSIE:       2.0 - Voornaam/Achternaam support
  * UPLOAD NAAR:  /app.js (ROOT, OVERSCHRIJF!)
  * 
  * FIXES:
- * - âœ… Voornaam/Achternaam fields ophalen van API
- * - âœ… Naam rendering respecteert Voornaam/Achternaam checkboxes
- * - âœ… Legacy "Naam" fallback voor backwards compatibility
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * - ✅ Voornaam/Achternaam fields ophalen van API
+ * - ✅ Naam rendering respecteert Voornaam/Achternaam checkboxes
+ * - ✅ Legacy "Naam" fallback voor backwards compatibility
+ * ═══════════════════════════════════════════════════════════════════
  */
 // ============================================================================
 // === PeopleDisplay - Main Application Script
@@ -76,8 +76,13 @@ if (window.__labee_app_initialized) {
 } else {
   window.__labee_app_initialized = true;
 
-// Detecteer BASE_PATH voor localhost/productie
-const BASE_PATH = window.location.pathname.includes('/peopledisplay') ? '/peopledisplay' : '';
+// Detecteer BASE_PATH — werkt voor root én submap installs
+const BASE_PATH = (function() {
+    if (typeof window.PD_BASE_PATH !== 'undefined') return window.PD_BASE_PATH;
+    const path = window.location.pathname;
+    return path.replace(/\/(index|login|scan|overzicht|frontpage|kiosk_login|visitor_register|visitor_checkin|visitor_checkout|privacy|reset_password|offline)\.php.*$/, '')
+               .replace(/\/$/, '');
+})();
 console.log('BASE_PATH detected:', BASE_PATH);
 
   (function(){
@@ -86,19 +91,19 @@ console.log('BASE_PATH detected:', BASE_PATH);
 
     let employees = [];
     let selectedLocations = [];
-    let selectedAfdelingen = []; // ðŸ†• Voor afdeling filtering
+    let selectedAfdelingen = []; // 🆕 Voor afdeling filtering
     let visibleFields = ["Naam","BHV","Foto","Functie","Afdeling","Locatie","Tijdstip"];
     
-    // ðŸ†• USER FEATURES
+    // 🆕 USER FEATURES
     let userVisibleFields = null; // Komt van user_features.php
     let userLocations = null;     // Komt van user_features.php
-    let userAfdelingen = null;    // ðŸ†• Komt van user_features.php
+    let userAfdelingen = null;    // 🆕 Komt van user_features.php
     let userExtraButtons = null;  // Komt van user_features.php
-    let showAllLocations = false; // ðŸ†• Track of ALL geklikt is (toon ook niet-user locaties)
+    let showAllLocations = false; // 🆕 Track of ALL geklikt is (toon ook niet-user locaties)
     
-    // ðŸ†• BUTTON CONFIGURATIE (dynamisch geladen)
+    // 🆕 BUTTON CONFIGURATIE (dynamisch geladen)
     
-    // ðŸ†• BUTTON CONFIGURATIE (dynamisch geladen)
+    // 🆕 BUTTON CONFIGURATIE (dynamisch geladen)
     let buttonConfig = {
       button1: { name: 'PAUZE', color: '#ff69b4', enabled: true, ask_until: false },
       button2: { name: 'THUISWERKEN', color: '#9370db', enabled: true, ask_until: false },
@@ -106,27 +111,27 @@ console.log('BASE_PATH detected:', BASE_PATH);
     };
     let buttonConfigLoaded = false;
     
-    // ðŸ†• DATETIME PICKER VARIABLES  
+    // 🆕 DATETIME PICKER VARIABLES  
     let currentEmployeeId = null;
     let currentSubStatus = null;
     let currentButtonNumber = null;
     let selectedUntil = null;
     
-    // ðŸ†• Track optimistic updates that should override server data
+    // 🆕 Track optimistic updates that should override server data
     const optimisticUpdates = new Map(); // ID -> {Status, Tijdstip, timestamp}
 
     // Utility helpers
     function normalize(str){ 
       return (str||"").toString().trim().toLowerCase()
         .replace(/:/g, '')       // Verwijder dubbele punten
-        .replace(/\s+/g, ' ')    // Normaliseer spaties (meerdere â†’ enkele)
+        .replace(/\s+/g, ' ')    // Normaliseer spaties (meerdere → enkele)
         .trim();                 // Trim opnieuw
     }
     
-    // ðŸ†• Extract location ID from location string
-    // "05: Brakken OP" â†’ "05"
-    // "100: Bezoeker" â†’ "100"
-    // "Pinokkio" â†’ "pinokkio" (fallback to full name)
+    // 🆕 Extract location ID from location string
+    // "05: Brakken OP" → "05"
+    // "100: Bezoeker" → "100"
+    // "Pinokkio" → "pinokkio" (fallback to full name)
     function getLocationID(locStr) {
       if(!locStr) return "";
       const match = locStr.match(/^(\d+)/);
@@ -135,7 +140,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
       return normalize(locStr);
     }
     
-    // ðŸ†• Check if employee location matches user location settings
+    // 🆕 Check if employee location matches user location settings
     function matchesUserLocation(employeeLocation, userLocationsList) {
       if(!userLocationsList || userLocationsList.length === 0) return true;
       
@@ -230,7 +235,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
 // === DEEL 2: USER PROFILE RENDERING
 // ============================================================================
     
-    // ðŸ†• Render user profile in header
+    // 🆕 Render user profile in header
     function renderUserProfile(userFeatures) {
       if(!userFeatures) return;
       
@@ -271,16 +276,16 @@ console.log('BASE_PATH detected:', BASE_PATH);
         <div class="user-dropdown" id="user-dropdown">
           <div class="user-dropdown-header">
             <strong>${displayName}</strong>
-            <small>@${username} â€¢ ${role}</small>
+            <small>@${username} • ${role}</small>
           </div>
           <a href="${BASE_PATH}/user/profile.php" class="user-dropdown-item">
-            ðŸ‘¤ Mijn Profiel
+            👤 Mijn Profiel
           </a>
           <a href="${BASE_PATH}/frontpage.php" class="user-dropdown-item">
-            ðŸ  Menu
+            🏠 Menu
           </a>
           <button class="user-dropdown-item logout" id="logout-btn">
-            ðŸšª Uitloggen
+            🚪 Uitloggen
           </button>
         </div>
       `;
@@ -313,7 +318,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
         });
       }
       
-      console.log('âœ… User profile rendered:', displayName);
+      console.log('✅ User profile rendered:', displayName);
     }
 
 // ============================================================================
@@ -382,13 +387,13 @@ console.log('BASE_PATH detected:', BASE_PATH);
       }
     }
 
-    // Setup filters (locatie + afdeling) - MET SORT_ORDER! ðŸ†•
+    // Setup filters (locatie + afdeling) - MET SORT_ORDER! 🆕
     async function setupFilters(){
       const locSel = document.getElementById("filter-locatie");
       const afdSel = document.getElementById("filter-afdeling");
       if(!locSel || !afdSel) return;
       
-      // ðŸ†• BEWAAR huidige selectie voordat we innerHTML resetten
+      // 🆕 BEWAAR huidige selectie voordat we innerHTML resetten
       const currentLocatie = locSel.value;
       const currentAfdeling = afdSel.value;
       
@@ -399,7 +404,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
         
         if (data.success) {
           // Fill location filter with sorted locations
-          locSel.innerHTML = '<option value="">ðŸ“ Locatie (alles)</option>';
+          locSel.innerHTML = '<option value="">📍 Locatie (alles)</option>';
           data.locations.forEach(loc => {
             const opt = document.createElement("option");
             opt.value = loc;
@@ -408,7 +413,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
           });
           
           // Fill afdeling filter with sorted afdelingen
-          afdSel.innerHTML = '<option value="">ðŸ¢ Afdeling (alles)</option>';
+          afdSel.innerHTML = '<option value="">🏢 Afdeling (alles)</option>';
           data.afdelingen.forEach(afd => {
             const opt = document.createElement("option");
             opt.value = afd;
@@ -416,27 +421,27 @@ console.log('BASE_PATH detected:', BASE_PATH);
             afdSel.appendChild(opt);
           });
           
-          // ðŸ†• HERSTEL geselecteerde waarden
+          // 🆕 HERSTEL geselecteerde waarden
           if(currentLocatie) locSel.value = currentLocatie;
           if(currentAfdeling) afdSel.value = currentAfdeling;
           
-          // ðŸ†• ATTACH EVENT LISTENERS (opnieuw omdat innerHTML listeners verwijdert)
+          // 🆕 ATTACH EVENT LISTENERS (opnieuw omdat innerHTML listeners verwijdert)
           locSel.addEventListener('change', debounceFilter);
           afdSel.addEventListener('change', debounceFilter);
           
-          console.log('âœ… Filters loaded with sort_order (selection preserved):', {
+          console.log('✅ Filters loaded with sort_order (selection preserved):', {
             locations: data.locations.length,
             afdelingen: data.afdelingen.length,
             currentLocatie,
             currentAfdeling
           });
         } else {
-          console.error('âŒ Failed to load sorted filters:', data.error);
+          console.error('❌ Failed to load sorted filters:', data.error);
           // Fallback to old method
           setupFiltersOld();
         }
       } catch (error) {
-        console.error('âŒ Error loading sorted filters:', error);
+        console.error('❌ Error loading sorted filters:', error);
         // Fallback to old method
         setupFiltersOld();
       }
@@ -448,20 +453,20 @@ console.log('BASE_PATH detected:', BASE_PATH);
       const afdSel = document.getElementById("filter-afdeling");
       if(!locSel || !afdSel) return;
       
-      // ðŸ†• BEWAAR huidige selectie voordat we innerHTML resetten
+      // 🆕 BEWAAR huidige selectie voordat we innerHTML resetten
       const currentLocatie = locSel.value;
       const currentAfdeling = afdSel.value;
       
       const uniqueLocs = [...new Set(employees.map(e => e.Locatie).filter(Boolean))].sort();
       const uniqueAfds = [...new Set(employees.map(e => e.Afdeling).filter(Boolean))].sort();
-      locSel.innerHTML = '<option value="">ðŸ“ Locatie (alles)</option>';
+      locSel.innerHTML = '<option value="">📍 Locatie (alles)</option>';
       uniqueLocs.forEach(loc => {
         const opt = document.createElement("option");
         opt.value = loc;
         opt.textContent = loc;
         locSel.appendChild(opt);
       });
-      afdSel.innerHTML = '<option value="">ðŸ¢ Afdeling (alles)</option>';
+      afdSel.innerHTML = '<option value="">🏢 Afdeling (alles)</option>';
       uniqueAfds.forEach(afd => {
         const opt = document.createElement("option");
         opt.value = afd;
@@ -469,20 +474,20 @@ console.log('BASE_PATH detected:', BASE_PATH);
         afdSel.appendChild(opt);
       });
       
-      // ðŸ†• HERSTEL geselecteerde waarden
+      // 🆕 HERSTEL geselecteerde waarden
       if(currentLocatie) locSel.value = currentLocatie;
       if(currentAfdeling) afdSel.value = currentAfdeling;
       
-      // ðŸ†• ATTACH EVENT LISTENERS (ook in fallback)
+      // 🆕 ATTACH EVENT LISTENERS (ook in fallback)
       locSel.addEventListener('change', debounceFilter);
       afdSel.addEventListener('change', debounceFilter);
     }
 
-    // ðŸ†• Load button configuration from API
+    // 🆕 Load button configuration from API
     function loadButtonConfig() {
-      const apiUrl = BASE_PATH + '/api/get_button_config_until.php'; // ðŸ†• UPDATED voor until support
+      const apiUrl = BASE_PATH + '/api/get_button_config_until.php'; // 🆕 UPDATED voor until support
       
-      console.log('ðŸ“‹ Loading button configuration...');
+      console.log('📋 Loading button configuration...');
       
       fetch(apiUrl, { cache: 'no-store' })
         .then(r => {
@@ -496,22 +501,22 @@ console.log('BASE_PATH detected:', BASE_PATH);
             buttonConfig = data.buttons;
             buttonConfigLoaded = true;
             
-            console.log('âœ… Button config loaded:', buttonConfig);
+            console.log('✅ Button config loaded:', buttonConfig);
             console.log('   - Button 1:', buttonConfig.button1.name);
             console.log('   - Button 2:', buttonConfig.button2.name);
             console.log('   - Button 3:', buttonConfig.button3.name);
             
             // Re-render als employees al geladen zijn
             if (employees.length > 0) {
-              console.log('ðŸ”„ Re-rendering with new button names...');
+              console.log('🔄 Re-rendering with new button names...');
               renderEmployees();
             }
           } else {
-            console.warn('âš ï¸ Button config load failed, using defaults');
+            console.warn('⚠️ Button config load failed, using defaults');
           }
         })
         .catch(err => {
-          console.warn('âš ï¸ Button config load error:', err.message, '- using defaults');
+          console.warn('⚠️ Button config load error:', err.message, '- using defaults');
         });
     }
 
@@ -532,7 +537,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
         }
         const data = await r.json();
         
-        // âœ… FIXED: Support both old format (array) and new format (object with employees key)
+        // ✅ FIXED: Support both old format (array) and new format (object with employees key)
         const rawEmployees = data.employees || (Array.isArray(data) ? data : []);
         
         employees = rawEmployees.map(e => {
@@ -542,20 +547,20 @@ console.log('BASE_PATH detected:', BASE_PATH);
             Voornaam: (e.Voornaam ?? e.voornaam ?? "").toString().trim(),
             Achternaam: (e.Achternaam ?? e.achternaam ?? "").toString().trim(),
             Status: (e.Status ?? e.status ?? "").toString().trim().toUpperCase(),
-            SubStatus: (e.SubStatus ?? e.sub_status ?? e.substatus ?? "").toString().trim().toUpperCase(), // ðŸ†• SUB-STATUS
-            sub_status_until: e.sub_status_until ?? e.SubStatusUntil ?? null, // ðŸ†• SUB-STATUS TIME
+            SubStatus: (e.SubStatus ?? e.sub_status ?? e.substatus ?? "").toString().trim().toUpperCase(), // 🆕 SUB-STATUS
+            sub_status_until: e.sub_status_until ?? e.SubStatusUntil ?? null, // 🆕 SUB-STATUS TIME
             Locatie: (e.Locatie ?? e.Gebouw ?? e.locatie ?? "").toString().trim(),
             FotoURL: e.FotoURL ?? e.Foto ?? e.foto ?? "",
             Functie: (e.Functie ?? e.functie ?? "").toString().trim(),
             Afdeling: (e.Afdeling ?? e.afdeling ?? "").toString().trim(),
             BHV: (e.BHV ?? e.Bhv ?? e.bhv ?? "").toString().trim(),
             Tijdstip: e.Tijdstip ?? e.tijdstip ?? "",
-            // ðŸ†• MANUAL LOCATION FIELDS
+            // 🆕 MANUAL LOCATION FIELDS
             allow_manual_location_change: e.allow_manual_location_change ?? 0,
             visible_locations: e.visible_locations ?? null
           };
           
-          // ðŸ”§ KRITIEK: Check of er een optimistische update is voor deze medewerker
+          // 🔧 KRITIEK: Check of er een optimistische update is voor deze medewerker
           const optimisticUpdate = optimisticUpdates.get(String(emp.ID));
           if(optimisticUpdate) {
             const age = Date.now() - optimisticUpdate.timestamp;
@@ -567,18 +572,18 @@ console.log('BASE_PATH detected:', BASE_PATH);
             const optimisticSubStatus = (optimisticUpdate.SubStatus || "").toUpperCase();
             
             if(serverStatus === optimisticStatus && serverSubStatus === optimisticSubStatus) {
-              // âœ… Server heeft de nieuwe status + substatus!
-              console.log("âœ… Server confirmed status for:", emp.Naam, "â†’", optimisticStatus, optimisticSubStatus || "");
+              // ✅ Server heeft de nieuwe status + substatus!
+              console.log("✅ Server confirmed status for:", emp.Naam, "→", optimisticStatus, optimisticSubStatus || "");
               optimisticUpdates.delete(String(emp.ID));
             } else if(age < 30000) {
               // Server heeft het nog niet, maar update is nog geldig
-              console.log("ðŸ”„ Applying optimistic update for:", emp.Naam, "â†’", optimisticStatus, optimisticSubStatus || "", "(age:", Math.round(age/1000), "s)");
+              console.log("🔄 Applying optimistic update for:", emp.Naam, "→", optimisticStatus, optimisticSubStatus || "", "(age:", Math.round(age/1000), "s)");
               emp.Status = optimisticUpdate.Status;
               emp.SubStatus = optimisticUpdate.SubStatus;
               emp.Tijdstip = optimisticUpdate.Tijdstip;
             } else {
               // Te oud (>30s) en server heeft het nog steeds niet
-              console.log("â° Optimistic update expired for:", emp.Naam);
+              console.log("⏰ Optimistic update expired for:", emp.Naam);
               optimisticUpdates.delete(String(emp.ID));
             }
           }
@@ -586,7 +591,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
           return emp;
         });
         
-        // ðŸ†• Store for debugging
+        // 🆕 Store for debugging
         window.__allEmployees = employees;
         
         await renderBuildings();
@@ -602,51 +607,55 @@ console.log('BASE_PATH detected:', BASE_PATH);
 
     // Buildings menu render / helpers
     async function renderBuildings(){
-      console.log("ðŸ¢ renderBuildings() called - selectedLocations:", selectedLocations);
+      console.log("🏢 renderBuildings() called - selectedLocations:", selectedLocations);
       const menu = document.getElementById("building-menu");
       if(!menu) return;
       
-      // ðŸ†• Haal ALLE locaties uit database (niet alleen uit employee data!)
+      // 🆕 Haal ALLE locaties uit database (niet alleen uit employee data!)
       let orderedLocs = [];
       try {
         const response = await fetch(BASE_PATH + '/admin/api/get_locations_ordered.php');
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.locations && data.locations.length > 0) {
-            console.log("âœ… Loaded ALL locations from database:", data.locations);
+            console.log("✅ Loaded ALL locations from database:", data.locations);
             orderedLocs = data.locations; // Gebruik database als bron!
           } else {
-            console.warn("âš ï¸ No locations in database, falling back to employee data");
+            console.warn("⚠️ No locations in database, falling back to employee data");
             // Fallback: haal uit employee data
             orderedLocs = [...new Set(
               employees.map(e => (e.Locatie || e.Gebouw || "").trim()).filter(Boolean)
             )].sort();
           }
         } else {
-          console.warn("âš ï¸ Could not fetch locations, using employee data");
+          console.warn("⚠️ Could not fetch locations, using employee data");
           // Fallback: haal uit employee data
           orderedLocs = [...new Set(
             employees.map(e => (e.Locatie || e.Gebouw || "").trim()).filter(Boolean)
           )].sort();
         }
       } catch (error) {
-        console.warn("âš ï¸ Error fetching locations:", error, "- using employee data");
+        console.warn("⚠️ Error fetching locations:", error, "- using employee data");
         // Fallback: haal uit employee data
         orderedLocs = [...new Set(
           employees.map(e => (e.Locatie || e.Gebouw || "").trim()).filter(Boolean)
         )].sort();
       }
       
-      console.log("ðŸ¢ Final locations to render:", orderedLocs);
+      console.log("🏢 Final locations to render:", orderedLocs);
+      
+      // 🆕 Sla alle locaties op voor gebruik door getAllLocations() (locatie pion modal)
+      window.__allLocations = [...orderedLocs];
+      
       menu.innerHTML = "";
       
       const allBtn = document.createElement("button");
       
-      // ðŸ†• ALL knop status: groen als showAllLocations actief is
-      allBtn.textContent = showAllLocations ? "ALL âœ“" : "ALL";
+      // 🆕 ALL knop status: groen als showAllLocations actief is
+      allBtn.textContent = showAllLocations ? "ALL ✓" : "ALL";
       allBtn.classList.add("all-clear");
       
-      // ðŸ†• Groene kleur als show all mode actief is
+      // 🆕 Groene kleur als show all mode actief is
       if(showAllLocations) {
         allBtn.style.backgroundColor = "#28a745";
         allBtn.style.color = "white";
@@ -654,20 +663,20 @@ console.log('BASE_PATH detected:', BASE_PATH);
       
       allBtn.addEventListener("click", () => {
         if(showAllLocations) {
-          // State 2 â†’ State 1: Terug naar user locations
+          // State 2 → State 1: Terug naar user locations
           showAllLocations = false;
           if(userLocations && Array.isArray(userLocations) && userLocations.length > 0) {
             selectedLocations = userLocations.slice();
-            console.log('ðŸ”„ ALL clicked - back to user locations:', selectedLocations);
+            console.log('🔄 ALL clicked - back to user locations:', selectedLocations);
           } else {
             selectedLocations = [];
-            console.log('ðŸ”„ ALL clicked - no user locations, showing none');
+            console.log('🔄 ALL clicked - no user locations, showing none');
           }
         } else {
-          // State 1 â†’ State 2: Toon en selecteer ALLE locaties
+          // State 1 → State 2: Toon en selecteer ALLE locaties
           showAllLocations = true;
           selectedLocations = [...orderedLocs];
-          console.log('ðŸ”„ ALL clicked - showing and selecting all locations:', selectedLocations);
+          console.log('🔄 ALL clicked - showing and selecting all locations:', selectedLocations);
         }
         
         // Re-render menu en update filters
@@ -682,13 +691,13 @@ console.log('BASE_PATH detected:', BASE_PATH);
       clearBtn.textContent = "CLEAR";
       clearBtn.classList.add("all-clear");
       clearBtn.addEventListener("click", () => {
-        // ðŸ†• Reset naar user settings (default bij inloggen)
+        // 🆕 Reset naar user settings (default bij inloggen)
         if(userLocations && Array.isArray(userLocations) && userLocations.length > 0) {
           selectedLocations = userLocations.slice();
-          console.log('ðŸ”„ Clear clicked - reset to user locations:', selectedLocations);
+          console.log('🔄 Clear clicked - reset to user locations:', selectedLocations);
         } else {
           selectedLocations = [];
-          console.log('ðŸ”„ Clear clicked - no user locations, showing all');
+          console.log('🔄 Clear clicked - no user locations, showing all');
         }
         
         // Re-render menu en update filters
@@ -703,11 +712,11 @@ console.log('BASE_PATH detected:', BASE_PATH);
         const b = document.createElement("button");
         b.textContent = loc;
         
-        // ðŸ†• Check of deze locatie in user settings staat (ID-based matching)
+        // 🆕 Check of deze locatie in user settings staat (ID-based matching)
         const isUserLocation = userLocations && userLocations.length > 0 && 
           userLocations.some(userLoc => getLocationID(userLoc) === getLocationID(loc));
         
-        // ðŸ†• VISIBILITY: Verberg niet-user locaties tenzij showAllLocations actief is
+        // 🆕 VISIBILITY: Verberg niet-user locaties tenzij showAllLocations actief is
         if(!showAllLocations && userLocations && userLocations.length > 0 && !isUserLocation) {
           b.style.display = 'none'; // Verberg deze button
           b.classList.add('hidden-location'); // Class voor tracking
@@ -719,7 +728,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
         if(isUserLocation) {
           b.classList.add("user-location"); // Voor styling
           b.style.border = "3px solid #28b463"; // Groene rand
-          console.log("   âœ… User location matched:", loc, "â†”", userLocations.find(ul => getLocationID(ul) === getLocationID(loc)));
+          console.log("   ✅ User location matched:", loc, "↔", userLocations.find(ul => getLocationID(ul) === getLocationID(loc)));
         }
         
         // Check of deze locatie geselecteerd is
@@ -770,22 +779,22 @@ console.log('BASE_PATH detected:', BASE_PATH);
 
     // Update status
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════
 // EINDE DEEL 1 - GA VERDER MET DEEL 2!
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════
 /**
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════════
  * APP.JS - DEEL 2 VAN 3
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════════
  */
 
-    // ðŸ†• Track pending updates to prevent double-clicking issues
+    // 🆕 Track pending updates to prevent double-clicking issues
     const pendingUpdates = new Set();
     
     function updateStatus(id, status, subStatus = null, tempLocation = null){
       // Voorkom dubbele updates voor hetzelfde ID
       if(pendingUpdates.has(id)) {
-        console.log("â³ Update already pending for ID:", id);
+        console.log("⏳ Update already pending for ID:", id);
         return;
       }
       
@@ -793,45 +802,46 @@ console.log('BASE_PATH detected:', BASE_PATH);
       
       const now = new Date().toISOString();
       
-      // ðŸ†• Check for temp location in memory if not explicitly provided
+      // 🆕 Check for temp location in memory if not explicitly provided
       if (!tempLocation && typeof getTempLocation === 'function') {
         tempLocation = getTempLocation(id);
       }
       
-      // ðŸ”§ KRITIEK: Sla optimistische update op in Map (VOOR lokale update)
+      // 🔧 KRITIEK: Sla optimistische update op in Map (VOOR lokale update)
       optimisticUpdates.set(String(id), {
         Status: (status||"").toString().trim().toUpperCase(),
-        SubStatus: subStatus ? subStatus.toString().trim().toUpperCase() : null, // ðŸ†• SUB-STATUS
+        SubStatus: subStatus ? subStatus.toString().trim().toUpperCase() : null, // 🆕 SUB-STATUS
         Tijdstip: now,
         timestamp: Date.now()
       });
-      console.log("ðŸ’¾ Stored optimistic update for ID:", id, "â†’", status, subStatus ? `+ ${subStatus}` : "", tempLocation ? `@ ${tempLocation}` : "");
+      console.log("💾 Stored optimistic update for ID:", id, "→", status, subStatus ? `+ ${subStatus}` : "", tempLocation ? `@ ${tempLocation}` : "");
       
-      // ðŸ”§ Optimistic update: Update lokaal DIRECT
+      // 🔧 Optimistic update: Update lokaal DIRECT
       const idx = employees.findIndex(e => String(e.ID) === String(id));
+      const prevStatus = idx !== -1 ? employees[idx].Status : null; // save for rollback
       if(idx !== -1){
         employees[idx].Status = (status||"").toString().trim().toUpperCase();
-        employees[idx].SubStatus = subStatus ? subStatus.toString().trim().toUpperCase() : null; // ðŸ†•
+        employees[idx].SubStatus = subStatus ? subStatus.toString().trim().toUpperCase() : null; // 🆕
         employees[idx].Tijdstip = now;
-        console.log("âœ… Optimistic update:", employees[idx].Naam, "â†’", status, subStatus ? `+ ${subStatus}` : "", tempLocation ? `@ ${tempLocation}` : "");
+        console.log("✅ Optimistic update:", employees[idx].Naam, "→", status, subStatus ? `+ ${subStatus}` : "", tempLocation ? `@ ${tempLocation}` : "");
       }
       
-      // ðŸ†• Bij checkout: reset naar originele locatie
+      // 🆕 Bij checkout: reset naar originele locatie
       let checkoutResetLocation = null;
       if (status.toUpperCase() === 'OUT') {
-        console.log(`ðŸ“ Checkout detected for ${id}`);
+        console.log(`📍 Checkout detected for ${id}`);
         
         if (typeof getOriginalLocation === 'function') {
           checkoutResetLocation = getOriginalLocation(id);
-          console.log(`ðŸ“ Original location retrieved: ${checkoutResetLocation || 'NULL'}`);
+          console.log(`📍 Original location retrieved: ${checkoutResetLocation || 'NULL'}`);
           
           if (checkoutResetLocation) {
-            console.log(`ðŸ“ Checkout: resetting ${id} to original location: ${checkoutResetLocation}`);
+            console.log(`📍 Checkout: resetting ${id} to original location: ${checkoutResetLocation}`);
           } else {
-            console.log(`âš ï¸ No original location found for ${id} - will not reset`);
+            console.log(`⚠️ No original location found for ${id} - will not reset`);
           }
         } else {
-          console.log(`âŒ getOriginalLocation function not available`);
+          console.log(`❌ getOriginalLocation function not available`);
         }
         
         if (typeof clearTempLocation === 'function') {
@@ -839,10 +849,10 @@ console.log('BASE_PATH detected:', BASE_PATH);
         }
       }
       
-      // ðŸ”§ Update UI direct zonder te wachten op server
+      // 🔧 Update UI direct zonder te wachten op server
       applyCurrentFilters();
       
-      // ðŸ”§ Disable buttons tijdens update
+      // 🔧 Disable buttons tijdens update
       const card = document.querySelector(`[data-id="${id}"]`);
       if(card) {
         const buttons = card.querySelectorAll('button');
@@ -867,16 +877,27 @@ console.log('BASE_PATH detected:', BASE_PATH);
       
       fetch(url, { cache: "no-store" })
         .then(r => r.json().catch(()=>null))
-        .then(() => {
-          console.log("âœ… Server confirmed update for ID:", id);
+        .then(data => {
+          if (data === null) {
+            // JSON parse failed — keep optimistic update (status stays as shown)
+            console.warn("⚠️ Could not parse server response for ID:", id, "- keeping optimistic update");
+          } else if (data && data.success) {
+            console.log("✅ Server confirmed update for ID:", id);
+          } else {
+            // Explicit server rejection: {success: false} — revert status
+            console.warn("⚠️ Server rejected update for ID:", id, data?.error || '');
+            optimisticUpdates.delete(String(id));
+            if (idx !== -1 && prevStatus !== null) {
+              employees[idx].Status = prevStatus;
+              // Update card CSS directly — no full re-render (keeps card reference valid)
+              if (card) {
+                card.className = 'employee-card ' + (prevStatus.toUpperCase() === 'IN' ? 'in' : 'out');
+              }
+            }
+          }
           pendingUpdates.delete(id);
-          
-          // ðŸ”§ FIX: Houd optimistic update langer (wordt pas verwijderd na fetch die nieuwe status heeft)
-          // De 30-seconden timeout in fetchEmployees zorgt ervoor dat het uiteindelijk wordt opgeschoond
-          console.log("ðŸ’¾ Keeping optimistic update until server refresh confirms new status");
-          
-          // ðŸ”§ Re-enable buttons
-          if(card) {
+          // Re-enable buttons (card stays valid: no applyCurrentFilters inside callbacks)
+          if (card) {
             const buttons = card.querySelectorAll('button');
             buttons.forEach(btn => {
               btn.disabled = false;
@@ -884,19 +905,21 @@ console.log('BASE_PATH detected:', BASE_PATH);
               btn.style.cursor = 'pointer';
             });
           }
-          
-          // ðŸ”§ GEEN fetchEmployees() meer - kaart is al ge-update!
-          // Optimistic update blijft actief, fetchEmployees() wordt automatisch
-          // aangeroepen door de bestaande auto-refresh (elke 30 sec)
-          console.log("âœ… Status update complete - no full refresh needed");
+          console.log("✅ Status update complete");
         })
         .catch(err => {
-          console.error("âŒ updateStatus error:", err);
+          console.error("❌ updateStatus error:", err);
           pendingUpdates.delete(id);
-          optimisticUpdates.delete(String(id)); // Verwijder ook bij error
-          
-          // Re-enable buttons on error
-          if(card) {
+          optimisticUpdates.delete(String(id));
+          // Revert optimistic update on network/parse error
+          if (idx !== -1 && prevStatus !== null) {
+            employees[idx].Status = prevStatus;
+            if (card) {
+              card.className = 'employee-card ' + (prevStatus.toUpperCase() === 'IN' ? 'in' : 'out');
+            }
+          }
+          // Re-enable buttons
+          if (card) {
             const buttons = card.querySelectorAll('button');
             buttons.forEach(btn => {
               btn.disabled = false;
@@ -907,9 +930,9 @@ console.log('BASE_PATH detected:', BASE_PATH);
         });
     }
     
-    // ðŸ†• Export updateStatus to global scope for manual location selector
+    // 🆕 Export updateStatus to global scope for manual location selector
     window.updateStatus = updateStatus;
-    console.log('âœ… updateStatus exported to window');
+    console.log('✅ updateStatus exported to window');
 
     // Dashboard counters
     function updateDashboard(){
@@ -946,13 +969,13 @@ console.log('BASE_PATH detected:', BASE_PATH);
         if(!inScope) return;
         
         const s = (emp.Status||"").toString().trim().toUpperCase();
-        const sub = (emp.SubStatus||"").toString().trim().toUpperCase(); // ðŸ†• SUB-STATUS
+        const sub = (emp.SubStatus||"").toString().trim().toUpperCase(); // 🆕 SUB-STATUS
         
-        // ðŸ”§ FIX: Tel hoofdstatus (IN/OUT)
+        // 🔧 FIX: Tel hoofdstatus (IN/OUT)
         if(s === "IN") cntIn++;
         else if(s === "OUT") cntOut++;
         
-        // ðŸ”§ Bepaal de WERKELIJKE button namen (inclusief custom namen!)
+        // 🔧 Bepaal de WERKELIJKE button namen (inclusief custom namen!)
         let btn1Name = buttonConfig.button1.name;
         let btn2Name = buttonConfig.button2.name;
         let btn3Name = buttonConfig.button3.name;
@@ -964,19 +987,19 @@ console.log('BASE_PATH detected:', BASE_PATH);
         }
         
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// ðŸ†• DATETIME PICKER MODAL - INJECTION
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════
+// 🆕 DATETIME PICKER MODAL - INJECTION
+// ═══════════════════════════════════════════════════════════════════
 (function injectDatetimeModal() {
   if (document.getElementById('until-modal')) return;
   
-  const modalHTML = `<div id="until-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:99999;justify-content:center;align-items:center"><div style="background:white;border-radius:16px;padding:32px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><h2 style="margin:0 0 8px 0;font-size:24px;color:#2d3748"><span id="until-modal-icon">ðŸŒ´</span> <span id="until-modal-title">Tot wanneer?</span></h2><p style="color:#718096;margin:0 0 24px 0;font-size:14px">Kies tot wanneer deze status geldig is</p><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px"><button onclick="window.selectQuickDate('today_17')" class="quick-btn" style="padding:12px;background:#f7fafc;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">ðŸ•” Vandaag 17:00</button><button onclick="window.selectQuickDate('tomorrow_23')" class="quick-btn" style="padding:12px;background:#f7fafc;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">ðŸŒ™ Morgen 23:59</button><button onclick="window.selectQuickDate('next_week')" class="quick-btn" style="padding:12px;background:#f7fafc;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">ðŸ“… Over 1 week</button><button onclick="window.selectQuickDate('custom')" class="quick-btn" style="padding:12px;background:#f7fafc;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">ðŸ• Aangepast...</button></div><div id="custom-datetime" style="display:none;margin-bottom:24px"><label style="display:block;font-size:14px;font-weight:600;color:#4a5568;margin-bottom:8px">Datum & Tijd:</label><input type="datetime-local" id="until-datetime" style="width:100%;padding:12px;border:2px solid #e2e8f0;border-radius:8px;font-size:16px"></div><div id="until-preview" style="background:#edf2f7;padding:16px;border-radius:8px;margin-bottom:24px;display:none"><div style="font-size:13px;color:#718096;margin-bottom:4px">Preview:</div><div style="font-size:18px;font-weight:700;color:#2d3748" id="until-preview-text"></div></div><div style="display:flex;gap:12px"><button onclick="window.confirmUntilDate()" style="flex:1;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer">âœ… Bevestigen</button><button onclick="window.closeUntilModal()" style="flex:1;padding:14px;background:#e2e8f0;color:#4a5568;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer">âŒ Annuleren</button></div></div></div><style>.quick-btn:hover{background:#e2e8f0!important;border-color:#667eea!important;transform:translateY(-2px)}.quick-btn:active{transform:translateY(0)}</style>`;
+  const modalHTML = `<div id="until-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:99999;justify-content:center;align-items:center"><div style="background:white;border-radius:16px;padding:32px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><h2 style="margin:0 0 8px 0;font-size:24px;color:#2d3748"><span id="until-modal-icon">🌴</span> <span id="until-modal-title">Tot wanneer?</span></h2><p style="color:#718096;margin:0 0 24px 0;font-size:14px">Kies tot wanneer deze status geldig is</p><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px"><button onclick="window.selectQuickDate('today_17')" class="quick-btn" style="padding:12px;background:#f7fafc;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🕔 Vandaag 17:00</button><button onclick="window.selectQuickDate('tomorrow_23')" class="quick-btn" style="padding:12px;background:#f7fafc;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🌙 Morgen 23:59</button><button onclick="window.selectQuickDate('next_week')" class="quick-btn" style="padding:12px;background:#f7fafc;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">📅 Over 1 week</button><button onclick="window.selectQuickDate('custom')" class="quick-btn" style="padding:12px;background:#f7fafc;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🕐 Aangepast...</button></div><div id="custom-datetime" style="display:none;margin-bottom:24px"><label style="display:block;font-size:14px;font-weight:600;color:#4a5568;margin-bottom:8px">Datum & Tijd:</label><input type="datetime-local" id="until-datetime" style="width:100%;padding:12px;border:2px solid #e2e8f0;border-radius:8px;font-size:16px"></div><div id="until-preview" style="background:#edf2f7;padding:16px;border-radius:8px;margin-bottom:24px;display:none"><div style="font-size:13px;color:#718096;margin-bottom:4px">Preview:</div><div style="font-size:18px;font-weight:700;color:#2d3748" id="until-preview-text"></div></div><div style="display:flex;gap:12px"><button onclick="window.confirmUntilDate()" style="flex:1;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer">✅ Bevestigen</button><button onclick="window.closeUntilModal()" style="flex:1;padding:14px;background:#e2e8f0;color:#4a5568;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer">❌ Annuleren</button></div></div></div><style>.quick-btn:hover{background:#e2e8f0!important;border-color:#667eea!important;transform:translateY(-2px)}.quick-btn:active{transform:translateY(0)}</style>`;
   
   document.body.insertAdjacentHTML('beforeend', modalHTML);
-  console.log('âœ… Until modal injected');
+  console.log('✅ Until modal injected');
 })();
 
-// ðŸ†• MODAL FUNCTIONS
+// 🆕 MODAL FUNCTIONS
 window.showUntilModal = function(employeeId, subStatus, buttonName, buttonNumber) {
   currentEmployeeId = employeeId;
   currentSubStatus = subStatus;
@@ -985,11 +1008,11 @@ window.showUntilModal = function(employeeId, subStatus, buttonName, buttonNumber
   
   // Icon mapping - gebruik BUTTON NUMBER ipv naam voor reliability
   const buttonIcons = { 
-    1: 'â˜•',  // Button 1 (PAUZE)
-    2: 'ðŸ ',  // Button 2 (THUISWERKEN)
-    3: 'ðŸŒ¿'   // Button 3 (VAKANTIE)
+    1: '☕',  // Button 1 (PAUZE)
+    2: '🏠',  // Button 2 (THUISWERKEN)
+    3: '🌿'   // Button 3 (VAKANTIE)
   };
-  document.getElementById('until-modal-icon').textContent = buttonIcons[buttonNumber] || 'ðŸŽ¯';
+  document.getElementById('until-modal-icon').textContent = buttonIcons[buttonNumber] || '🎯';
   
   // Title: gebruik custom naam als die er is, anders gewoon "Tot wanneer?"
   const title = buttonName ? `${buttonName} tot wanneer?` : 'Tot wanneer?';
@@ -1056,9 +1079,9 @@ window.confirmUntilDate = async function() {
   const min = String(selectedUntil.getMinutes()).padStart(2,'0');
   const mysqlFormat = `${y}-${m}-${d} ${h}:${min}:00`;
   
-  // ðŸ”§ FIX v2: Send button NUMBER instead of name
+  // 🔧 FIX v2: Send button NUMBER instead of name
   // This is more reliable and works regardless of custom or original names
-  console.log('ðŸ• Temporal status:', {
+  console.log('🕐 Temporal status:', {
     employeeId: currentEmployeeId,
     buttonNumber: currentButtonNumber,
     until: mysqlFormat,
@@ -1082,13 +1105,13 @@ window.confirmUntilDate = async function() {
     alert('Fout: ' + error.message);
   }
 };
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════
 
         const btn1Upper = btn1Name.toUpperCase();
         const btn2Upper = btn2Name.toUpperCase();
         const btn3Upper = btn3Name.toUpperCase();
         
-        // ðŸ”§ FIX: Tel BUTTON1/2/3 (database waarde) ipv button namen
+        // 🔧 FIX: Tel BUTTON1/2/3 (database waarde) ipv button namen
         if(sub === 'BUTTON1') cntPauze++;
         if(sub === 'BUTTON2') cntThuiswerken++;
         if(sub === 'BUTTON3') cntVakantie++;
@@ -1097,9 +1120,9 @@ window.confirmUntilDate = async function() {
         if(s === "IN" && normalize(emp.BHV) === "ja") cntBhv++;
       });
       
-      if(inTop) inTop.innerHTML = '<span class="badge-icon">âœ“</span>' + cntIn;
-      if(outTop) outTop.innerHTML = '<span class="badge-icon">âœ—</span>' + cntOut;
-      if(bhvTop) bhvTop.innerHTML = '<span class="badge-icon">ðŸš¨</span>' + cntBhv;
+      if(inTop) inTop.innerHTML = '<span class="badge-icon">✓</span>' + cntIn;
+      if(outTop) outTop.innerHTML = '<span class="badge-icon">✗</span>' + cntOut;
+      if(bhvTop) bhvTop.innerHTML = '<span class="badge-icon">🚨</span>' + cntBhv;
       
       updateExtraBadges(cntPauze, cntVakantie, cntThuiswerken);
     }
@@ -1150,7 +1173,7 @@ window.confirmUntilDate = async function() {
       }
       
       // Update badge text met iconen (kort!)
-      // Iconen: â˜• Pauze, ðŸ–ï¸ Vakantie, ðŸ  Thuiswerken
+      // Iconen: ☕ Pauze, 🏖️ Vakantie, 🏠 Thuiswerken
       if (pauzeBadge) {
         const icon = getButtonIcon(btn1Name);
         pauzeBadge.innerHTML = `<span class="badge-icon">${icon}</span>${pauze}`;
@@ -1173,29 +1196,29 @@ window.confirmUntilDate = async function() {
       const name = buttonName.toUpperCase();
       
       // Pauze varianten
-      if (name.includes('PAUZE') || name.includes('KOFFIE') || name.includes('PAUS')) return 'â˜•';
-      if (name.includes('CURSUS') || name.includes('TRAINING')) return 'ðŸ“š';
-      if (name.includes('LUNCH') || name.includes('ETEN')) return 'ðŸ½ï¸';
+      if (name.includes('PAUZE') || name.includes('KOFFIE') || name.includes('PAUS')) return '☕';
+      if (name.includes('CURSUS') || name.includes('TRAINING')) return '📚';
+      if (name.includes('LUNCH') || name.includes('ETEN')) return '🍽️';
       
       // Vakantie varianten
-      if (name.includes('VAKANTIE') || name.includes('VRIJ')) return 'ðŸ–ï¸';
-      if (name.includes('VERLOF')) return 'ðŸ—“ï¸';
-      if (name.includes('ZIEK')) return 'ðŸ¤’';
+      if (name.includes('VAKANTIE') || name.includes('VRIJ')) return '🏖️';
+      if (name.includes('VERLOF')) return '🗓️';
+      if (name.includes('ZIEK')) return '🤒';
       
       // Thuiswerken varianten
-      if (name.includes('THUIS') || name.includes('HOME')) return 'ðŸ ';
-      if (name.includes('REMOTE')) return 'ðŸ’»';
-      if (name.includes('EXTERN')) return 'ðŸŒ';
+      if (name.includes('THUIS') || name.includes('HOME')) return '🏠';
+      if (name.includes('REMOTE')) return '💻';
+      if (name.includes('EXTERN')) return '🌐';
       
       // Default iconen
-      return 'ðŸ“'; // Fallback
+      return '📍'; // Fallback
     }
 
 // ============================================================================
-// === DEEL 6: FILTERS & EMPLOYEE RENDERING (ðŸ”¥ 8-CHAR BUTTONS!)
+// === DEEL 6: FILTERS & EMPLOYEE RENDERING (🔥 8-CHAR BUTTONS!)
 // ============================================================================
 
-    // ðŸ†• FILTER DEBOUNCING voor betere performance
+    // 🆕 FILTER DEBOUNCING voor betere performance
     let filterTimeout = null;
     function debounceFilter() {
       clearTimeout(filterTimeout);
@@ -1204,7 +1227,7 @@ window.confirmUntilDate = async function() {
       }, 300); // 300ms vertraging
     }
 /**
- * ðŸ†• Check of employee zichtbaar moet zijn op huidige locatie
+ * 🆕 Check of employee zichtbaar moet zijn op huidige locatie
  * Gebruikt visible_locations veld uit database
  */
 function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
@@ -1290,23 +1313,23 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
     const matchL = !locatie || normalize(emp.Locatie || emp.Gebouw) === normalize(locatie);
     const matchA = !afdeling || normalize(emp.Afdeling) === normalize(afdeling);
     
-    // ðŸ†• Location filtering: dropdown override user settings
-    // Als dropdown gebruikt wordt â†’ skip user settings (toon alles)
-    // Als dropdown leeg â†’ gebruik user settings
+    // 🆕 Location filtering: dropdown override user settings
+    // Als dropdown gebruikt wordt → skip user settings (toon alles)
+    // Als dropdown leeg → gebruik user settings
     const matchSel = locatie ? true : (
       selectedLocations.length === 0 || 
       selectedLocations.some(selLoc => getLocationID(selLoc) === getLocationID(emp.Locatie || emp.Gebouw))
     );
     
-    // ðŸ†• Afdeling filtering: dropdown override user settings
-    // Als dropdown gebruikt wordt â†’ skip user settings (toon alles)
-    // Als dropdown leeg â†’ gebruik user settings
+    // 🆕 Afdeling filtering: dropdown override user settings
+    // Als dropdown gebruikt wordt → skip user settings (toon alles)
+    // Als dropdown leeg → gebruik user settings
     const matchAfdSel = afdeling ? true : (
       selectedAfdelingen.length === 0 || 
       selectedAfdelingen.some(selAfd => normalize(selAfd) === normalize(emp.Afdeling))
     );
     
-    // ðŸ†• Multi-location visibility check
+    // 🆕 Multi-location visibility check
     const matchVisible = !locatie || shouldShowEmployeeOnLocation(emp, locatie);
     
     return matchQ && matchS && matchB && matchL && matchA && matchSel && matchAfdSel && matchVisible;
@@ -1314,23 +1337,22 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
 
       renderEmployees(filtered);
       updateDashboard();
-      renderVisitors(); // âœ… Update visitors when location filter changes
-      renderVisitorsInside(); // âœ… Update visitors inside when location filter changes
+      renderVisitors(); // ✅ Update visitors when location filter changes
+      renderVisitorsInside(); // ✅ Update visitors inside when location filter changes
     }
 
-    // ðŸ†• Field options setup - NU MET USER FEATURES SUPPORT
+    // 🆕 Field options setup - NU MET USER FEATURES SUPPORT
     function setupFieldOptions(){
       const checks = document.querySelectorAll("#field-options input[type=checkbox]");
       
       // Als user features beschikbaar zijn, gebruik die
       if(userVisibleFields && userVisibleFields.length > 0) {
         visibleFields = userVisibleFields.slice();
-        console.log("âœ… User visible fields loaded:", visibleFields);
+        console.log("✅ User visible fields loaded:", visibleFields);
         
         // Update checkboxes to match user settings
         checks.forEach(cb => {
           const fieldName = cb.value;
-          // Map FotoURL -> Foto voor compatibility
           const mappedName = fieldName === "FotoURL" ? "Foto" : fieldName;
           cb.checked = visibleFields.includes(mappedName) || visibleFields.includes(fieldName);
         });
@@ -1352,14 +1374,14 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
 
     // Render employees
     function renderEmployees(listOverride){
-      console.log("ðŸ‘¥ renderEmployees() called");
+      console.log("👥 renderEmployees() called");
       console.log("   - selectedLocations:", selectedLocations);
       console.log("   - employees count:", employees.length);
       const list = document.getElementById("employee-list");
       if(!list) return;
       list.innerHTML = "";
       
-      // ðŸ”§ Als listOverride is gegeven, gebruik die (komt van applyCurrentFilters)
+      // 🔧 Als listOverride is gegeven, gebruik die (komt van applyCurrentFilters)
       // Anders filter op locaties
       let filtered;
       if(listOverride) {
@@ -1381,79 +1403,83 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
         console.log("   - after location filter:", filtered.length);
       }
 
-      // ðŸ”„ SORT: Apply current sort mode (voornaam or achternaam)
+      // 🔄 SORT: Apply current sort mode (voornaam or achternaam)
+      // Helper function to extract name based on sort mode
+      const extractName = (employee, mode) => {
+        if (mode === 'voornaam') {
+          // Extract Voornaam
+          if (employee.Voornaam) {
+            return employee.Voornaam;
+          } else {
+            const fullName = employee.Naam || '';
+            if (fullName.includes(',')) {
+              return fullName.split(',')[1]?.trim() || fullName;
+            } else {
+              return fullName.split(' ')[0] || fullName;
+            }
+          }
+        } else {
+          // Extract Achternaam
+          if (employee.Achternaam) {
+            return employee.Achternaam;
+          } else {
+            const fullName = employee.Naam || '';
+            if (fullName.includes(',')) {
+              return fullName.split(',')[0]?.trim() || fullName;
+            } else {
+              const parts = fullName.split(' ');
+              return parts[parts.length - 1] || fullName;
+            }
+          }
+        }
+      };
+      
       if (window.SortToggle && typeof window.SortToggle.getCurrentMode === 'function') {
         const sortMode = window.SortToggle.getCurrentMode();
-        console.log(`ðŸ”„ Sorting employees by: ${sortMode}`);
+        console.log(`🔄 Sorting employees by: ${sortMode}`);
         console.log(`   Filtered count before sort: ${filtered.length}`);
         console.log(`   First employee before sort: ${filtered[0]?.Naam}`);
         
         if (sortMode === 'voornaam') {
+          // Remember this for status sorting
+          if (window.SortToggle.setPreviousNameSort) {
+            window.SortToggle.setPreviousNameSort('voornaam');
+          }
+          
           // Sort by first name (Voornaam with capital V!)
           filtered.sort((a, b) => {
-            let nameA, nameB;
+            const nameA = extractName(a, 'voornaam');
+            const nameB = extractName(b, 'voornaam');
+            return nameA.toLowerCase().localeCompare(nameB.toLowerCase());
+          });
+        } else if (sortMode === 'status') {
+          // Sort by Status - IN first, then by previous name sort within groups
+          const previousMode = window.SortToggle.getPreviousNameSort?.() || 'achternaam';
+          console.log(`   📊 Status sort using previous name mode: ${previousMode}`);
+          
+          filtered.sort((a, b) => {
+            const statusA = (a.Status || '').toUpperCase();
+            const statusB = (b.Status || '').toUpperCase();
             
-            // Check if Voornaam field exists (capital V!), otherwise split Naam
-            if (a.Voornaam) {
-              nameA = a.Voornaam;
-            } else {
-              // Split "Achternaam, Voornaam" or "Voornaam Achternaam"
-              const fullName = a.Naam || '';
-              if (fullName.includes(',')) {
-                // Format: "Achternaam, Voornaam" â†’ take after comma
-                nameA = fullName.split(',')[1]?.trim() || fullName;
-              } else {
-                // Format: "Voornaam Achternaam" â†’ take first word
-                nameA = fullName.split(' ')[0] || fullName;
-              }
-            }
+            // IN comes first
+            if (statusA === 'IN' && statusB !== 'IN') return -1;
+            if (statusA !== 'IN' && statusB === 'IN') return 1;
             
-            if (b.Voornaam) {
-              nameB = b.Voornaam;
-            } else {
-              const fullName = b.Naam || '';
-              if (fullName.includes(',')) {
-                nameB = fullName.split(',')[1]?.trim() || fullName;
-              } else {
-                nameB = fullName.split(' ')[0] || fullName;
-              }
-            }
-            
+            // Within same status group, sort by previous name mode (voornaam or achternaam)
+            const nameA = extractName(a, previousMode);
+            const nameB = extractName(b, previousMode);
             return nameA.toLowerCase().localeCompare(nameB.toLowerCase());
           });
         } else {
           // Sort by last name (Achternaam with capital A!)
+          // Remember this for status sorting
+          if (window.SortToggle.setPreviousNameSort) {
+            window.SortToggle.setPreviousNameSort('achternaam');
+          }
+          
           filtered.sort((a, b) => {
-            let nameA, nameB;
-            
-            // Check if Achternaam field exists (capital A!), otherwise split Naam
-            if (a.Achternaam) {
-              nameA = a.Achternaam;
-            } else {
-              // Split "Achternaam, Voornaam" or "Voornaam Achternaam"
-              const fullName = a.Naam || '';
-              if (fullName.includes(',')) {
-                // Format: "Achternaam, Voornaam" â†’ take before comma
-                nameA = fullName.split(',')[0]?.trim() || fullName;
-              } else {
-                // Format: "Voornaam Achternaam" â†’ take last word
-                const parts = fullName.split(' ');
-                nameA = parts[parts.length - 1] || fullName;
-              }
-            }
-            
-            if (b.Achternaam) {
-              nameB = b.Achternaam;
-            } else {
-              const fullName = b.Naam || '';
-              if (fullName.includes(',')) {
-                nameB = fullName.split(',')[0]?.trim() || fullName;
-              } else {
-                const parts = fullName.split(' ');
-                nameB = parts[parts.length - 1] || fullName;
-              }
-            }
-            
+            const nameA = extractName(a, 'achternaam');
+            const nameB = extractName(b, 'achternaam');
             return nameA.toLowerCase().localeCompare(nameB.toLowerCase());
           });
         }
@@ -1481,9 +1507,9 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
         const sub = (emp.SubStatus||"").toString().trim().toUpperCase(); // RAW database waarde
         const subOriginal = sub;  // Bewaar origineel voor kaart kleur check!
         
-        // ðŸ” DEBUG: Log voor eerste 3 employees met sub-status
+        // 🔍 DEBUG: Log voor eerste 3 employees met sub-status
         if (subOriginal && filtered.indexOf(emp) < 3) {
-          console.log(`ðŸ” DEBUG Card Color for ${emp.Naam}:`);
+          console.log(`🔍 DEBUG Card Color for ${emp.Naam}:`);
           console.log(`   SubStatus raw: "${emp.SubStatus}"`);
           console.log(`   subOriginal: "${subOriginal}"`);
           console.log(`   Match BUTTON1: ${subOriginal === 'BUTTON1'}`);
@@ -1504,13 +1530,13 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
         // STAP 2: Als er sub-status is, voeg kleur class toe
         if (subOriginal) {
           if (subOriginal === 'BUTTON1') {
-            cardClass += "pauze";  // â†’ .employee-card.in.pauze (roze)
+            cardClass += "pauze";  // → .employee-card.in.pauze (roze)
           } else if (subOriginal === 'BUTTON2') {
-            cardClass += "thuiswerken";  // â†’ .employee-card.in.thuiswerken (paars)
+            cardClass += "thuiswerken";  // → .employee-card.in.thuiswerken (paars)
           } else if (subOriginal === 'BUTTON3') {
-            cardClass += "vakantie";  // â†’ .employee-card.in.vakantie (groen)
+            cardClass += "vakantie";  // → .employee-card.in.vakantie (groen)
           } else {
-            console.warn(`âš ï¸ Unknown sub-status label: "${subOriginal}" for ${emp.Naam}`);
+            console.warn(`⚠️ Unknown sub-status label: "${subOriginal}" for ${emp.Naam}`);
           }
         }
         
@@ -1527,16 +1553,54 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
 
         let html = '<div class="card-content">';
         
-        // Foto (check both "Foto" and "FotoURL")
-        if((visibleFields.includes("Foto") || visibleFields.includes("FotoURL")) && photo){
-          html += '<div class="emp-photo-side">' +
-                    `<img src="${photo}" alt="${emp.Naam||''}" onerror="this.src='${BASE_PHOTO_URL}/no-photo.png'"/>` +
-                  '</div>';
+        // Foto en/of pion kolom
+        const showFoto = (visibleFields.includes("Foto") || visibleFields.includes("FotoURL")) && photo;
+        const hasPion = emp.allow_manual_location_change == 1 && emp.visible_locations;
+
+        if (showFoto || hasPion) {
+          html += '<div class="emp-photo-side">';
+
+          // Foto alleen als feature aan staat
+          if (showFoto) {
+            html += `<img src="${photo}" alt="${emp.Naam||''}" onerror="this.src='${BASE_PHOTO_URL}/no-photo.png'"/>`;
+          }
+
+          // 📍 MANUAL LOCATION BUTTON — onder de foto
+          if (hasPion) {
+            try {
+              const visLocs = typeof emp.visible_locations === 'string' ? JSON.parse(emp.visible_locations) : emp.visible_locations;
+              if (visLocs && visLocs.includes('ALL')) {
+                const empData = JSON.stringify(emp).replace(/"/g, '&quot;');
+                html += `<button
+                    class="manual-location-btn"
+                    onclick="event.stopPropagation(); showManualLocationSelector(${empData})"
+                    title="Check-in op andere locatie"
+                    style="
+                        display: block;
+                        margin: ${showFoto ? '4px' : '0'} auto 0 auto;
+                        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+                        color: white;
+                        border: none;
+                        padding: 4px 10px;
+                        border-radius: 6px;
+                        font-size: 16px;
+                        cursor: pointer;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        width: 100%;
+                    "
+                >📍</button>`;
+              }
+            } catch(e) {
+              console.warn('Failed to parse visible_locations for employee', emp.ID, e);
+            }
+          }
+
+          html += '</div>';
         }
 
         html += '<div class="emp-details">';
         
-        // âœ… FIXED: Naam rendering met Voornaam/Achternaam support
+        // ✅ FIXED: Naam rendering met Voornaam/Achternaam support
         const showVoornaam = visibleFields.includes("Voornaam");
         const showAchternaam = visibleFields.includes("Achternaam");
         const showNaam = visibleFields.includes("Naam"); // Legacy fallback
@@ -1556,49 +1620,15 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
           html += '</div>';
         }
 
-        // ðŸ“ MANUAL LOCATION BUTTON
-        if (emp.allow_manual_location_change == 1 && emp.visible_locations) {
-            try {
-                const visLocs = typeof emp.visible_locations === 'string' ? JSON.parse(emp.visible_locations) : emp.visible_locations;
-                
-                if (visLocs && visLocs.includes('ALL')) {
-                    const empData = JSON.stringify(emp).replace(/"/g, '&quot;');
-                    
-                    html += `
-                        <button 
-                            class="manual-location-btn" 
-                            onclick="event.stopPropagation(); showManualLocationSelector(${empData})"
-                            title="Check-in op andere locatie"
-                            style="
-                                position: absolute;
-                                top: 8px;
-                                right: 80px;
-                                background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-                                color: white;
-                                border: none;
-                                padding: 6px 10px;
-                                border-radius: 6px;
-                                font-size: 16px;
-                                cursor: pointer;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                                z-index: 10;
-                            "
-                        >ðŸ“</button>
-                    `;
-                }
-            } catch(e) {
-                console.warn('Failed to parse visible_locations for employee', emp.ID, e);
-            }
-        }
 
         if(visibleFields.includes("BHV") && normalize(emp.BHV)==="ja"){
           html += '<div class="bhv-label">BHV</div>';
         }
-// ðŸ†• SUB-STATUS MET UNTIL DATE + LABEL MAPPING
+// 🆕 SUB-STATUS MET UNTIL DATE + LABEL MAPPING
 if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
   let displayName = subOriginal;
   
-  // âœ… FIX: Get button names from buttonConfig (not hardcoded!)
+  // ✅ FIX: Get button names from buttonConfig (not hardcoded!)
   let btn1Custom = (buttonConfig.button1 && buttonConfig.button1.name) ? buttonConfig.button1.name.toUpperCase() : 'PAUZE';
   let btn2Custom = (buttonConfig.button2 && buttonConfig.button2.name) ? buttonConfig.button2.name.toUpperCase() : 'THUISWERKEN';
   let btn3Custom = (buttonConfig.button3 && buttonConfig.button3.name) ? buttonConfig.button3.name.toUpperCase() : 'VAKANTIE';
@@ -1623,7 +1653,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
   
   let subStatusText = displayName;
   
-  // ðŸŽ¯ SUB-STATUS TIJD DISPLAY (VERSIE B - CLEAN)
+  // 🎯 SUB-STATUS TIJD DISPLAY (VERSIE B - CLEAN)
   let untilValue = null;
   
   // Check multiple possible field names
@@ -1643,7 +1673,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       const now = new Date();
       
       if (!isNaN(until.getTime()) && until > now) {
-        // ðŸŽ¨ Bepaal kleur op basis van button
+        // 🎨 Bepaal kleur op basis van button
         let color = '#999'; // Default grijs
         if (subOriginal === 'BUTTON1') {
           color = buttonConfig.button1.color || '#ff69b4'; // Roze
@@ -1674,7 +1704,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         
         // Add time display (VERSIE B - Larger, centered, with colored border)
         subStatusHTML = `<div style="font-size:11px;padding:4px 8px;background:rgba(0,0,0,0.1);border-radius:4px;margin-top:4px">${subStatusText}</div>`;
-        subStatusHTML += `<div style="background:rgba(255,255,255,0.95);color:#333;padding:8px 13px;border-radius:8px;font-size:11px;font-weight:600;margin:8px auto;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:2px solid ${color};max-width:200px">ðŸ• ${timeText}</div>`;
+        subStatusHTML += `<div style="background:rgba(255,255,255,0.95);color:#333;padding:8px 13px;border-radius:8px;font-size:11px;font-weight:600;margin:8px auto;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:2px solid ${color};max-width:200px">🕐 ${timeText}</div>`;
       }
     } catch (error) {
       // Silent fail - don't show time if error
@@ -1691,7 +1721,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
           const parts = [];
           if(visibleFields.includes("Afdeling") && emp.Afdeling) parts.push(emp.Afdeling);
           if(visibleFields.includes("Locatie") && (emp.Locatie||emp.Gebouw)) parts.push(emp.Locatie||emp.Gebouw);
-          if(parts.length) html += `<div class="emp-meta">${parts.join(" â€“ ")}</div>`;
+          if(parts.length) html += `<div class="emp-meta">${parts.join(" – ")}</div>`;
         }
 
         html += '<div class="btn-wrap">';
@@ -1699,12 +1729,12 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         html += '<button class="status-btn out">UIT</button>';
         html += '</div>';
 
-        // ðŸ”¥ EXTRA KNOPPEN MET 8-KARAKTER NAMEN! ðŸ”¥
+        // 🔥 EXTRA KNOPPEN MET 8-KARAKTER NAMEN! 🔥
         if (window.__userFeatures && window.__userFeatures.extraButtons) {
           const extras = window.__userFeatures.extraButtons;
           html += '<div class="extra-btn-wrap">';
           
-          // Button 1 (PAUZE) - ðŸ”¥ MAX 8 TEKENS!
+          // Button 1 (PAUZE) - 🔥 MAX 8 TEKENS!
           let btn1Name = buttonConfig.button1.name;
           // Check for user custom name FIRST
           if(window.__userFeatures.customButtonNames && window.__userFeatures.customButtonNames.button1) {
@@ -1746,25 +1776,25 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
 
         const inBtn = card.querySelector(".status-btn.in");
         const outBtn = card.querySelector(".status-btn.out");
-        // ðŸ”§ IN/OUT buttons: clear sub_status
+        // 🔧 IN/OUT buttons: clear sub_status
         if(inBtn) inBtn.addEventListener("click",()=>{ updateStatus(emp.ID,"IN", null); if(typeof window.__labee_autoHideMenuReset === "function") window.__labee_autoHideMenuReset(); });
         if (outBtn) outBtn.addEventListener("click",()=>{ updateStatus(emp.ID,"OUT", null); });
 
-        // ðŸ”§ Extra buttons: Set sub-status (zet status op IN als nog OUT)
+        // 🔧 Extra buttons: Set sub-status (zet status op IN als nog OUT)
         const extraBtns = card.querySelectorAll(".extra-btn");
         extraBtns.forEach(btn => {
           btn.addEventListener("click", () => {
             const subStatusName = btn.getAttribute('data-status');
             const currentStatus = emp.Status.toUpperCase();
             
-            // Als OUT â†’ zet eerst op IN
+            // Als OUT → zet eerst op IN
             const newStatus = (currentStatus === "OUT") ? "IN" : currentStatus;
             
-            // ðŸ†• Get button number from data attribute (POSITION-BASED!)
+            // 🆕 Get button number from data attribute (POSITION-BASED!)
             const buttonNumber = parseInt(btn.getAttribute('data-button-number')) || 1;
             const config = buttonConfig[`button${buttonNumber}`];
             
-            // â­ CRITICAL FIX: Generate LABEL from button number
+            // ⭐ CRITICAL FIX: Generate LABEL from button number
             const labelMap = {
               1: 'BUTTON1',
               2: 'BUTTON2',
@@ -1772,11 +1802,11 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
             };
             const subStatusLabel = labelMap[buttonNumber] || 'BUTTON1';
             
-            console.log('ðŸ”˜ Button clicked:', {
+            console.log('🔘 Button clicked:', {
               buttonNumber: buttonNumber,
               displayName: subStatusName,
               configName: config?.name,
-              labelToSend: subStatusLabel  // â­ This goes to database!
+              labelToSend: subStatusLabel  // ⭐ This goes to database!
             });
             
             if (config && config.ask_until) {
@@ -1784,7 +1814,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
               window.showUntilModal(emp.ID, subStatusName, subStatusName, buttonNumber);
             } else {
               // Direct update with LABEL (not custom name!)
-              updateStatus(emp.ID, newStatus, subStatusLabel);  // â­ SEND LABEL!
+              updateStatus(emp.ID, newStatus, subStatusLabel);  // ⭐ SEND LABEL!
             }
           });
         });
@@ -1810,19 +1840,21 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       }
       actions.innerHTML = "";
       
-      // âœ… BHV Button - ALTIJD ZICHTBAAR met duidelijk icoon
-      const bhvBtn = document.createElement("a");
-      bhvBtn.href = BASE_PATH + "/bhv-print/bhv-print.html";
+      // ✅ BHV Button - ALTIJD ZICHTBAAR met duidelijk icoon
+      const bhvBtn = document.createElement("button");
+      bhvBtn.type = "button";
       bhvBtn.className = "footer-btn footer-btn-bhv";
-      bhvBtn.innerHTML = "ðŸš¨ BHV Overzicht"; // âœ… Icoon toegevoegd
-      bhvBtn.setAttribute("target", "_blank");
+      bhvBtn.innerHTML = "🚨 BHV Overzicht"; // ✅ Icoon toegevoegd
       bhvBtn.setAttribute("title", "Open BHV Overzicht");
+      bhvBtn.addEventListener("click", function() {
+        window.open(BASE_PATH + "/bhv-print/bhv-print.html", "bhv_overzicht", "width=1200,height=800,menubar=no,toolbar=no,location=no");
+      });
       
-      // âœ… Admin Button - CORRECTE URL naar dashboard
+      // ✅ Admin Button - CORRECTE URL naar dashboard
       const adminBtn = document.createElement("a");
-      adminBtn.href = BASE_PATH + "/admin/dashboard.php"; // âœ… GEFIXED!
+      adminBtn.href = BASE_PATH + "/admin/dashboard.php"; // ✅ GEFIXED!
       adminBtn.className = "footer-btn footer-btn-admin";
-      adminBtn.innerHTML = "âš™ï¸ Admin Dashboard"; // âœ… Icoon toegevoegd
+      adminBtn.innerHTML = "⚙️ Admin Dashboard"; // ✅ Icoon toegevoegd
       adminBtn.setAttribute("target", "_blank");
       adminBtn.setAttribute("title", "Open Admin Dashboard");
       
@@ -1837,7 +1869,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
     function finalizeUI(){
       updateFooterButtons();
       
-      // âœ… REMOVED: BHV button blijft nu altijd zichtbaar!
+      // ✅ REMOVED: BHV button blijft nu altijd zichtbaar!
       // Oude code die BHV button verborg is verwijderd
     }
     
@@ -1863,7 +1895,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       console.log('Auto-hide menu timer started (2 min)');
     }
     
-    // ðŸ†• FILTER DEBOUNCING - Attach listeners
+    // 🆕 FILTER DEBOUNCING - Attach listeners
     document.addEventListener('DOMContentLoaded', () => {
       const searchInput = document.getElementById("search-input");
       const filterSelects = document.querySelectorAll("#filters select");
@@ -1878,7 +1910,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
     });
     
     // ============================================================================
-    // ðŸ” FILTER PERSISTENCE MODULE
+    // 🔍 FILTER PERSISTENCE MODULE
     // Bewaart filters in localStorage + visuele feedback
     // ============================================================================
     (function() {
@@ -2036,7 +2068,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
             const button = document.createElement('button');
             button.id = 'reset-filters-btn';
             button.className = 'reset-filters-btn';
-            button.innerHTML = 'ðŸ—‘ï¸ Reset Filters <span id="filter-indicator" class="filter-count">0</span>';
+            button.innerHTML = '🗑️ Reset Filters <span id="filter-indicator" class="filter-count">0</span>';
             button.style.display = 'none';
             button.onclick = clearFilters;
             
@@ -2061,12 +2093,12 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
             
             // Wait for employees to load before applying filters
             if (hasActiveFilters()) {
-                console.log('ðŸ“ Active filters detected, will apply after data loads');
+                console.log('📍 Active filters detected, will apply after data loads');
                 
                 // Listen for employee data load
                 const checkAndApply = setInterval(() => {
                     if (window.employees && window.employees.length > 0 && typeof applyCurrentFilters === 'function') {
-                        console.log('âœ… Employees loaded, applying saved filters');
+                        console.log('✅ Employees loaded, applying saved filters');
                         applyCurrentFilters();
                         clearInterval(checkAndApply);
                     }
@@ -2097,70 +2129,70 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
     fetch(BASE_PATH + '/admin/api/get-user-features.php')
       .then(r => r.ok ? r.json() : null)
       .then(userFeatures => {
-        console.log("ðŸ“‚ USER FEATURES RECEIVED:", userFeatures);
+        console.log("📂 USER FEATURES RECEIVED:", userFeatures);
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════
 // EINDE DEEL 2 - GA VERDER MET DEEL 3!
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════
 /**
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════════
  * APP.JS - DEEL 3 VAN 3
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════════
  * PLAK DIT DIRECT NA DEEL 2
  * DIT IS HET LAATSTE DEEL!
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════════
  */
 
         
-        // ðŸ†• Sla user features op
+        // 🆕 Sla user features op
         if(userFeatures && !userFeatures.error) {
           userVisibleFields = userFeatures.visibleFields || null;
           userLocations = userFeatures.locations || null;
-          userAfdelingen = userFeatures.afdelingen || null; // ðŸ†• Afdeling filtering
+          userAfdelingen = userFeatures.afdelingen || null; // 🆕 Afdeling filtering
           
-          // ðŸ”§ Fix extraButtons: converteer array naar object formaat
+          // 🔧 Fix extraButtons: converteer array naar object formaat
           if(Array.isArray(userFeatures.extraButtons)) {
             // Als het een array is met strings zoals ["PAUZE", "VAKANTIE"]
             userExtraButtons = {};
             userFeatures.extraButtons.forEach(btn => {
               userExtraButtons[btn] = true;
             });
-            console.log("âœ… Extra buttons converted from array:", userExtraButtons);
+            console.log("✅ Extra buttons converted from array:", userExtraButtons);
           } else if(typeof userFeatures.extraButtons === 'object') {
             // Als het al een object is zoals {"PAUZE": true}
             userExtraButtons = userFeatures.extraButtons;
-            console.log("âœ… Extra buttons loaded:", userExtraButtons);
+            console.log("✅ Extra buttons loaded:", userExtraButtons);
           } else {
             userExtraButtons = {};
           }
           
-          // ðŸ†• Auto-select user locations
+          // 🆕 Auto-select user locations
           if(userLocations && Array.isArray(userLocations) && userLocations.length > 0) {
             selectedLocations = userLocations.slice();
-            console.log("âœ… User locations auto-selected:", selectedLocations);
+            console.log("✅ User locations auto-selected:", selectedLocations);
             console.log("   Location IDs:", selectedLocations.map(getLocationID));
           } else {
-            console.log("âš ï¸ No user locations found - showing all");
+            console.log("⚠️ No user locations found - showing all");
             selectedLocations = []; // Toon alles als geen locaties ingesteld
           }
           
-          // ðŸ†• Auto-select user afdelingen
+          // 🆕 Auto-select user afdelingen
           if(userAfdelingen && Array.isArray(userAfdelingen) && userAfdelingen.length > 0) {
             selectedAfdelingen = userAfdelingen.slice();
-            console.log("âœ… User afdelingen auto-selected:", selectedAfdelingen);
+            console.log("✅ User afdelingen auto-selected:", selectedAfdelingen);
           } else {
-            console.log("âš ï¸ No user afdelingen found - showing all");
+            console.log("⚠️ No user afdelingen found - showing all");
             selectedAfdelingen = []; // Toon alles als geen afdelingen ingesteld
           }
           
-          console.log("ðŸ“Š Final user settings:", {
+          console.log("📊 Final user settings:", {
             visibleFields: userVisibleFields,
             locations: selectedLocations,
-            afdelingen: selectedAfdelingen, // ðŸ†•
+            afdelingen: selectedAfdelingen, // 🆕
             extraButtons: userExtraButtons
           });
         } else {
-          console.warn("âš ï¸ User features not available or error:", userFeatures);
+          console.warn("⚠️ User features not available or error:", userFeatures);
         }
         
         // Haal daarna config op
@@ -2172,19 +2204,19 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
           .then(cfg => {
     console.log("CONFIG:", cfg);
     
-    window.DATA_API_URL = BASE_PATH + "/admin/api/employees_api.php";  // âœ… NIEUWE REGEL
+    window.DATA_API_URL = BASE_PATH + "/admin/api/employees_api.php";  // ✅ NIEUWE REGEL
             
-            // ðŸŽ¬ Start presentatie controller
+            // 🎬 Start presentatie controller
             if (window.PresentationController && userFeatures) {
-              console.log('ðŸŽ¬ Initializing presentation controller');
+              console.log('🎬 Initializing presentation controller');
               window.PresentationController.init({
                 presentationID: cfg.presentationID || null,
                 userPresentationID: userFeatures.presentationID || null,
-                idle_timeout: userFeatures.presentationIdleSeconds || 120,  // âœ… In SECONDEN!
+                idle_timeout: userFeatures.presentationIdleSeconds || 120,  // ✅ In SECONDEN!
                 allow_auto_fullscreen: cfg.allow_auto_fullscreen || false
               });
             } else if (!window.PresentationController) {
-              console.log('â„¹ï¸ PresentationController not loaded - presentation disabled');
+              console.log('ℹ️ PresentationController not loaded - presentation disabled');
             }
             
             // Sla user features op voor filtering
@@ -2203,7 +2235,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
  * INSTRUCTIE: Plak dit DIRECT na deel 2 (ZONDER deze header!)
  * ============================================================================
  * DEEL 3 (regel 1641-2463):
- * BEVAT: Manual Location Selector module (NIEUW! ðŸ“)
+ * BEVAT: Manual Location Selector module (NIEUW! 📍)
  * ============================================================================
  */
 
@@ -2212,21 +2244,21 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
               extraButtons: userExtraButtons // Gebruik de geconverteerde versie
             };
             
-            // ðŸ”— Create alias for sort toggle module (uses window.userFeatures)
+            // 🔗 Create alias for sort toggle module (uses window.userFeatures)
             window.userFeatures = window.__userFeatures;
             
-            console.log("ðŸŒ Global __userFeatures set:", window.__userFeatures);
+            console.log("🌐 Global __userFeatures set:", window.__userFeatures);
             
-            // ðŸ†• Load button configuration
+            // 🆕 Load button configuration
             loadButtonConfig();
             
-            // ðŸ”„ Initialize sort toggle if available
+            // 🔄 Initialize sort toggle if available
             if (window.SortToggle && typeof window.SortToggle.init === 'function') {
-                console.log('ðŸ”„ Calling SortToggle.init()...');
+                console.log('🔄 Calling SortToggle.init()...');
                 window.SortToggle.init();
             }
             
-            // ðŸ†• Render user profile in header
+            // 🆕 Render user profile in header
             renderUserProfile(window.__userFeatures);
             
             // Setup field options NADAT user features geladen zijn
@@ -2234,9 +2266,9 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
             
             fetchEmployees();
             
-            // ðŸ”„ AUTO-REFRESH employees every 30 seconds
+            // 🔄 AUTO-REFRESH employees every 30 seconds
             setInterval(() => {
-              console.log('ðŸ”„ Auto-refreshing employees...');
+              console.log('🔄 Auto-refreshing employees...');
               fetchEmployees();
             }, 30000);
           });
@@ -2249,46 +2281,43 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
 
 
     // ============================================================
-    // VERSIECHECK — automatisch herladen bij nieuwe versie
-    // Vergelijkt window.PD_LOADED_VERSION (gezet door index.php)
-    // met /api/app-version.php elke 5 min + bij terugkeren scherm
+    // VERSIECHECK - automatisch herladen bij nieuwe versie
     // ============================================================
     (function initVersionCheck() {
-      const CHECK_INTERVAL = 5 * 60 * 1000;
-      const loadedVersion  = window.PD_LOADED_VERSION || '0.0.0';
-      let reloadPending    = false;
+      var CHECK_INTERVAL = 5 * 60 * 1000;
+      var loadedVersion  = window.PD_LOADED_VERSION || '0.0.0';
+      var reloadPending  = false;
 
-      async function checkVersion() {
+      function checkVersion() {
         if (reloadPending) return;
-        try {
-          const res  = await fetch(BASE_PATH + '/api/app-version.php', { cache: 'no-store' });
-          if (!res.ok) return;
-          const data = await res.json();
-          if (!data.version) return;
-          if (data.version !== loadedVersion) {
-            reloadPending = true;
-            console.log('Nieuwe versie: ' + data.version + ' (geladen: ' + loadedVersion + ')');
-            toonUpdateMelding();
-            setTimeout(() => window.location.reload(true), 4000);
-          }
-        } catch (e) { /* stil falen */ }
+        fetch(BASE_PATH + '/api/app-version.php', { cache: 'no-store' })
+          .then(function(res) { return res.ok ? res.json() : null; })
+          .then(function(data) {
+            if (!data || !data.version) return;
+            if (data.version !== loadedVersion) {
+              reloadPending = true;
+              toonUpdateMelding();
+              setTimeout(function() { window.location.reload(true); }, 4000);
+            }
+          })
+          .catch(function() { /* stil falen */ });
       }
 
       function toonUpdateMelding() {
         if (document.getElementById('pd-update-banner')) return;
-        const style = document.createElement('style');
+        var style = document.createElement('style');
         style.textContent = '@keyframes pd-fadein{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
         document.head.appendChild(style);
-        const banner = document.createElement('div');
+        var banner = document.createElement('div');
         banner.id = 'pd-update-banner';
-        banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E293B;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-family:sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:99999;text-align:center;animation:pd-fadein 0.3s ease;';
-        banner.innerHTML = 'Nieuwe versie beschikbaar — pagina wordt bijgewerkt…';
+        banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E293B;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-family:sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:99999;text-align:center;animation:pd-fadein 0.3s ease;white-space:nowrap;';
+        banner.innerHTML = 'Nieuwe versie beschikbaar \u2014 pagina wordt bijgewerkt\u2026';
         document.body.appendChild(banner);
       }
 
       checkVersion();
       setInterval(checkVersion, CHECK_INTERVAL);
-      document.addEventListener('visibilitychange', () => {
+      document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') checkVersion();
       });
     })();
@@ -2308,7 +2337,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       
       const employeeList = document.getElementById("employee-list");
       if (!employeeList) {
-        console.warn("âš ï¸ employee-list not found, cannot create visitors section");
+        console.warn("⚠️ employee-list not found, cannot create visitors section");
         return;
       }
       
@@ -2348,7 +2377,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       
       visitorsSection.innerHTML = `
         <div class="visitors-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; color: white;">
-          <h3 style="font-size: 13px; font-weight: 600; margin: 0; line-height: 1;">ðŸ‘¥ Verwachte Bezoekers</h3>
+          <h3 style="font-size: 13px; font-weight: 600; margin: 0; line-height: 1;">👥 Verwachte Bezoekers</h3>
           <div class="visitors-count" id="visitors-count-dynamic" style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 10px; font-weight: 600; font-size: 10px;">0</div>
         </div>
         <div class="visitors-list" id="visitors-list-dynamic" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 200px)); gap: 4px; max-height: 250px; overflow-y: auto;"></div>
@@ -2358,7 +2387,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       flexContainer.appendChild(visitorsSection);
       visitorsContainer = document.getElementById("visitors-list-dynamic");
       
-      console.log("âœ… Visitors section created dynamically (side-by-side)");
+      console.log("✅ Visitors section created dynamically (side-by-side)");
     }
     
     // Fetch visitors from API
@@ -2376,15 +2405,15 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         
         if (data.success) {
           visitors = data.visitors || [];
-          console.log('âœ… Visitors loaded:', visitors.length);
+          console.log('✅ Visitors loaded:', visitors.length);
           renderVisitors();
         } else {
-          console.warn('âš ï¸ Visitors fetch failed:', data.error);
+          console.warn('⚠️ Visitors fetch failed:', data.error);
           visitors = [];
           renderVisitors();
         }
       } catch (error) {
-        console.error('âŒ Error fetching visitors:', error);
+        console.error('❌ Error fetching visitors:', error);
         visitors = [];
         renderVisitors();
       }
@@ -2392,16 +2421,16 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
     
     // Render visitors in UI
     function renderVisitors() {
-      console.log('ðŸŽ¨ renderVisitors called');
+      console.log('🎨 renderVisitors called');
       console.log('   Total visitors:', visitors.length);
       console.log('   Selected locations:', selectedLocations);
       console.log('   Selected locations length:', selectedLocations ? selectedLocations.length : 'null');
       
-      // âœ… NIEUWE AANPAK: Verwijder section VOLLEDIG als geen match
+      // ✅ NIEUWE AANPAK: Verwijder section VOLLEDIG als geen match
       // (niet alleen display:none, maar echt uit DOM)
       
       if (!selectedLocations || selectedLocations.length === 0) {
-        console.log('ðŸš« ALL MODE - REMOVING visitor section from DOM');
+        console.log('🚫 ALL MODE - REMOVING visitor section from DOM');
         if (visitorsSection && visitorsSection.parentNode) {
           visitorsSection.parentNode.removeChild(visitorsSection);
           visitorsSection = null;
@@ -2410,14 +2439,14 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         return;
       }
       
-      console.log('âœ… SPECIFIC LOCATION MODE - continuing...');
+      console.log('✅ SPECIFIC LOCATION MODE - continuing...');
       
       // Filter AANGEMELD bezoekers
       let filteredVisitors = visitors.filter(v => 
         v.status && v.status.toUpperCase() === 'AANGEMELD'
       );
       
-      console.log('ðŸ“‹ AANGEMELD visitors:', filteredVisitors.length, '/', visitors.length);
+      console.log('📋 AANGEMELD visitors:', filteredVisitors.length, '/', visitors.length);
       
       if (filteredVisitors.length > 0) {
         console.log('   Visitor locations:', filteredVisitors.map(v => v.locatie));
@@ -2435,11 +2464,11 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         console.log('   Visitor', v.naam, 'at', v.locatie, '- match:', match);
         return match;
       });
-      console.log('ðŸ“ After location filter:', filteredVisitors.length, 'visitors remain');
+      console.log('📍 After location filter:', filteredVisitors.length, 'visitors remain');
       
-      // âœ… GEEN bezoekers voor deze locatie? VERWIJDER section
+      // ✅ GEEN bezoekers voor deze locatie? VERWIJDER section
       if (filteredVisitors.length === 0) {
-        console.log('ðŸ‘» No visitors for this location - REMOVING pink section from DOM');
+        console.log('👻 No visitors for this location - REMOVING pink section from DOM');
         if (visitorsSection && visitorsSection.parentNode) {
           visitorsSection.parentNode.removeChild(visitorsSection);
           visitorsSection = null;
@@ -2454,12 +2483,12 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       }
       
       if (!visitorsContainer) {
-        console.warn('âš ï¸ Visitors container not ready after create');
+        console.warn('⚠️ Visitors container not ready after create');
         return;
       }
       
       // Toon section
-      console.log('ðŸ‘¥ SHOWING', filteredVisitors.length, 'visitors for selected location(s)');
+      console.log('👥 SHOWING', filteredVisitors.length, 'visitors for selected location(s)');
       visitorsSection.style.display = 'block';
       
       // Update count
@@ -2506,7 +2535,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 4px; margin-bottom: 1px;">
             <div style="font-size: 13px; font-weight: 600; color: #2d3748; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; line-height: 1.2;">${naam}</div>
-            <div style="font-size: 10px; color: #667eea; white-space: nowrap; font-weight: 700; line-height: 1.2;">ðŸ• ${time}</div>
+            <div style="font-size: 10px; color: #667eea; white-space: nowrap; font-weight: 700; line-height: 1.2;">🕐 ${time}</div>
           </div>
           <div style="font-size: 10px; color: #a0aec0; background: #f7fafc; padding: 1px 6px; border-radius: 8px; text-align: center; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">${locatie}</div>
           <div style="font-size: 10px; color: #718096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2;">${bedrijf}</div>
@@ -2523,7 +2552,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
             width: 100%;
             line-height: 1.2;
           " onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''">
-            âœ“ Check In
+            ✓ Check In
           </button>
         `;
         
@@ -2550,21 +2579,21 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         const data = await response.json();
         
         if (data.success) {
-          console.log('âœ… Visitor checked in:', visitorId);
+          console.log('✅ Visitor checked in:', visitorId);
           // Refresh visitors list
           await fetchVisitors();
         } else {
           alert('Fout bij inchecken: ' + (data.error || 'Onbekende fout'));
         }
       } catch (error) {
-        console.error('âŒ Check-in error:', error);
+        console.error('❌ Check-in error:', error);
         alert('Fout bij inchecken. Probeer opnieuw.');
       }
     };
     
     // Initialize visitors after employees are loaded
     function initVisitors() {
-      console.log('ðŸ“Š Initializing visitors...');
+      console.log('📊 Initializing visitors...');
       createVisitorsSection();
       fetchVisitors();
       
@@ -2594,7 +2623,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       if (!flexContainer) {
         const employeeList = document.getElementById("employee-list");
         if (!employeeList) {
-          console.warn("âš ï¸ employee-list not found");
+          console.warn("⚠️ employee-list not found");
           return;
         }
         flexContainer = document.createElement("div");
@@ -2630,7 +2659,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       
       visitorsInsideSection.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; color: white;">
-          <h3 style="font-size: 13px; font-weight: 600; margin: 0; line-height: 1;">ðŸ‘¤ Bezoekers Binnen</h3>
+          <h3 style="font-size: 13px; font-weight: 600; margin: 0; line-height: 1;">👤 Bezoekers Binnen</h3>
           <div id="visitors-inside-count-dynamic" style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 10px; font-weight: 600; font-size: 10px;">0</div>
         </div>
         <div id="visitors-inside-list-dynamic" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 200px)); gap: 4px; max-height: 250px; overflow-y: auto;"></div>
@@ -2640,7 +2669,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       flexContainer.appendChild(visitorsInsideSection);
       visitorsInsideContainer = document.getElementById("visitors-inside-list-dynamic");
       
-      console.log("âœ… Visitors inside section created (side-by-side)");
+      console.log("✅ Visitors inside section created (side-by-side)");
     }
     
     // Fetch visitors inside from API
@@ -2658,15 +2687,15 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         
         if (data.success) {
           visitorsInside = data.visitors || [];
-          console.log('âœ… Visitors inside loaded:', visitorsInside.length);
+          console.log('✅ Visitors inside loaded:', visitorsInside.length);
           renderVisitorsInside();
         } else {
-          console.warn('âš ï¸ Visitors inside fetch failed:', data.error);
+          console.warn('⚠️ Visitors inside fetch failed:', data.error);
           visitorsInside = [];
           renderVisitorsInside();
         }
       } catch (error) {
-        console.error('âŒ Error fetching visitors inside:', error);
+        console.error('❌ Error fetching visitors inside:', error);
         visitorsInside = [];
         renderVisitorsInside();
       }
@@ -2674,15 +2703,15 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
     
     // Render visitors inside (COMPACT layout)
     function renderVisitorsInside() {
-      console.log('ðŸŽ¨ renderVisitorsInside called');
+      console.log('🎨 renderVisitorsInside called');
       console.log('   Total inside:', visitorsInside.length);
       console.log('   Selected locations:', selectedLocations);
       console.log('   Selected locations length:', selectedLocations ? selectedLocations.length : 'null');
       
-      // âœ… NIEUWE AANPAK: Verwijder section VOLLEDIG als geen match
+      // ✅ NIEUWE AANPAK: Verwijder section VOLLEDIG als geen match
       
       if (!selectedLocations || selectedLocations.length === 0) {
-        console.log('ðŸš« ALL MODE - REMOVING visitors inside section from DOM');
+        console.log('🚫 ALL MODE - REMOVING visitors inside section from DOM');
         if (visitorsInsideSection && visitorsInsideSection.parentNode) {
           visitorsInsideSection.parentNode.removeChild(visitorsInsideSection);
           visitorsInsideSection = null;
@@ -2691,7 +2720,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         return;
       }
       
-      console.log('âœ… SPECIFIC LOCATION MODE - continuing...');
+      console.log('✅ SPECIFIC LOCATION MODE - continuing...');
       
       // Filter op GESELECTEERDE locatie (ALTIJD!)
       let filteredVisitors = visitorsInside.filter(v => {
@@ -2705,11 +2734,11 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         console.log('   Visitor inside', v.naam, 'at', v.locatie, '- match:', match);
         return match;
       });
-      console.log('ðŸ“ After location filter:', filteredVisitors.length, 'visitors inside remain');
+      console.log('📍 After location filter:', filteredVisitors.length, 'visitors inside remain');
       
-      // âœ… GEEN bezoekers binnen voor deze locatie? VERWIJDER section
+      // ✅ GEEN bezoekers binnen voor deze locatie? VERWIJDER section
       if (filteredVisitors.length === 0) {
-        console.log('ðŸ‘» No visitors inside for this location - REMOVING green section from DOM');
+        console.log('👻 No visitors inside for this location - REMOVING green section from DOM');
         if (visitorsInsideSection && visitorsInsideSection.parentNode) {
           visitorsInsideSection.parentNode.removeChild(visitorsInsideSection);
           visitorsInsideSection = null;
@@ -2724,12 +2753,12 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       }
       
       if (!visitorsInsideContainer) {
-        console.warn('âš ï¸ Visitors inside container not ready after create');
+        console.warn('⚠️ Visitors inside container not ready after create');
         return;
       }
       
       // Toon section
-      console.log('ðŸ‘¥ SHOWING', filteredVisitors.length, 'visitors inside');
+      console.log('👥 SHOWING', filteredVisitors.length, 'visitors inside');
       visitorsInsideSection.style.display = 'block';
       
       // Update count
@@ -2782,7 +2811,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         tile.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 4px; margin-bottom: 1px;">
             <div style="font-size: 13px; font-weight: 600; color: #2d3748; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; line-height: 1.2;">${naam}</div>
-            <div style="font-size: 10px; color: #718096; white-space: nowrap; line-height: 1.2;">ðŸ• ${tijd}</div>
+            <div style="font-size: 10px; color: #718096; white-space: nowrap; line-height: 1.2;">🕐 ${tijd}</div>
           </div>
           <div style="font-size: 10px; color: #a0aec0; background: #f7fafc; padding: 1px 6px; border-radius: 8px; text-align: center; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">${locatie}</div>
           <button onclick="window.checkOutVisitor(${visitor.id})" style="
@@ -2798,7 +2827,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
             width: 100%;
             line-height: 1.2;
           " onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''">
-            âœ“ Check Out
+            ✓ Check Out
           </button>
         `;
         
@@ -2824,7 +2853,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         const data = await response.json();
         
         if (data.success) {
-          console.log('âœ… Visitor checked out:', visitorId);
+          console.log('✅ Visitor checked out:', visitorId);
           // Refresh both lists
           await Promise.all([
             fetchVisitorsInside(),
@@ -2834,14 +2863,14 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
           alert('Fout bij uitchecken: ' + (data.error || 'Onbekende fout'));
         }
       } catch (error) {
-        console.error('âŒ Check-out error:', error);
+        console.error('❌ Check-out error:', error);
         alert('Fout bij uitchecken. Probeer opnieuw.');
       }
     };
     
     // Initialize visitors inside
     function initVisitorsInside() {
-      console.log('ðŸ‘¤ Initializing visitors inside (compact)...');
+      console.log('👤 Initializing visitors inside (compact)...');
       createVisitorsInsideSection();
       fetchVisitorsInside();
       
@@ -2857,7 +2886,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
       }
     }, 100);
     
-    // âœ… EXPORT internal functies naar window voor gebruik buiten IIFE
+    // ✅ EXPORT internal functies naar window voor gebruik buiten IIFE
     // Dit MOET binnen de IIFE gebeuren (functies zijn hier beschikbaar)
     window.__labee_internal = {
       fetchEmployees: fetchEmployees,
@@ -2878,7 +2907,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
 // ook na auto-refresh wanneer de guard true is en code skipped wordt.
 
 window.labeeApp = window.__labee_internal;
-console.log("âœ… window.labeeApp exported:", window.labeeApp ? Object.keys(window.labeeApp) : 'UNDEFINED');
+console.log("✅ window.labeeApp exported:", window.labeeApp ? Object.keys(window.labeeApp) : 'UNDEFINED');
 
 // ============================================================================
 // MANUAL LOCATION SELECTOR MODULE
@@ -2900,7 +2929,7 @@ function setTempLocation(employeeId, tempLocationName, originalLocationName) {
     localStorage.setItem('__tempEmployeeLocations', JSON.stringify(tempLocs));
     localStorage.setItem('__originalEmployeeLocations', JSON.stringify(origLocs));
     
-    console.log(`ðŸ“ Temp location set for employee ${employeeId}: ${tempLocationName} (original: ${originalLocationName})`);
+    console.log(`📍 Temp location set for employee ${employeeId}: ${tempLocationName} (original: ${originalLocationName})`);
 }
 
 /**
@@ -2932,25 +2961,29 @@ function clearTempLocation(employeeId) {
     localStorage.setItem('__tempEmployeeLocations', JSON.stringify(tempLocs));
     localStorage.setItem('__originalEmployeeLocations', JSON.stringify(origLocs));
     
-    console.log(`ðŸ“ Temp location cleared for employee ${employeeId}`);
+    console.log(`📍 Temp location cleared for employee ${employeeId}`);
 }
 
 /**
- * Helper: Haal alle locaties op
+ * Helper: Haal alle locaties op — altijd uit database via API
+ * Synchrone fallback op window.__allLocations als API nog niet geladen is
  */
 function getAllLocations() {
-    // Probeer eerst window.__allLocations
+    // Gebruik window.__allLocations — gevuld door renderBuildings() via get_locations_ordered.php
+    // Dit zijn de actuele locaties uit de database, niet uit medewerkerdata
     if (window.__allLocations && window.__allLocations.length > 0) {
-        return window.__allLocations;
+        console.log('📍 getAllLocations: using database locations:', window.__allLocations.length);
+        return [...window.__allLocations].sort();
     }
     
-    // Fallback: extract uit labeeApp employees
+    // Fallback: extract uit labeeApp employees (minder betrouwbaar — alleen locaties met medewerkers)
+    console.warn('getAllLocations: window.__allLocations not available, falling back to employee data');
     const employees = window.labeeApp && typeof window.labeeApp.getEmployees === 'function' 
         ? window.labeeApp.getEmployees() 
         : [];
     
     if (!employees || employees.length === 0) {
-        console.warn('getAllLocations: No employees found');
+        console.warn('getAllLocations: No employees found either');
         return [];
     }
     
@@ -2963,24 +2996,40 @@ function getAllLocations() {
     });
     
     const result = Array.from(locations).sort();
-    console.log('ðŸ“ getAllLocations found:', result.length, 'locations');
+    console.log('📍 getAllLocations fallback found:', result.length, 'locations');
     return result;
 }
 
 /**
  * Toon locatie selector modal
  */
-function showManualLocationSelector(employee) {
-    console.log('ðŸ“ Showing manual location selector for:', employee);
+async function showManualLocationSelector(employee) {
+    console.log('📍 Showing manual location selector for:', employee);
     
     // Check of employee dit mag
     if (!employee.allow_manual_location_change || employee.allow_manual_location_change != 1) {
-        console.log('âŒ Employee not allowed to change location manually');
+        console.log('❌ Employee not allowed to change location manually');
         return;
     }
     
-    // Haal alle locaties op
-    const allLocations = getAllLocations();
+    // Haal locaties op — probeer eerst API als __allLocations leeg is
+    let allLocations = getAllLocations();
+    
+    if (!allLocations || allLocations.length === 0) {
+        console.log('📍 Fetching fresh locations from API...');
+        try {
+            const response = await fetch(BASE_PATH + '/admin/api/get_locations_ordered.php');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.locations && data.locations.length > 0) {
+                    window.__allLocations = data.locations;
+                    allLocations = [...data.locations].sort();
+                }
+            }
+        } catch(e) {
+            console.warn('📍 Could not fetch locations from API:', e);
+        }
+    }
     
     if (!allLocations || allLocations.length === 0) {
         alert('Geen locaties beschikbaar');
@@ -3010,7 +3059,7 @@ function showManualLocationSelector(employee) {
                 box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             ">
                 <h2 style="margin: 0 0 10px 0; color: #2d3748; font-size: 22px;">
-                    ðŸ“ Check-in op andere locatie
+                    📍 Check-in op andere locatie
                 </h2>
                 <p style="color: #718096; margin: 0 0 20px 0; font-size: 14px;">
                     ${employee.Naam || employee.naam || 'Medewerker'}<br>
@@ -3048,7 +3097,7 @@ function showManualLocationSelector(employee) {
                         font-weight: 600;
                         cursor: pointer;
                     ">
-                        âœ“ Inchecken op deze locatie
+                        ✓ Inchecken op deze locatie
                     </button>
                     <button id="manual-location-cancel" style="
                         padding: 12px 24px;
@@ -3081,17 +3130,21 @@ function showManualLocationSelector(employee) {
             return;
         }
         
-        // Sla tijdelijke locatie op (inclusief originele locatie voor reset)
-        setTempLocation(employee.ID, selectedLocation, employee.Locatie || employee.locatie);
+        // Sla tijdelijke locatie op
+        // Gebruik de originele locatie uit localStorage als die er al is (bijv. al eerder op andere locatie ingecheckt)
+        // Anders gebruik employee.Locatie als originele locatie
+        const existingOriginal = getOriginalLocation(employee.ID);
+        const originalLocation = existingOriginal || employee.Locatie || employee.locatie;
+        setTempLocation(employee.ID, selectedLocation, originalLocation);
         
-        console.log('ðŸ“ Calling check-in with location:', selectedLocation);
+        console.log('📍 Calling check-in with location:', selectedLocation);
         
         // Check-in met tijdelijke locatie - via window.updateStatus
         if (typeof window.updateStatus === 'function') {
             window.updateStatus(employee.ID, 'IN', null, selectedLocation);
-            console.log('âœ… Check-in called successfully');
+            console.log('✅ Check-in called successfully');
         } else {
-            console.error('âŒ updateStatus function not found on window');
+            console.error('❌ updateStatus function not found on window');
         }
         
         // Sluit modal
@@ -3122,56 +3175,57 @@ window.setTempLocation = setTempLocation;
 window.getTempLocation = getTempLocation;
 window.clearTempLocation = clearTempLocation;
 
-console.log('âœ… Manual Location Selector module loaded');
+console.log('✅ Manual Location Selector module loaded');
 /**
  * ============================================================================
  * EINDE DEEL 3 VAN 3 - APP.JS COMPLEET!
  * ============================================================================
  * 
- * âœ… JE BENT KLAAR!
+ * ✅ JE BENT KLAAR!
  * 
  * VOLGENDE STAPPEN:
  * 1. Voeg alle 3 delen samen (zonder headers!)
  * 2. Sla op als app.js
  * 3. Upload naar /app.js (OVERSCHRIJF)
  * 4. Hard refresh browser (Ctrl+Shift+R)
- * 5. Check console: "âœ… Manual Location Selector module loaded"
- * 6. Test ðŸ“ knop op employee kaarten
+ * 5. Check console: "✅ Manual Location Selector module loaded"
+ * 6. Test 📍 knop op employee kaarten
  * 
  * ============================================================================
  */
 
 // ============================================================================
-// ðŸ”¥ APP.JS LOADED - MANUAL LOCATION MODULE
+// 🔥 APP.JS LOADED - MANUAL LOCATION MODULE
 // ============================================================================
-console.log('âœ… Manual Location Selector module loaded');
+console.log('✅ Manual Location Selector module loaded');
 
 /**
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
- * âœ¨ SORTEER TOGGLE FUNCTIONALITY (NIEUW)
- * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ * ═══════════════════════════════════════════════════════════════
+ * ✨ SORTEER TOGGLE FUNCTIONALITY (NIEUW)
+ * ═══════════════════════════════════════════════════════════════
  */
 
 (function() {
     'use strict';
     
     let currentSortMode = 'achternaam'; // Default
+    let previousNameSortMode = 'achternaam'; // Track last name-based sort for status sorting
     
     /**
      * Initialize sort toggle
      */
     function initSortToggle() {
-        console.log('ðŸ”„ Initializing sort toggle...');
+        console.log('🔄 Initializing sort toggle...');
         
         // Check if user has sorteerFunctie feature
         const canToggleSort = window.userFeatures?.sorteerFunctie || false;
         
         if (!canToggleSort) {
-            console.log('â„¹ï¸ User does not have sort toggle feature');
+            console.log('ℹ️ User does not have sort toggle feature');
             return;
         }
         
-        console.log('âœ… User has sort toggle feature - showing button');
+        console.log('✅ User has sort toggle feature - showing button');
         
         // Show toggle container
         const container = document.getElementById('sort-toggle-container');
@@ -3181,9 +3235,9 @@ console.log('âœ… Manual Location Selector module loaded');
         
         // Load saved preference from localStorage
         const savedSort = localStorage.getItem('peopledisplay_sort_mode');
-        if (savedSort && (savedSort === 'voornaam' || savedSort === 'achternaam')) {
+        if (savedSort && (savedSort === 'voornaam' || savedSort === 'achternaam' || savedSort === 'status')) {
             currentSortMode = savedSort;
-            console.log('ðŸ“ Loaded saved sort preference:', currentSortMode);
+            console.log('📝 Loaded saved sort preference:', currentSortMode);
         }
         
         // Update UI to reflect current mode
@@ -3202,7 +3256,7 @@ console.log('âœ… Manual Location Selector module loaded');
         const sortOptions = document.querySelectorAll('.sort-option');
         
         if (!toggleBtn || !dropdown) {
-            console.error('âŒ Sort toggle elements not found');
+            console.error('❌ Sort toggle elements not found');
             return;
         }
         
@@ -3220,48 +3274,21 @@ console.log('âœ… Manual Location Selector module loaded');
                 const sortMode = this.dataset.sort;
                 
                 if (sortMode !== currentSortMode) {
-                    console.log('ðŸ”„ ========================================');
-                    console.log('ðŸ”„ SORT MODE CHANGE DETECTED');
-                    console.log('ðŸ”„ From:', currentSortMode, 'â†’ To:', sortMode);
-                    console.log('ðŸ”„ ========================================');
+                    console.log('🔄 Switching sort mode to:', sortMode);
                     currentSortMode = sortMode;
                     
                     // Save to localStorage
                     localStorage.setItem('peopledisplay_sort_mode', sortMode);
-                    console.log('ðŸ’¾ Saved to localStorage:', sortMode);
                     
                     // Update UI
                     updateSortUI();
-                    console.log('ðŸŽ¨ UI updated - button should show:', sortMode === 'voornaam' ? 'V' : 'A');
                     
-                    // Check if employees array has data
-                    console.log('ðŸ“Š Checking employees array...');
-                    if (typeof window.labeeApp !== 'undefined' && typeof window.labeeApp.getEmployees === 'function') {
-                        const empArray = window.labeeApp.getEmployees();
-                        console.log('   - Employees in global array:', empArray ? empArray.length : 'NULL');
-                        console.log('   - First employee:', empArray && empArray[0] ? empArray[0].Naam : 'N/A');
-                    } else {
-                        console.log('   - âš ï¸ labeeApp.getEmployees not available');
-                    }
-                    
-                    // Re-apply filters (which triggers renderEmployees with sort)
-                    console.log('ðŸ”„ Calling applyCurrentFilters()...');
+                    // Re-apply filters with new sort
                     if (window.labeeApp && typeof window.labeeApp.applyCurrentFilters === 'function') {
                         window.labeeApp.applyCurrentFilters();
-                        console.log('âœ… applyCurrentFilters() executed');
                     } else if (window.labeeApp && typeof window.labeeApp.renderEmployees === 'function') {
-                        console.log('âš ï¸ Fallback: calling renderEmployees() directly');
                         window.labeeApp.renderEmployees();
-                        console.log('âœ… renderEmployees() executed');
-                    } else {
-                        console.error('âŒ window.labeeApp not available!');
-                        console.error('   Available:', window.labeeApp ? Object.keys(window.labeeApp) : 'UNDEFINED');
                     }
-                    
-                    console.log('ðŸ”„ ========================================');
-                    console.log('ðŸ”„ SORT CHANGE COMPLETE');
-                    console.log('ðŸ”„ Check if cards re-ordered on screen now!');
-                    console.log('ðŸ”„ ========================================');
                 }
                 
                 // Close dropdown
@@ -3278,7 +3305,7 @@ console.log('âœ… Manual Location Selector module loaded');
             }
         });
         
-        console.log('âœ… Sort toggle event listeners setup complete');
+        console.log('✅ Sort toggle event listeners setup complete');
     }
     
     /**
@@ -3288,10 +3315,12 @@ console.log('âœ… Manual Location Selector module loaded');
         const letter = document.getElementById('sort-letter');
         const sortOptions = document.querySelectorAll('.sort-option');
         
-        // Update compact button letter (A = Achternaam, V = Voornaam)
+        // Update compact button letter (A = Achternaam, V = Voornaam, S = Status)
         if (letter) {
             if (currentSortMode === 'voornaam') {
                 letter.textContent = 'V';
+            } else if (currentSortMode === 'status') {
+                letter.textContent = 'S';
             } else {
                 letter.textContent = 'A';
             }
@@ -3304,14 +3333,14 @@ console.log('âœ… Manual Location Selector module loaded');
             
             if (sortMode === currentSortMode) {
                 option.classList.add('active');
-                if (bullet) bullet.textContent = 'â—';
+                if (bullet) bullet.textContent = '●';
             } else {
                 option.classList.remove('active');
-                if (bullet) bullet.textContent = 'â—‹';
+                if (bullet) bullet.textContent = '○';
             }
         });
         
-        console.log('ðŸŽ¨ Sort UI updated - current mode:', currentSortMode);
+        console.log('🎨 Sort UI updated - current mode:', currentSortMode);
     }
     
     /**
@@ -3321,13 +3350,32 @@ console.log('âœ… Manual Location Selector module loaded');
         return currentSortMode;
     }
     
+    /**
+     * Set previous name-based sort mode (for status sorting)
+     */
+    function setPreviousNameSort(mode) {
+        if (mode === 'voornaam' || mode === 'achternaam') {
+            previousNameSortMode = mode;
+            console.log('📝 Previous name sort set to:', mode);
+        }
+    }
+    
+    /**
+     * Get previous name-based sort mode
+     */
+    function getPreviousNameSort() {
+        return previousNameSortMode;
+    }
+    
     // Expose to global scope
     window.SortToggle = {
         init: initSortToggle,
-        getCurrentMode: getCurrentSortMode
+        getCurrentMode: getCurrentSortMode,
+        setPreviousNameSort: setPreviousNameSort,
+        getPreviousNameSort: getPreviousNameSort
     };
     
-    console.log('âœ… Sort toggle module loaded');
+    console.log('✅ Sort toggle module loaded');
 })();
 
 
