@@ -33,6 +33,7 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 // Session en auth check
 session_start();
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/version.php';
 require_once __DIR__ . '/includes/license_check.php';
 
 if (!isset($_SESSION['user_id'])) {
