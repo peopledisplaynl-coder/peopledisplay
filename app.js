@@ -1939,7 +1939,7 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
         'use strict';
         
         const STORAGE_KEY = 'peopledisplay_filters';
-        const FILTER_TIMEOUT = 5 * 60 * 1000; // 5 minuten
+        const FILTER_TIMEOUT = 1 * 60 * 1000; // 1 minuut
         
         function saveFilters() {
             const searchInput = document.getElementById("search-input");
@@ -2137,6 +2137,20 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
             setTimeout(init, 100);
         }
         
+        // ⏱️ WATCHDOG: filters actief resetten na inactiviteit, ook zonder page reload
+        setInterval(() => {
+            if (!hasActiveFilters()) return;
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (!stored) return;
+                const filters = JSON.parse(stored);
+                if (Date.now() - filters.timestamp > FILTER_TIMEOUT) {
+                    console.log('⏱️ Zoekfilters automatisch gereset na inactiviteit');
+                    clearFilters(true);
+                }
+            } catch (e) {}
+        }, 5000); // elke 5 seconden checken
+
         window.FilterPersistence = {
             save: saveFilters,
             clear: clearFilters,
