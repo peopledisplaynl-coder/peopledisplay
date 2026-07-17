@@ -1445,26 +1445,48 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
           if (window.SortToggle.setPreviousNameSort) {
             window.SortToggle.setPreviousNameSort('voornaam');
           }
-          
+            
           // Sort by first name (Voornaam with capital V!)
           filtered.sort((a, b) => {
             const nameA = extractName(a, 'voornaam');
             const nameB = extractName(b, 'voornaam');
             return nameA.toLowerCase().localeCompare(nameB.toLowerCase());
           });
+        } else if (sortMode === 'voornaam_status') {
+          // Groepeer op status (IN eerst), sorteer binnen elke groep op voornaam
+          filtered.sort((a, b) => {
+            const statusA = (a.Status || '').toString().trim().toUpperCase();
+            const statusB = (b.Status || '').toString().trim().toUpperCase();
+            const inA = statusA === 'IN' ? 0 : 1;
+            const inB = statusB === 'IN' ? 0 : 1;
+            if (inA !== inB) return inA - inB;
+
+            const getVoornaam = (emp) => {
+                if (emp.Voornaam) return emp.Voornaam;
+                const fullName = emp.Naam || '';
+                if (fullName.includes(',')) {
+                    return fullName.split(',')[1]?.trim() || fullName;
+                }
+                return fullName.split(' ')[0] || fullName;
+            };
+
+            const nameA = getVoornaam(a).toLowerCase();
+            const nameB = getVoornaam(b).toLowerCase();
+            return nameA.localeCompare(nameB);
+          });
         } else if (sortMode === 'status') {
           // Sort by Status - IN first, then by previous name sort within groups
           const previousMode = window.SortToggle.getPreviousNameSort?.() || 'achternaam';
           console.log(`   📊 Status sort using previous name mode: ${previousMode}`);
-          
+            
           filtered.sort((a, b) => {
             const statusA = (a.Status || '').toUpperCase();
             const statusB = (b.Status || '').toUpperCase();
-            
+                
             // IN comes first
             if (statusA === 'IN' && statusB !== 'IN') return -1;
             if (statusA !== 'IN' && statusB === 'IN') return 1;
-            
+                
             // Within same status group, sort by previous name mode (voornaam or achternaam)
             const nameA = extractName(a, previousMode);
             const nameB = extractName(b, previousMode);
@@ -1476,7 +1498,7 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
           if (window.SortToggle.setPreviousNameSort) {
             window.SortToggle.setPreviousNameSort('achternaam');
           }
-          
+            
           filtered.sort((a, b) => {
             const nameA = extractName(a, 'achternaam');
             const nameB = extractName(b, 'achternaam');
@@ -3216,34 +3238,37 @@ console.log('✅ Manual Location Selector module loaded');
      */
     function initSortToggle() {
         console.log('🔄 Initializing sort toggle...');
-        
-        // Check if user has sorteerFunctie feature
+
+        // Vaste sorteervolgorde vanuit beheer - geldt ALTIJD, ook zonder knop
+        currentSortMode = window.userFeatures?.sorteerStandaard || 'voornaam_status';
+
+        // Bepaalt alleen of de HANDMATIGE knop zichtbaar is
         const canToggleSort = window.userFeatures?.sorteerFunctie || false;
-        
+
         if (!canToggleSort) {
-            console.log('ℹ️ User does not have sort toggle feature');
+            console.log('ℹ️ Sorteerknop verborgen - vaste volgorde actief:', currentSortMode);
             return;
         }
-        
+
         console.log('✅ User has sort toggle feature - showing button');
-        
-        // Show toggle container
+
+        // De knop kent alleen 'voornaam' / 'achternaam' als handmatige opties
+        if (currentSortMode !== 'voornaam' && currentSortMode !== 'achternaam') {
+            currentSortMode = 'achternaam';
+        }
+
         const container = document.getElementById('sort-toggle-container');
         if (container) {
             container.style.display = 'block';
         }
-        
-        // Load saved preference from localStorage
+
         const savedSort = localStorage.getItem('peopledisplay_sort_mode');
-        if (savedSort && (savedSort === 'voornaam' || savedSort === 'achternaam' || savedSort === 'status')) {
+        if (savedSort && (savedSort === 'voornaam' || savedSort === 'achternaam')) {
             currentSortMode = savedSort;
-            console.log('📝 Loaded saved sort preference:', currentSortMode);
+            console.log('📁 Loaded saved sort preference:', currentSortMode);
         }
-        
-        // Update UI to reflect current mode
+
         updateSortUI();
-        
-        // Setup event listeners
         setupSortEventListeners();
     }
     

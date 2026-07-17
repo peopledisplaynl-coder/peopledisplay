@@ -90,7 +90,8 @@ try {
         'locations' => $features['locations'] ?? [],
         'afdelingen' => $afdelingen, // ✅ NIEUW!
         'customButtonNames' => null,
-        'sorteerFunctie' => isset($features['sorteerFunctie']) && $features['sorteerFunctie'] ? true : false  // ✅ SORTEER TOGGLE FEATURE
+        'sorteerFunctie' => isset($features['sorteerFunctie']) && $features['sorteerFunctie'] ? true : false,  // ✅ SORTEER TOGGLE FEATURE
+        'sorteerStandaard' => $features['sorteerStandaard'] ?? 'voornaam_status',   // ← NIEUW
     ];
     
     // Add custom names if they exist

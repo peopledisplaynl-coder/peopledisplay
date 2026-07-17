@@ -269,6 +269,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     // ✨ Sorteer Toggle Feature
     $sorteerFunctie = isset($_POST['can_toggle_sort']) ? true : false;
+    $sorteerStandaard = in_array($_POST['sorteer_standaard'] ?? '', ['achternaam','voornaam','voornaam_status'])
+        ? $_POST['sorteer_standaard']
+        : 'voornaam_status';
 
     // 📋 IN/UIT Bord weergave feature
     $inuitBord = isset($_POST['can_inuitbord']) ? true : false;
@@ -293,6 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'extraButtons' => $extraButtons,
         'locations' => $locations,
         'sorteerFunctie' => $sorteerFunctie,  // ← CORRECT FIELD NAME!
+        'sorteerStandaard' => $sorteerStandaard,
         'inuitBord' => $inuitBord,            // ← IN/UIT Bord weergave
         'admin_features' => $adminFeatures    // ← NEW: Admin feature permissions
     ]);
@@ -1797,6 +1801,26 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                         <span style="font-size: 12px; color: #718096; line-height: 1.4;">
                                             User kan zelf switchen tussen voornaam/achternaam sortering via header knop
                                         </span>
+                                    </label>
+                                </div>
+                                <div class="checkbox-item" style="align-items: flex-start; margin-top: 10px;">
+                                    <label for="sorteer-standaard-${userId}" style="flex: 1; display: block;">
+                                        <strong style="display: block; margin-bottom: 4px;">↕️ Standaard sorteervolgorde</strong>
+                                        <span style="font-size: 12px; color: #718096; line-height: 1.4; display: block; margin-bottom: 6px;">
+                                            Geldt altijd, ook als de sorteerknop hierboven uit staat.
+                                        </span>
+                                        <select id="sorteer-standaard-${userId}" name="sorteer_standaard" 
+                                                style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e0;">
+                                            <option value="voornaam_status" ${(!features.sorteerStandaard || features.sorteerStandaard === 'voornaam_status') ? 'selected' : ''}>
+                                                Voornaam A→Z, status IN eerst
+                                            </option>
+                                            <option value="voornaam" ${features.sorteerStandaard === 'voornaam' ? 'selected' : ''}>
+                                                Voornaam A→Z
+                                            </option>
+                                            <option value="achternaam" ${features.sorteerStandaard === 'achternaam' ? 'selected' : ''}>
+                                                Achternaam A→Z
+                                            </option>
+                                        </select>
                                     </label>
                                 </div>
                                 <div class="checkbox-item" style="align-items: flex-start; margin-top: 10px;">
