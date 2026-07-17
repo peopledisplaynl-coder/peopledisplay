@@ -272,6 +272,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $sorteerStandaard = in_array($_POST['sorteer_standaard'] ?? '', ['achternaam','voornaam','voornaam_status'])
         ? $_POST['sorteer_standaard']
         : 'voornaam_status';
+    $zoomFunctie = isset($_POST['can_toggle_zoom']) ? true : false;
+    $zoomStandaard = isset($_POST['zoom_standaard']) && is_numeric($_POST['zoom_standaard'])
+        ? max(50, min(150, (int)$_POST['zoom_standaard']))
+        : 100;
 
     // 📋 IN/UIT Bord weergave feature
     $inuitBord = isset($_POST['can_inuitbord']) ? true : false;
@@ -297,6 +301,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'locations' => $locations,
         'sorteerFunctie' => $sorteerFunctie,  // ← CORRECT FIELD NAME!
         'sorteerStandaard' => $sorteerStandaard,
+        'zoomFunctie' => $zoomFunctie,
+        'zoomStandaard' => $zoomStandaard,
         'inuitBord' => $inuitBord,            // ← IN/UIT Bord weergave
         'admin_features' => $adminFeatures    // ← NEW: Admin feature permissions
     ]);
@@ -1821,6 +1827,27 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                                 Achternaam A→Z
                                             </option>
                                         </select>
+                                    </label>
+                                </div>
+                                <div class="checkbox-item" style="align-items: flex-start; margin-top: 10px;">
+                                    <input type="checkbox" id="can-toggle-zoom-${userId}" name="can_toggle_zoom" value="1" ${features.zoomFunctie ? 'checked' : ''}>
+                                    <label for="can-toggle-zoom-${userId}" style="flex: 1;">
+                                        <strong style="display: block; margin-bottom: 4px;">🔍 Zoomknop tonen</strong>
+                                        <span style="font-size: 12px; color: #718096; line-height: 1.4; display: block;">
+                                            Toont kleine +/- knopjes naast de sorteerknop waarmee de gebruiker
+                                            het scherm lokaal kan aanpassen.
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="checkbox-item" style="align-items: flex-start; margin-top: 10px;">
+                                    <label for="zoom-standaard-${userId}" style="flex: 1; display: block;">
+                                        <strong style="display: block; margin-bottom: 4px;">🔍 Standaard zoomniveau (%)</strong>
+                                        <span style="font-size: 12px; color: #718096; line-height: 1.4; display: block; margin-bottom: 6px;">
+                                            Geldt altijd bij het laden van de pagina. Tussen 50 en 150.
+                                        </span>
+                                        <input type="number" id="zoom-standaard-${userId}" name="zoom_standaard" min="50" max="150" step="5"
+                                               value="${features.zoomStandaard || 100}"
+                                               style="width: 100px; padding: 6px; border-radius: 4px; border: 1px solid #cbd5e0;">
                                     </label>
                                 </div>
                                 <div class="checkbox-item" style="align-items: flex-start; margin-top: 10px;">

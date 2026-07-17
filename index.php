@@ -316,7 +316,18 @@ $user_id = $_SESSION['user_id'];
                     </div>
                 </div>
             </div>
-            
+
+            <!-- ═══════════════════════════════════════════════════════════════
+                 ✨ ZOOM TOGGLE - COMPACT (+/- KNOPPEN)
+                 ═══════════════════════════════════════════════════════════════ -->
+            <div id="zoom-toggle-container" style="display: none; position: relative;">
+                <div style="display:flex; align-items:center; gap:2px;">
+                    <button id="zoom-out-btn" class="sort-toggle-compact" title="Uitzoomen" style="width:20px;height:20px;font-size:14px;line-height:1;padding:0;">−</button>
+                    <button id="zoom-in-btn" class="sort-toggle-compact" title="Inzoomen" style="width:20px;height:20px;font-size:14px;line-height:1;padding:0;">+</button>
+                </div>
+                <div id="zoom-bubble" style="position:absolute; top:-28px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:2px 8px; border-radius:4px; font-size:12px; opacity:0; pointer-events:none; transition:opacity 0.4s ease; white-space:nowrap;">100%</div>
+            </div>
+
             <button onclick="window.location.href='overzicht.php'" class="btn btn-secondary">📋 Overzicht</button>
             <?php if ($toonInuitBordKnop): ?>
             <button onclick="window.location.href='/inuitbord.php'" class="btn btn-secondary">📋 IN/UIT Bord</button>

@@ -2293,7 +2293,13 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
                 console.log('🔄 Calling SortToggle.init()...');
                 window.SortToggle.init();
             }
-            
+
+            // 🔍 Initialize zoom toggle if available
+            if (window.ZoomToggle && typeof window.ZoomToggle.init === 'function') {
+                console.log('🔍 Calling ZoomToggle.init()...');
+                window.ZoomToggle.init();
+            }
+
             // 🆕 Render user profile in header
             renderUserProfile(window.__userFeatures);
             
@@ -3415,6 +3421,92 @@ console.log('✅ Manual Location Selector module loaded');
     };
     
     console.log('✅ Sort toggle module loaded');
+})();
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * ✨ ZOOM TOGGLE FUNCTIONALITY (NIEUW)
+ * ═══════════════════════════════════════════════════════════════
+ */
+(function() {
+    'use strict';
+
+    const ZOOM_STEP = 5;
+    const ZOOM_MIN = 50;
+    const ZOOM_MAX = 150;
+    const STORAGE_KEY = 'peopledisplay_zoom_level';
+    let currentZoom = 100;
+    let bubbleTimeout = null;
+
+    function applyZoom(level) {
+        currentZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, level));
+        document.documentElement.style.zoom = currentZoom + '%';
+    }
+
+    function showBubble() {
+        const bubble = document.getElementById('zoom-bubble');
+        if (!bubble) return;
+        bubble.textContent = currentZoom + '%';
+        bubble.style.opacity = '1';
+        if (bubbleTimeout) clearTimeout(bubbleTimeout);
+        bubbleTimeout = setTimeout(() => {
+            bubble.style.opacity = '0';
+        }, 1500);
+    }
+
+    function initZoomToggle() {
+        console.log('🔍 Initializing zoom toggle...');
+
+        // Vaste standaardwaarde vanuit beheer - geldt ALTIJD
+        const standaard = parseInt(window.userFeatures?.zoomStandaard, 10);
+        applyZoom(!isNaN(standaard) ? standaard : 100);
+
+        // Handmatige aanpassing van dit specifieke scherm herstellen (indien aanwezig)
+        const savedZoom = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+        if (!isNaN(savedZoom)) {
+            applyZoom(savedZoom);
+        }
+
+        // Bepaalt alleen of de HANDMATIGE knopjes zichtbaar zijn
+        const canToggleZoom = window.userFeatures?.zoomFunctie || false;
+
+        if (!canToggleZoom) {
+            console.log('ℹ️ Zoomknoppen verborgen - vast niveau actief:', currentZoom + '%');
+            return;
+        }
+
+        const container = document.getElementById('zoom-toggle-container');
+        if (container) {
+            container.style.display = 'block';
+        }
+
+        const zoomOutBtn = document.getElementById('zoom-out-btn');
+        const zoomInBtn = document.getElementById('zoom-in-btn');
+
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener('click', function() {
+                applyZoom(currentZoom - ZOOM_STEP);
+                localStorage.setItem(STORAGE_KEY, currentZoom);
+                showBubble();
+            });
+        }
+
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener('click', function() {
+                applyZoom(currentZoom + ZOOM_STEP);
+                localStorage.setItem(STORAGE_KEY, currentZoom);
+                showBubble();
+            });
+        }
+
+        console.log('✅ Zoom toggle event listeners setup complete');
+    }
+
+    window.ZoomToggle = {
+        init: initZoomToggle
+    };
+
+    console.log('✅ Zoom toggle module loaded');
 })();
 
 

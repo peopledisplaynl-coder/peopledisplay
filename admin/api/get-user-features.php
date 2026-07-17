@@ -92,6 +92,8 @@ try {
         'customButtonNames' => null,
         'sorteerFunctie' => isset($features['sorteerFunctie']) && $features['sorteerFunctie'] ? true : false,  // ✅ SORTEER TOGGLE FEATURE
         'sorteerStandaard' => $features['sorteerStandaard'] ?? 'voornaam_status',   // ← NIEUW
+        'zoomFunctie' => isset($features['zoomFunctie']) && $features['zoomFunctie'] ? true : false,
+        'zoomStandaard' => isset($features['zoomStandaard']) ? (int)$features['zoomStandaard'] : 100,
     ];
     
     // Add custom names if they exist
