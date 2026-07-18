@@ -91,12 +91,13 @@ function buildUpdateInfo(array $remote): array
     $message = !empty($newChanges) ? implode(' · ', array_slice($newChanges, 0, 2)) : '';
 
     return [
-        'available'     => true,
-        'version'       => $remote['version'],
-        'critical'      => $remote['critical'] ?? false,
-        'message'       => $message,
-        'changelog_url' => 'https://peopledisplay.nl',
-        'download_url'  => $remote['download_url'] ?? '',
-        'checksum'      => $remote['checksum']      ?? '',
+        'available'         => true,
+        'version'           => $remote['version'],
+        'critical'          => $remote['critical'] ?? false,
+        'message'           => $message,
+        'changelog_url'     => 'https://peopledisplay.nl',
+        'download_url'      => $remote['download_url']       ?? '',
+        'delta_download_url'=> $remote['delta_download_url'] ?? '',
+        'checksum'          => $remote['checksum']           ?? '',
     ];
 }
