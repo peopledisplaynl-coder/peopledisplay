@@ -381,7 +381,12 @@ $canCreateBackup         = ($userRole === 'superadmin') || hasAdminFeature('crea
                 <?php if (!empty($updateInfo['message'])): ?> — <?= htmlspecialchars($updateInfo['message']) ?><?php endif; ?>
             </span>
             <a href="<?= htmlspecialchars($updateInfo['changelog_url']) ?>" class="ub-link" target="_blank">Wat is nieuw?</a>
-            <a href="<?= htmlspecialchars($updateInfo['download_url']) ?>" class="ub-btn" target="_blank">Download</a>
+            <?php if (!empty($updateInfo['delta_download_url'])): ?>
+            <a href="<?= htmlspecialchars($updateInfo['delta_download_url']) ?>" class="ub-btn" target="_blank">⬇️ Update downloaden</a>
+            <a href="<?= htmlspecialchars($updateInfo['download_url']) ?>" class="ub-link" target="_blank" style="font-size:12px;opacity:0.75;">Volledige installatie</a>
+            <?php else: ?>
+            <a href="<?= htmlspecialchars($updateInfo['download_url']) ?>" class="ub-btn" target="_blank">⬇️ Update downloaden</a>
+            <?php endif; ?>
             <button class="ub-dismiss" title="Verberg melding" onclick="dismissUpdateBanner('<?= htmlspecialchars($updateInfo['version']) ?>')">&#x2715;</button>
         </div>
         <script>
