@@ -547,7 +547,12 @@ header div[id^="count-"] {
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
-  
+
+  /* ✅ Elke kaart houdt zijn eigen hoogte i.p.v. uit te rekken tot de hoogste
+     kaart in dezelfde rij (bijv. een medewerker met BHV-label + extra knoppen
+     naast een medewerker zonder) — maakt de grid pas écht responsive op inhoud. */
+  align-items: start;
+
   /* ✅ Performance optimalisatie */
   will-change: scroll-position;
   transform: translateZ(0);
@@ -665,8 +670,12 @@ header div[id^="count-"] {
   color: black;
   transition: background-color 0.3s ease, transform 0.08s ease;
   background: #fff;
-  min-height: 140px;
-  
+  /* ✅ Was vast 140px — daardoor bleef een kaart met minimale featurebeheer-
+     instellingen (bijv. alleen naam + IN/UIT) altijd even groot als een volle
+     kaart met foto, BHV-label en extra knoppen. Nu alleen een kleine bodem
+     zodat de kaart verder op zijn eigen inhoud sized. */
+  min-height: 90px;
+
   /* ✅ Performance */
   will-change: transform;
   transform: translateZ(0);
