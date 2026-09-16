@@ -19,7 +19,9 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
   ]);
   session_start();
 }
-<?php
+// download-al-backups.php
+require_once __DIR__ . '/auth_helper.php';
+if (!isAdmin()) { http_response_code(401); echo 'Not authorized'; exit; }
 $backupDir = __DIR__ . '/backups';
 $zipName = 'config-backups-' . date('Ymd-His') . '.zip';
 $zipPath = __DIR__ . '/' . $zipName;

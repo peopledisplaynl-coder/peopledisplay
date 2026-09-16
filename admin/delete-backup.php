@@ -19,8 +19,9 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
   ]);
   session_start();
 }
-<?php
 // delete-backup.php?file=config.20251010-0930.json
+require_once __DIR__ . '/auth_helper.php';
+if (!isAdmin()) { http_response_code(401); echo 'Not authorized'; exit; }
 $filename = $_GET['file'] ?? '';
 $path = __DIR__ . '/backups/' . basename($filename);
 

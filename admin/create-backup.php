@@ -19,11 +19,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
   ]);
   session_start();
 }
-<?php
 // create-backup.php
-session_start();
+require_once __DIR__ . '/auth_helper.php';
 header('Content-Type: application/json; charset=utf-8');
-if(empty($_SESSION['is_admin'])){ http_response_code(401); echo json_encode(['success'=>false]); exit; }
+if (!isAdmin()) { http_response_code(401); echo json_encode(['success'=>false]); exit; }
 
 try {
   $cfgFile = __DIR__ . '/config.json';

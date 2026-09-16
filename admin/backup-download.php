@@ -19,10 +19,9 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
   ]);
   session_start();
 }
-<?php
 // backup-download.php
-session_start();
-if(empty($_SESSION['is_admin'])){ http_response_code(401); echo 'Not authorized'; exit; }
+require_once __DIR__ . '/auth_helper.php';
+if (!isAdmin()) { http_response_code(401); echo 'Not authorized'; exit; }
 $id = $_GET['backupId'] ?? '';
 $backupsDir = __DIR__ . '/backups';
 $pattern = $backupsDir . "/config_backup_{$id}.json";

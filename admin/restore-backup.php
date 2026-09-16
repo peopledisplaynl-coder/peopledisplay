@@ -19,11 +19,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
   ]);
   session_start();
 }
-<?php
 // restore-backup.php
-session_start();
+require_once __DIR__ . '/auth_helper.php';
 header('Content-Type: application/json; charset=utf-8');
-if(empty($_SESSION['is_admin'])){ http_response_code(401); echo json_encode(['success'=>false,'error'=>'not_authorized']); exit; }
+if (!isAdmin()) { http_response_code(401); echo json_encode(['success'=>false,'error'=>'not_authorized']); exit; }
 
 $input = json_decode(file_get_contents('php://input'), true);
 if(empty($input['backupId'])){ http_response_code(400); echo json_encode(['success'=>false,'error'=>'missing_backupId']); exit; }
