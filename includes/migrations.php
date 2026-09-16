@@ -140,6 +140,27 @@ try {
         }
     }
 
+    // Ensure the license_log table itself exists — some older installs never got
+    // it created (it was introduced alongside the licensing system in 2.0.0 but,
+    // on at least one customer's database, apparently never landed). Every write
+    // to it already fails silently (see logLicenseAction()'s own try/catch), but
+    // the migration below assumes the table exists and would otherwise abort here.
+    $db->exec("CREATE TABLE IF NOT EXISTS `license_log` (
+        `id`          int(11)      NOT NULL AUTO_INCREMENT,
+        `license_key` varchar(100) DEFAULT NULL,
+        `action`      enum('activated','deactivated','validated','failed','upgraded','expired','continuity_unlocked') NOT NULL,
+        `domain`      varchar(255) DEFAULT NULL,
+        `ip_address`  varchar(45)  DEFAULT NULL,
+        `user_agent`  text         DEFAULT NULL,
+        `details`     text         DEFAULT NULL,
+        `created_at`  datetime     DEFAULT current_timestamp(),
+        PRIMARY KEY (`id`),
+        KEY `idx_license_key` (`license_key`),
+        KEY `idx_action`      (`action`),
+        KEY `idx_created_at`  (`created_at`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $pd_migrations_changes[] = 'license_log table ensured';
+
     // Ensure license_log.action ENUM includes continuity_unlocked
     $actionCol = $db->query("SHOW COLUMNS FROM `license_log` LIKE 'action'")->fetch();
     if ($actionCol && strpos($actionCol['Type'], 'continuity_unlocked') === false) {

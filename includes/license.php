@@ -800,6 +800,24 @@ function ensureContinuityColumns(): void {
             }
         }
 
+        // Some older installs never got the license_log table created at all (it was
+        // introduced alongside the licensing system, but apparently missed at least
+        // one customer's database) — create it if missing before touching its ENUM.
+        $db->exec("CREATE TABLE IF NOT EXISTS `license_log` (
+            `id`          int(11)      NOT NULL AUTO_INCREMENT,
+            `license_key` varchar(100) DEFAULT NULL,
+            `action`      enum('activated','deactivated','validated','failed','upgraded','expired','continuity_unlocked') NOT NULL,
+            `domain`      varchar(255) DEFAULT NULL,
+            `ip_address`  varchar(45)  DEFAULT NULL,
+            `user_agent`  text         DEFAULT NULL,
+            `details`     text         DEFAULT NULL,
+            `created_at`  datetime     DEFAULT current_timestamp(),
+            PRIMARY KEY (`id`),
+            KEY `idx_license_key` (`license_key`),
+            KEY `idx_action`      (`action`),
+            KEY `idx_created_at`  (`created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
         $actionCol = $db->query("SHOW COLUMNS FROM `license_log` LIKE 'action'")->fetch();
         if ($actionCol && strpos($actionCol['Type'], 'continuity_unlocked') === false) {
             $db->exec("ALTER TABLE `license_log` MODIFY `action` ENUM('activated','deactivated','validated','failed','upgraded','expired','continuity_unlocked') NOT NULL");
