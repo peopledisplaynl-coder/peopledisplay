@@ -44,12 +44,26 @@ if (!defined('PD_CONTINUITY_SECRET')) {
 function isLicenseValid(): bool {
     global $db;
     try {
-        $stmt = $db->prepare(
-            "SELECT license_key, license_status, license_domain, license_expires_at, continuity_unlocked
-             FROM config WHERE id = 1 LIMIT 1"
-        );
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        // continuity_unlocked is added by a migration that only runs for a logged-in
+        // admin/superadmin session (see includes/migrations.php). activate_license.php
+        // is reachable by anonymous users, so on a freshly deployed domain where no
+        // admin has visited the dashboard yet, that column may not exist. Fall back to
+        // a query without it rather than letting the whole license check fail closed.
+        try {
+            $stmt = $db->prepare(
+                "SELECT license_key, license_status, license_domain, license_expires_at, continuity_unlocked
+                 FROM config WHERE id = 1 LIMIT 1"
+            );
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $stmt = $db->prepare(
+                "SELECT license_key, license_status, license_domain, license_expires_at
+                 FROM config WHERE id = 1 LIMIT 1"
+            );
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
 
         // No key: allow if within free Starter limits
         if (!$row || empty($row['license_key'])) {
@@ -168,23 +182,49 @@ function getStarterTierInfo(): ?array {
 function getLicenseInfo(): ?array {
     global $db;
     try {
-        $stmt = $db->prepare("
-            SELECT
-                c.license_key, c.license_tier, c.license_domain,
-                c.license_activated_at, c.license_expires_at,
-                c.license_status, c.license_notes,
-                c.continuity_unlocked, c.continuity_unlocked_at,
-                lt.tier_name, lt.tier_description,
-                lt.max_users, lt.max_employees,
-                lt.max_locations, lt.max_departments,
-                lt.features, lt.price_eur
-            FROM config c
-            LEFT JOIN license_tiers lt ON c.license_tier = lt.tier_code
-            WHERE c.id = 1
-            LIMIT 1
-        ");
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        // See isLicenseValid() for why continuity_unlocked(_at) may not exist yet on a
+        // freshly deployed domain — fall back to a query without those columns instead
+        // of letting the whole lookup fail.
+        try {
+            $stmt = $db->prepare("
+                SELECT
+                    c.license_key, c.license_tier, c.license_domain,
+                    c.license_activated_at, c.license_expires_at,
+                    c.license_status, c.license_notes,
+                    c.continuity_unlocked, c.continuity_unlocked_at,
+                    lt.tier_name, lt.tier_description,
+                    lt.max_users, lt.max_employees,
+                    lt.max_locations, lt.max_departments,
+                    lt.features, lt.price_eur
+                FROM config c
+                LEFT JOIN license_tiers lt ON c.license_tier = lt.tier_code
+                WHERE c.id = 1
+                LIMIT 1
+            ");
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $stmt = $db->prepare("
+                SELECT
+                    c.license_key, c.license_tier, c.license_domain,
+                    c.license_activated_at, c.license_expires_at,
+                    c.license_status, c.license_notes,
+                    lt.tier_name, lt.tier_description,
+                    lt.max_users, lt.max_employees,
+                    lt.max_locations, lt.max_departments,
+                    lt.features, lt.price_eur
+                FROM config c
+                LEFT JOIN license_tiers lt ON c.license_tier = lt.tier_code
+                WHERE c.id = 1
+                LIMIT 1
+            ");
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                $row['continuity_unlocked'] = 0;
+                $row['continuity_unlocked_at'] = null;
+            }
+        }
 
         // No key: return Starter tier info if within limits
         if (!$row || empty($row['license_key'])) {
@@ -494,6 +534,10 @@ function activateLicense(string $key): array {
 
     $result = ['success' => true, 'error' => '', 'tier' => $tier];
     if (isContinuityEligibleTier($tier)) {
+        // Make sure the continuity columns exist before the customer can be asked to
+        // redeem a key — see ensureContinuityColumns() for why this can't just rely
+        // on includes/migrations.php on a freshly (re)deployed, not-yet-admin-visited domain.
+        ensureContinuityColumns();
         // Shown once by activate_license.php so the customer can save it.
         // Stateless — always re-derivable from the license key + tier, nothing to store here.
         $result['continuity_key'] = generateContinuityKey($key, $tier);
@@ -731,6 +775,44 @@ function isContinuityEligibleTier(string $tier): bool {
 }
 
 /**
+ * Idempotently ensure the config/license_log columns needed for continuity keys
+ * exist, without depending on includes/migrations.php (which only runs for a
+ * logged-in admin/superadmin session — activate_license.php and the continuity
+ * redemption flow are reachable by anonymous users, e.g. right after a fresh
+ * file deploy where no admin has opened the dashboard yet).
+ *
+ * Safe to call on every request: each check is a single SHOW COLUMNS lookup and
+ * the ALTER only runs once, the first time it's actually missing.
+ *
+ * @return void
+ */
+function ensureContinuityColumns(): void {
+    global $db;
+    try {
+        $configCols = [
+            'continuity_unlocked'    => "TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Domeincheck permanent uitgeschakeld via continuity-sleutel'",
+            'continuity_unlocked_at' => "DATETIME DEFAULT NULL",
+        ];
+        foreach ($configCols as $colName => $definition) {
+            $col = $db->query("SHOW COLUMNS FROM `config` LIKE '$colName'")->fetch();
+            if (!$col) {
+                $db->exec("ALTER TABLE `config` ADD COLUMN `$colName` $definition");
+            }
+        }
+
+        $actionCol = $db->query("SHOW COLUMNS FROM `license_log` LIKE 'action'")->fetch();
+        if ($actionCol && strpos($actionCol['Type'], 'continuity_unlocked') === false) {
+            $db->exec("ALTER TABLE `license_log` MODIFY `action` ENUM('activated','deactivated','validated','failed','upgraded','expired','continuity_unlocked') NOT NULL");
+        }
+    } catch (Exception $e) {
+        // Non-fatal: isLicenseValid()/getLicenseInfo() fall back gracefully if these
+        // columns still don't exist, and includes/migrations.php will pick this up
+        // too as soon as an admin logs in.
+        error_log('[PD License] ensureContinuityColumns: ' . $e->getMessage());
+    }
+}
+
+/**
  * Deterministically derive the continuity key for a license key + tier.
  * Stateless by design — no separate storage, so it can be re-shown or
  * re-verified at any time purely from data already in `config`, using
@@ -785,6 +867,8 @@ function validateContinuityKey(string $inputKey): array {
  */
 function redeemContinuityKey(string $inputKey): array {
     global $db;
+
+    ensureContinuityColumns();
 
     $check = validateContinuityKey($inputKey);
     if (!$check['valid']) {
