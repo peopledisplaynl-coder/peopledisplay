@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS `config` (
   `license_expires_at`                  datetime                                              DEFAULT NULL,
   `license_status`                      enum('active','expired','revoked','invalid','pending') DEFAULT 'pending',
   `license_notes`                       text                                                  DEFAULT NULL,
+  `continuity_unlocked`                 tinyint(1)                                            NOT NULL DEFAULT 0 COMMENT 'Domeincheck permanent uitgeschakeld via continuity-sleutel',
+  `continuity_unlocked_at`              datetime                                              DEFAULT NULL,
   `eula_accepted`                       tinyint(1)                                            DEFAULT 0,
   `eula_accepted_at`                    datetime                                              DEFAULT NULL,
   `eula_version`                        varchar(10)                                           DEFAULT '1.0',
@@ -660,7 +662,7 @@ ON DUPLICATE KEY UPDATE `tier_code` = `tier_code`;
 CREATE TABLE IF NOT EXISTS `license_log` (
   `id`          int(11)                                                       NOT NULL AUTO_INCREMENT,
   `license_key` varchar(100)                                                  DEFAULT NULL,
-  `action`      enum('activated','deactivated','validated','failed','upgraded','expired') NOT NULL,
+  `action`      enum('activated','deactivated','validated','failed','upgraded','expired','continuity_unlocked') NOT NULL,
   `domain`      varchar(255)                                                  DEFAULT NULL,
   `ip_address`  varchar(45)                                                   DEFAULT NULL,
   `user_agent`  text                                                          DEFAULT NULL,

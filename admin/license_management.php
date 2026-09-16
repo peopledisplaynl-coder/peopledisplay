@@ -388,6 +388,26 @@ $currentUser = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'Admin';
                 <div class="di-label">Geregistreerd Domein</div>
                 <div class="di-value mono"><?= htmlspecialchars($licenseInfo['license_domain'] ?? '—') ?></div>
             </div>
+            <?php if (isContinuityEligibleTier($licenseInfo['license_tier'] ?? '')): ?>
+            <div class="detail-item" style="grid-column: 1 / -1;">
+                <div class="di-label">Continuity-sleutel</div>
+                <?php if (!empty($licenseInfo['continuity_unlocked'])): ?>
+                <div class="di-value" style="font-weight:400;font-size:13px;">
+                    <span class="badge badge-active">Ontgrendeld</span>
+                    &mdash; werkt op elk domein sinds
+                    <?= !empty($licenseInfo['continuity_unlocked_at']) ? date('d-m-Y H:i', strtotime($licenseInfo['continuity_unlocked_at'])) : 'onbekend' ?>
+                </div>
+                <?php else: ?>
+                <div class="di-value mono" style="font-weight:400;font-size:13px;">
+                    <?= htmlspecialchars(generateContinuityKey($licenseInfo['license_key'], $licenseInfo['license_tier'])) ?>
+                    <div style="font-weight:400;font-size:12px;color:#718096;margin-top:4px;">
+                        Nog niet ingewisseld — de klant kan deze sleutel op <code>activate_license.php</code>
+                        invoeren om de domeincheck permanent uit te schakelen (bijv. bij verhuizing).
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
             <div class="detail-item">
                 <div class="di-label">Geactiveerd op</div>
                 <div class="di-value">

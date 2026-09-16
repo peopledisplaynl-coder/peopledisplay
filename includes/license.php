@@ -24,6 +24,15 @@ if (!defined('PD_LICENSE_SALT')) {
     define('PD_LICENSE_SALT', 'PEOPLEDISPLAY_SALT_2024');
 }
 
+// Secret for continuity-key generation (see section 19, below).
+// On production: define PD_CONTINUITY_SECRET in admin/db_config.php (stays out of git),
+// same as PD_LICENSE_SALT. CRITICAL: once any continuity key has been handed to a
+// customer, this value must NEVER change — doing so invalidates every key already
+// issued, permanently.
+if (!defined('PD_CONTINUITY_SECRET')) {
+    define('PD_CONTINUITY_SECRET', 'PEOPLEDISPLAY_CONTINUITY_2026');
+}
+
 // ============================================================
 // 1. isLicenseValid()
 // ============================================================
@@ -36,7 +45,7 @@ function isLicenseValid(): bool {
     global $db;
     try {
         $stmt = $db->prepare(
-            "SELECT license_key, license_status, license_domain, license_expires_at
+            "SELECT license_key, license_status, license_domain, license_expires_at, continuity_unlocked
              FROM config WHERE id = 1 LIMIT 1"
         );
         $stmt->execute();
@@ -51,7 +60,10 @@ function isLicenseValid(): bool {
         if ($row['license_status'] !== 'active') {
             return false;
         }
-        if ($row['license_domain'] !== getCurrentDomain()) {
+        // Domain binding is skipped once continuity is unlocked (see redeemContinuityKey()) —
+        // this lets a paid license keep working after the customer's domain or hosting changes,
+        // or if peopledisplay.nl itself is no longer around to help re-bind it.
+        if (empty($row['continuity_unlocked']) && $row['license_domain'] !== getCurrentDomain()) {
             return false;
         }
         if (!empty($row['license_expires_at']) && strtotime($row['license_expires_at']) < time()) {
@@ -161,6 +173,7 @@ function getLicenseInfo(): ?array {
                 c.license_key, c.license_tier, c.license_domain,
                 c.license_activated_at, c.license_expires_at,
                 c.license_status, c.license_notes,
+                c.continuity_unlocked, c.continuity_unlocked_at,
                 lt.tier_name, lt.tier_description,
                 lt.max_users, lt.max_employees,
                 lt.max_locations, lt.max_departments,
@@ -478,7 +491,14 @@ function activateLicense(string $key): array {
     }
 
     logLicenseAction($key, 'activated', $domain, "Tier: {$tier}");
-    return ['success' => true, 'error' => '', 'tier' => $tier];
+
+    $result = ['success' => true, 'error' => '', 'tier' => $tier];
+    if (isContinuityEligibleTier($tier)) {
+        // Shown once by activate_license.php so the customer can save it.
+        // Stateless — always re-derivable from the license key + tier, nothing to store here.
+        $result['continuity_key'] = generateContinuityKey($key, $tier);
+    }
+    return $result;
 }
 
 // ============================================================
@@ -530,7 +550,7 @@ function deactivateLicense(): bool {
 function logLicenseAction(string $key, string $action, string $domain, string $details = ''): void {
     global $db;
 
-    $allowed = ['activated', 'deactivated', 'validated', 'failed', 'upgraded', 'expired'];
+    $allowed = ['activated', 'deactivated', 'validated', 'failed', 'upgraded', 'expired', 'continuity_unlocked'];
     if (!in_array($action, $allowed, true)) {
         $action = 'failed';
     }
@@ -692,6 +712,103 @@ function getNextTierFor(string $type, int $current_limit): ?array {
         error_log('[PD License] getNextTierFor: ' . $e->getMessage());
         return null;
     }
+}
+
+// ============================================================
+// 19. Continuity key — keep a paid license working after a domain
+//     or hosting move, even without peopledisplay.nl being reachable.
+// ============================================================
+
+/**
+ * Whether a tier is eligible for a continuity key.
+ * Any paid (non-Starter) tier qualifies — not just the tiers sold today.
+ *
+ * @param  string $tier  tier_code, e.g. 'unlimited'
+ * @return bool
+ */
+function isContinuityEligibleTier(string $tier): bool {
+    return $tier !== '' && $tier !== 'starter';
+}
+
+/**
+ * Deterministically derive the continuity key for a license key + tier.
+ * Stateless by design — no separate storage, so it can be re-shown or
+ * re-verified at any time purely from data already in `config`, using
+ * only PD_CONTINUITY_SECRET (which must never change).
+ *
+ * @param  string $licenseKey  e.g. "PDIS-U001-AB12-CD34"
+ * @param  string $tier        tier_code, e.g. 'unlimited'
+ * @return string              e.g. "PDEC-XXXX-XXXX-XXXX-XXXX"
+ */
+function generateContinuityKey(string $licenseKey, string $tier): string {
+    $licenseKey = strtoupper(trim($licenseKey));
+    $hash       = strtoupper(hash_hmac('sha256', $licenseKey . '|' . $tier, PD_CONTINUITY_SECRET));
+    $short      = substr($hash, 0, 16); // 16 hex chars = 4 groups of 4
+    return 'PDEC-' . implode('-', str_split($short, 4));
+}
+
+/**
+ * Validate a continuity key against the license currently active on this install.
+ *
+ * @param  string $inputKey
+ * @return array{valid:bool, error:string}
+ */
+function validateContinuityKey(string $inputKey): array {
+    $info = getLicenseInfo();
+    if (!$info || empty($info['license_key'])) {
+        return ['valid' => false, 'error' => 'Geen actieve licentie om een continuity-sleutel aan te koppelen.'];
+    }
+
+    $tier = $info['license_tier'] ?? '';
+    if (!isContinuityEligibleTier($tier)) {
+        return ['valid' => false, 'error' => 'Continuity is niet beschikbaar voor de gratis Starter-versie.'];
+    }
+
+    $expected = generateContinuityKey($info['license_key'], $tier);
+    $input    = strtoupper(trim($inputKey));
+
+    if (!hash_equals($expected, $input)) {
+        return ['valid' => false, 'error' => 'Ongeldige continuity-sleutel voor deze licentie.'];
+    }
+
+    return ['valid' => true, 'error' => ''];
+}
+
+/**
+ * Redeem a continuity key: permanently disables the domain-binding check for
+ * this install. Only the domain check is affected — license_status (active/
+ * expired/revoked) still applies as normal, so a deliberate revocation by
+ * Ton still works even after continuity has been unlocked.
+ *
+ * @param  string $inputKey
+ * @return array{success:bool, error:string}
+ */
+function redeemContinuityKey(string $inputKey): array {
+    global $db;
+
+    $check = validateContinuityKey($inputKey);
+    if (!$check['valid']) {
+        logLicenseAction('', 'failed', getCurrentDomain(), 'Continuity-sleutel ongeldig: ' . $check['error']);
+        return ['success' => false, 'error' => $check['error']];
+    }
+
+    try {
+        $stmt = $db->prepare("UPDATE config SET continuity_unlocked = 1, continuity_unlocked_at = NOW() WHERE id = 1");
+        $stmt->execute();
+    } catch (Exception $e) {
+        error_log('[PD License] redeemContinuityKey: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'Databasefout bij inwisselen van de continuity-sleutel.'];
+    }
+
+    $info = getLicenseInfo();
+    logLicenseAction(
+        $info['license_key'] ?? '',
+        'continuity_unlocked',
+        getCurrentDomain(),
+        'Domeincheck permanent uitgeschakeld via continuity-sleutel'
+    );
+
+    return ['success' => true, 'error' => ''];
 }
 
 // ============================================================

@@ -127,6 +127,26 @@ try {
         $pd_migrations_changes[] = 'Added employee_manager and user_manager roles to users.role ENUM';
     }
 
+    // Ensure config table has the continuity-key columns (domain-lock bypass for paid licenses).
+    $configCols = [
+        'continuity_unlocked'    => "TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Domeincheck permanent uitgeschakeld via continuity-sleutel'",
+        'continuity_unlocked_at' => "DATETIME DEFAULT NULL",
+    ];
+    foreach ($configCols as $colName => $definition) {
+        $col = $db->query("SHOW COLUMNS FROM `config` LIKE '$colName'")->fetch();
+        if (!$col) {
+            $db->exec("ALTER TABLE `config` ADD COLUMN `$colName` $definition");
+            $pd_migrations_changes[] = "Added config.$colName column";
+        }
+    }
+
+    // Ensure license_log.action ENUM includes continuity_unlocked
+    $actionCol = $db->query("SHOW COLUMNS FROM `license_log` LIKE 'action'")->fetch();
+    if ($actionCol && strpos($actionCol['Type'], 'continuity_unlocked') === false) {
+        $db->exec("ALTER TABLE `license_log` MODIFY `action` ENUM('activated','deactivated','validated','failed','upgraded','expired','continuity_unlocked') NOT NULL");
+        $pd_migrations_changes[] = 'Added continuity_unlocked to license_log.action ENUM';
+    }
+
     if (count($pd_migrations_changes) > 0) {
         $pd_migrations_status = 'Migraties toegepast';
     }

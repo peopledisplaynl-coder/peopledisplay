@@ -21,6 +21,7 @@ require_once __DIR__ . '/includes/license.php';
 
 $error   = '';
 $success = '';
+$continuityKeyToShow = null; // set after a fresh activation on a continuity-eligible tier
 
 // ── Reason messages from redirect ────────────────────────────
 $reason = htmlspecialchars($_GET['reason'] ?? '');
@@ -28,7 +29,7 @@ $reasonMessages = [
     'not_activated'         => 'Geen actieve licentie gevonden. Voer uw licentiecode in om te activeren.',
     'expired'               => 'Uw licentie is verlopen. Neem contact op voor verlenging.',
     'revoked'               => 'Deze licentie is ingetrokken. Neem contact op met support.',
-    'domain_mismatch'       => 'Deze licentie is geregistreerd voor een ander domein: <strong>' . htmlspecialchars($_GET['registered'] ?? 'onbekend') . '</strong>',
+    'domain_mismatch'       => 'Deze licentie is geregistreerd voor een ander domein: <strong>' . htmlspecialchars($_GET['registered'] ?? 'onbekend') . '</strong> — activeer opnieuw met uw licentiecode, of vul hieronder uw continuity-sleutel in.',
     'invalid'               => 'Ongeldige licentie. Activeer opnieuw.',
     'starter_limit_exceeded'=> 'U heeft de gratis Starter limieten overschreden (max 10 medewerkers, 1 locatie, 3 gebruikers). Activeer een licentiecode om door te gaan, of verwijder overtollige records om binnen de Starter limieten te blijven.',
 ];
@@ -59,9 +60,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['license_key'])) {
         $tierName = $info['tier_name'] ?? $activationResult['tier'];
         $success  = 'Licentie succesvol geactiveerd! Pakket: <strong>' . htmlspecialchars($tierName) . '</strong>';
         $error    = ''; // clear any prior error
-        header('Refresh: 2; url=admin/dashboard.php');
+
+        if (!empty($activationResult['continuity_key'])) {
+            // Show the continuity key once — don't auto-redirect, give the customer
+            // time to copy it before moving on.
+            $continuityKeyToShow = $activationResult['continuity_key'];
+        } else {
+            header('Refresh: 2; url=admin/dashboard.php');
+        }
     } else {
         $error = htmlspecialchars($activationResult['error']);
+    }
+}
+
+// ── Handle continuity key redemption ─────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['continuity_key']) && trim($_POST['continuity_key']) !== '') {
+    $continuityResult = redeemContinuityKey(trim($_POST['continuity_key']));
+    if ($continuityResult['success']) {
+        $success = 'Continuity-sleutel geaccepteerd. Deze licentie werkt voortaan op elk domein, zonder herkoppeling nodig.';
+        $error   = '';
+    } else {
+        $error = htmlspecialchars($continuityResult['error']);
     }
 }
 
@@ -70,6 +89,13 @@ $currentLicense    = getLicenseInfo();
 $alreadyActivated  = $currentLicense
     && !empty($currentLicense['license_key'])
     && $currentLicense['license_status'] === 'active';
+
+// Show the "I have a continuity key" form whenever there's a license on file
+// (any status) that's on an eligible tier and not yet unlocked.
+$showContinuityForm = $currentLicense
+    && !empty($currentLicense['license_key'])
+    && empty($currentLicense['continuity_unlocked'])
+    && isContinuityEligibleTier($currentLicense['license_tier'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -238,10 +264,31 @@ $alreadyActivated  = $currentLicense
     <?php if ($success !== ''): ?>
     <div class="alert alert-success">
         <?= $success ?><br>
+        <?php if ($continuityKeyToShow === null): ?>
         <small>U wordt automatisch doorgestuurd naar het dashboard&hellip;</small>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 
+    <?php if ($continuityKeyToShow !== null): ?>
+    <div class="license-panel" style="border-color:#9ae6b4; background:#f0fff4;">
+        <h3>Uw continuity-sleutel</h3>
+        <p style="font-size:13px; color:#276749; margin-bottom:14px; line-height:1.6;">
+            Bewaar deze sleutel op een veilige plek (bijv. wachtwoordmanager). Hiermee kunt u
+            deze licentie op een later moment blijven gebruiken op een ander domein of bij een
+            andere hosting-partij &mdash; ook als peopledisplay.nl dan niet meer bereikbaar is.
+            U hoeft hem nu nergens voor in te vullen.
+        </p>
+        <div style="font-family:'Courier New',Consolas,monospace; font-size:18px; font-weight:700; letter-spacing:1px; text-align:center; background:#fff; border:2px dashed #48bb78; border-radius:8px; padding:16px; color:#22543d; word-break:break-all;">
+            <?= htmlspecialchars($continuityKeyToShow) ?>
+        </div>
+    </div>
+    <a href="admin/dashboard.php" class="btn btn-green" style="margin-top:20px; display:block;">
+        Ik heb de sleutel bewaard — naar dashboard &rarr;
+    </a>
+    <?php endif; ?>
+
+    <?php if ($continuityKeyToShow === null): ?>
     <?php if (!$alreadyActivated && $success === ''): ?>
 
         <!-- ── Activation form ── -->
@@ -286,8 +333,15 @@ $alreadyActivated  = $currentLicense
     <?php else: ?>
 
         <!-- ── Already activated: show info ── -->
-        <div class="alert alert-info">
-            Er is al een actieve licentie op dit domein.
+        <?php $pdDomainMismatch = ($currentLicense['license_domain'] ?? '') !== getCurrentDomain() && empty($currentLicense['continuity_unlocked']); ?>
+        <div class="alert <?= $pdDomainMismatch ? 'alert-error' : 'alert-info' ?>">
+            <?php if ($pdDomainMismatch): ?>
+                Deze licentie staat geregistreerd op een ander domein dan waar u nu bent
+                (<strong><?= htmlspecialchars(getCurrentDomain()) ?></strong>). Vul hieronder uw
+                licentiecode of continuity-sleutel opnieuw in om te herkoppelen.
+            <?php else: ?>
+                Er is al een actieve licentie op dit domein.
+            <?php endif; ?>
         </div>
 
         <div class="license-panel">
@@ -302,9 +356,15 @@ $alreadyActivated  = $currentLicense
                 <span class="value"><?= htmlspecialchars($currentLicense['license_key'] ?? '—') ?></span>
             </div>
             <div class="detail-row">
-                <span class="label">Domein</span>
+                <span class="label">Geregistreerd domein</span>
                 <span class="value"><?= htmlspecialchars($currentLicense['license_domain'] ?? '—') ?></span>
             </div>
+            <?php if (!empty($currentLicense['continuity_unlocked'])): ?>
+            <div class="detail-row">
+                <span class="label">Continuity</span>
+                <span class="value"><span class="badge-active">Ontgrendeld — werkt op elk domein</span></span>
+            </div>
+            <?php endif; ?>
             <div class="detail-row">
                 <span class="label">Status</span>
                 <span class="value">
@@ -346,6 +406,32 @@ $alreadyActivated  = $currentLicense
         </a>
         <?php endif; ?>
 
+    <?php endif; ?>
+    <?php endif; // continuityKeyToShow === null ?>
+
+    <?php if ($continuityKeyToShow === null && $showContinuityForm): ?>
+    <div class="license-panel" style="margin-top:20px;">
+        <h3>Ik heb al een continuity-sleutel</h3>
+        <p style="font-size:13px; color:#718096; margin-bottom:14px;">
+            Domein of hosting gewijzigd, of is peopledisplay.nl niet bereikbaar? Vul hier de
+            continuity-sleutel in die u bij activering heeft ontvangen &mdash; de licentie werkt
+            daarna blijvend op dit domein, zonder verdere herkoppeling.
+        </p>
+        <form method="POST">
+            <div class="form-group" style="margin-bottom:14px;">
+                <input
+                    type="text"
+                    name="continuity_key"
+                    placeholder="PDEC-XXXX-XXXX-XXXX-XXXX"
+                    autocomplete="off"
+                    spellcheck="false"
+                    style="text-transform:uppercase;"
+                    required
+                >
+            </div>
+            <button type="submit" class="btn" style="background:#48bb78;">Continuity-sleutel inwisselen</button>
+        </form>
+    </div>
     <?php endif; ?>
 
 </div>

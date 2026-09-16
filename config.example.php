@@ -83,6 +83,21 @@ $DB_PASS = 'your_database_password';
  * ============================================================
  *
  * ============================================================
+ * CONTINUITY SECRET (voor betaalde licenties — domeinverhuizing)
+ * ============================================================
+ * Optioneel, zelfde idee als PD_LICENSE_SALT hierboven. Als u dit
+ * overslaat werkt alles gewoon met de ingebouwde standaardwaarde in
+ * includes/license.php — die is identiek op elke installatie, dus
+ * continuity-sleutels blijven ook dan geldig.
+ *
+ * // define('PD_CONTINUITY_SECRET', 'JOUW_GEHEIME_WAARDE_HIER');
+ *
+ * KRITIEK: verander deze waarde NOOIT meer zodra er ergens een
+ * continuity-sleutel is uitgegeven — elke eerder uitgegeven sleutel
+ * wordt daarmee direct en onherstelbaar ongeldig.
+ * ============================================================
+ *
+ * ============================================================
  * LEGACY (niet meer van toepassing)
  * ============================================================
  * // define('LICENSE_KEY', '');
