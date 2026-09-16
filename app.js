@@ -1599,13 +1599,13 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
                     title="Check-in op andere locatie"
                     style="
                         display: block;
-                        margin: ${showFoto ? '4px' : '0'} auto 0 auto;
+                        margin: ${showFoto ? '3px' : '0'} auto 0 auto;
                         background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
                         color: white;
                         border: none;
-                        padding: 4px 10px;
+                        padding: 3px 8px;
                         border-radius: 6px;
-                        font-size: 16px;
+                        font-size: 14px;
                         cursor: pointer;
                         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                         width: 100%;

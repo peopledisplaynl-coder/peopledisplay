@@ -663,7 +663,7 @@ header div[id^="count-"] {
   flex-direction: row;
   align-items: flex-start;
   border-radius: 8px;
-  padding: 10px;
+  padding: 8px;
   width: 100%;
   box-sizing: border-box;
   box-shadow: 0 2px 6px rgba(0,0,0,0.12);
@@ -727,9 +727,9 @@ header div[id^="count-"] {
   width: 100%; 
 }
 
-.emp-photo-side { 
-  flex: 0 0 60px; 
-  margin-right: 10px; 
+.emp-photo-side {
+  flex: 0 0 60px;
+  margin-right: 8px;
 }
 
 .emp-photo-side img {
@@ -801,10 +801,10 @@ header div[id^="count-"] {
   font-weight: 600;
 }
 
-.emp-meta { 
-  font-size: 13px; 
+.emp-meta {
+  font-size: 13px;
   margin-top: 3px;
-  line-height: 1.4;
+  line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -819,29 +819,29 @@ header div[id^="count-"] {
 /* === KNOPPEN ONDERAAN KAART === */
 .btn-wrap {
   display: flex;
-  margin-top: auto;
+  margin-top: 6px;
   width: 100%;
   gap: 8px;
 }
 
 .status-btn {
   flex: 1;
-  padding: 10px 0;
+  padding: 8px 0;
   font-size: 15px;
   font-weight: bold;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-height: 44px;
+  min-height: 40px;
 }
 
 /* Compacter op desktop */
-@media (min-width: 1200px) {
+@media (min-width: 1024px) {
   .status-btn {
-    padding: 8px 0;
+    padding: 6px 0;
     font-size: 14px;
-    min-height: 38px;
+    min-height: 34px;
   }
 }
 
