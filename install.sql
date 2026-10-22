@@ -8,7 +8,10 @@
 -- Run this script ONCE during installation.
 -- All statements use IF NOT EXISTS — safe to re-run.
 --
--- Tables: 28
+-- Tables: 31
+--
+-- Single source: edit THIS file (repository root). install/sql/install.sql
+-- is an exact copy for the install wizard — run `npm run sync-sql` after editing.
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -678,6 +681,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
 -- END OF SCHEMA
--- Tables created: 30
+-- Tables created: 31
 -- Run install.php after this to create your admin account
 -- ============================================================

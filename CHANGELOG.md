@@ -1,141 +1,170 @@
-# Changelog
+# PeopleDisplay Changelog
 
-All notable changes to PeopleDisplay are documented here.
+> Automatisch gegenereerd — niet handmatig bewerken.
 
-## Version 2.0.7 — Patch (2026-03-19)
+## v2.1.9 — 2026-10-22
 
-### Fixed
-- Fix: PWA sessie op mobiel blijft behouden na wisselen van app — niet langer onterecht uitgelogd als beheerder
+- Onderhoud: versienummers gelijkgetrokken (version.json, version.php en installer)
+- Fix: installatie-wizard gebruikt nu hetzelfde, actuele databaseschema als install.php (home_locatie en continuity-kolommen zaten er nog niet in)
+- Opgeruimd: ongebruikt voorbeeldbestand includes/config.json verwijderd
+- Intern: ontwikkeldocumentatie, controles en deploy-script toegevoegd — geen functionele wijzigingen voor gebruikers
 
-## Version 2.0.6 — Patch (2026-03-18)
+## v2.1.8 — 2026-09-16
 
-### Added
+- Fix: license_log tabel wordt nu automatisch aangemaakt op oudere installaties waar die ontbrak
+- Fix: medewerkerkaarten met minimale featurebeheer-instellingen zijn niet langer onnodig groot
+- Verbeterd: strakkere IN/UIT-knoppen en minder ruimte rond afdeling, locatie en Pion-knop
+
+## v2.1.7 — 2026-09-16
+
+- Nieuw: continuity-sleutel voor Unlimited- en Corporate-licenties — licentie blijft werken na verhuizing naar een ander domein of andere hosting
+- Nieuw: restore.php — volledige back-up (database + bestanden) zelf terugzetten op een nieuwe omgeving
+- Fix: licenties vielen in sommige gevallen terug op de Starter-limieten
+- Fix: syntaxfout en ontbrekende inlogcontrole in de config-back-up hulpmiddelen
+
+## v2.1.6 — 2026-07-18
+
+- Nieuw: instelbare standaard sorteervolgorde voor medewerkerkaarten, met optionele sorteerknop
+- Nieuw: instelbaar zoomniveau voor de kaarten, met optionele +/- knoppen
+- Nieuw: zoekfilters op het aanmeldscherm worden na 1 minuut inactiviteit gewist
+- Fix: update-melding biedt nu de kleine delta-update aan in plaats van de volledige installatie
+
+## v2.1.5 — 2026-06-02
+
+- Nieuw: schermen en PWA controleren elke 5 minuten (en bij terugkeer naar de app) of er een nieuwe versie is en herladen automatisch
+- Nieuw: api/app-version.php
+- Geen databasewijzigingen
+
+## v2.1.4 — 2026-05-31
+
+- Fix: medewerker die via de Pion op een andere locatie incheckte, kwam na uitchecken niet terug op zijn vaste locatie
+- Nieuw: veld home_locatie — uitchecken zet de medewerker terug op de thuislocatie
+- Migratie draait automatisch bij de eerste admin-login
+
+## v2.1.3 — 2026-05-15
+
+- Nieuw: IN/UIT-bord weergave — gesplitst scherm, status wisselen door op de naam te klikken, BHV-badges, filters op locatie en afdeling, sorteren, volledig scherm en automatisch verversen elke 30 seconden
+- Per gebruiker aan te zetten via featurebeheer
+- Geen databasewijzigingen
+
+## v2.1.2 — 2026-05-06
+
+- Nieuw: back-upmodule (database, bestanden of volledig) via admin/backup.php, met tegel op het dashboard
+
+## v2.1.1 — 2026-04-16
+
+- Fix: Header staat nu altijd vast bovenaan tijdens scrollen — sorteerknop altijd zichtbaar
+- Fix: Locatiemenu plakt direct onder de vaste header bij scrollen
+- Nieuw: Instelbare admin rechten per feature — SuperAdmin bepaalt wat een admin mag
+- Nieuw: Admins kunnen per functie worden beperkt (locaties, kiosk, badges, audit log etc.)
+- Fix: auth_helper.php include volgorde gecorrigeerd in alle admin pagina's
+
+## v2.0.18 — 2026-03-26
+
+- Fix: Foto op medewerkerkaart kan nu weer uitgezet worden via featurebeheer
+- Fix: Locatie pion staat nu netjes onder de profielfoto in plaats van over de naam
+- Fix: Locatie pion toont nu altijd actuele locaties inclusief nieuw toegevoegde locaties
+- Fix: Medewerker reset correct naar originele locatie bij uitchecken
+- Fix: Safari/iOS service worker redirect fout opgelost — niet meer onterecht uitgelogd
+- Fix: Audit log werkt nu correct op alle servers
+- Nieuw: Bezoekersregistratie formulier link toegevoegd aan admin dashboard
+
+## v2.0.17 — 2026-03-25
+
+- Fix: Locatie pion toont nu altijd actuele locaties uit de database
+- Fix: Nieuwe locaties verschijnen direct in de locatiekeuze bij inchecken
+- Fix: Medewerker reset correct naar originele locatie bij uitchecken
+- Fix: Safari/iOS service worker redirect fout opgelost — niet meer onterecht uitgelogd
+- Nieuw: Bezoekersregistratie formulier link toegevoegd aan admin dashboard
+- Fix: Audit log werkt nu correct op alle servers
+
+## v2.0.16 — 2026-03-23
+
+- Verbetering: Filters blijven bewaard na opslaan in medewerkers- en gebruikersbeheer
+- Verbetering: Filterbalk kleurt groen als er een filter actief is
+- Fix: Paginas in admin beheer laden altijd vers na een wijziging — geen Ctrl+R meer nodig
+- Fix: Update banner op dashboard blijft weg na wegklikken — ook na herladen
+- Fix: Versienummer in footer van dashboard klopt nu altijd
+
+## v2.0.15 — 2026-03-22
+
+- Verbetering: PNG badge export volledig herschreven naar client-side Canvas — werkt nu op alle hosting omgevingen
+- Fix: QR code en barcode staan niet meer over elkaar heen op de badge
+- Fix: Logo wordt nu correct weergegeven op de badge header
+- Verbetering: Tekst en profielfoto op badge zijn groter en beter leesbaar
+- Fix: changelog_url blijft bewaard bij elke nieuwe update build
+
+## v2.0.14 — 2026-03-22
+
+- Fix: PNG badge export ZIP was leeg — tijdelijke bestanden worden nu correct opgeruimd na ZIP aanmaken
+
+## v2.0.13 — 2026-03-22
+
+- Bugfix: Uitgeschakelde Export als PNG knop ingeschakeld
+
+## v2.0.12 — 2026-03-20
+
+- Fix: Admin paginas worden niet meer gecached door de browser — geen Ctrl+R meer nodig na wijzigingen
+- Nieuw: Badge export als PNG — individuele badge afbeeldingen per medewerker in ZIP bestand met QR/barcode
+
+## v2.0.11 — 2026-03-20
+
+- Fix: Fatale PHP fouten door dubbele functiedeclaraties in auth.php opgelost
+
+## v2.0.10 — 2026-03-19
+
+- Fix: HTTP 500 op users_manage en employees_manage opgelost — migraties draaien nu automatisch op alle adminpaginas
+
+## v2.0.9 — 2026-03-19
+
+- Fix: Fatale PHP fout in db.php opgelost waardoor de volledige site onbereikbaar was na de PWA sessie-fix
+
+## v2.0.6 — 2026-03-18
+
 - Gebruikersgroepen toegevoegd in gebruikersbeheer — admins kunnen gebruikers indelen in groepen per locatie
 
-## Version 2.0.2 — Patch (2026-03-16)
+## v2.0.5 — 2026-03-16
 
-### Fixed
-- Fix: Added close button to BHV overview for kiosk mode
+- Fix: BHV Overzicht sluitknop toegevoegd voor kiosk mode gebruik
 
-## Version 2.0.0 — License System Release (2026-03-09)
+## v2.0.4 — 2026-03-16
 
-### Added
-- **License enforcement system** (`includes/license.php`, `includes/license_check.php`)
-  - Starter / Professional / Business tier definitions
-  - `requireLicense()` — blocks access if no valid license is activated
-  - `requireFeature(string $key)` — redirects to upgrade page if tier lacks feature
-  - `canAddUser/Employee/Location/Department()` — enforces per-tier count limits
-  - `hasFeature(string $key)`, `getTierLimits()` — used for UI gating
-- **8-step web installer** (upgraded from 6 steps)
-  - Step 2: EULA acceptance (Dutch + English, language toggle)
-  - Step 3: License key validation against peopledisplay.nl
-  - EULA acceptance recorded in `config` table (`eula_accepted`, `eula_accepted_at`, `eula_version`)
-- **Feature gating in admin dashboard**
-  - `visitors_manage.php` and `visitor_email_config.php` hidden/grayed when `visitor_management` not in tier
-  - `kiosk_tokens_manage.php` hidden/grayed when `kiosk_mode` not in tier
-  - "Upgrade" badge with link to pricing page shown in place of locked items
-- **Usage limit enforcement**
-  - `users_create.php` checks `canAddUser()` before INSERT
-  - `employees_manage.php` checks `canAddEmployee()` before INSERT
-  - `locations_manage.php` checks `canAddLocation()` before INSERT
-  - `afdelingen_manage.php` checks `canAddDepartment()` before INSERT
-- **Automatic update check system** (`includes/update_check.php`)
-  - Fetches `admin.peopledisplay.nl/updates/version.json` at most once per week
-  - Compares remote version to `PEOPLEDISPLAY_VERSION` constant
-  - Dismissable banner in admin dashboard (saves dismissed version to DB)
-  - `admin/api/dismiss_update.php` — admin-only dismiss endpoint
-- **Version constants** (`includes/version.php`)
-  - `PEOPLEDISPLAY_VERSION`, `PEOPLEDISPLAY_RELEASE_DATE`
-  - `VERSION_CHECK_URL`, `VERSION_CHECK_INTERVAL`, `CHANGELOG_URL`, `DOWNLOAD_URL`
-- **Version footer** in admin dashboard — displays current version, changelog link
-- **EULA files**: `eula_nl.txt` (Dutch, 11 articles), `eula_en.txt` (English translation)
-- **`license_management.php`** — upgrade/license info page linked from locked feature placeholders
+- Kleine aanpassingen in update bestanden
 
-### Changed
-- Installer expanded from 6 steps to 8 steps (EULA + license added before database setup)
-- All admin panel pages now include `license_check.php` after `db.php`
-- `visitor_register.php`, `visitor_checkout.php` require `visitor_management` feature
-- README updated with license tier pricing and activation instructions
+## v2.0.3 — 2026-03-16
 
-## Version 2.0 — Universal Installer Release (2026-03)
+- Cache probleem gefixt
+- Changelog bestand opnieuw aangemaakt met automatische koppeling
 
-### Added
-- **Universal web installer** (6-step wizard, WordPress-style)
-  - Automatic PHP and extension version check
-  - Database connection test with live feedback
-  - Automated schema import (30 tables)
-  - Admin account creation with password validation
-  - Auto-writes `admin/db_config.php`
-  - Installer self-locks after completion
-- **Automatic environment detection** (`includes/environment.php`)
-  - Detects XAMPP, Strato, cPanel, Plesk, VPS, localhost
-  - Configures session path per environment
-  - Suppresses `open_basedir` restriction warnings
-- **Sub-status system** — extra configurable status buttons (Pause, Working from Home, Vacation)
-  - Optional time limit per sub-status (auto-resets at configured time)
-  - Per-user customizable button labels
-  - Visual card color per sub-status
-- **Visitor registration system** — digital visitor logbook
-  - Email notifications on visitor arrival
-  - Privacy consent tracking
-  - Token-based check-in/check-out via email links
-  - Multi-day visit support
-- **Token-based kiosk check-in** — unattended tablet/kiosk login
-- **Audit logging** — full history of employee status changes
-- **Online users panel** — see who is currently logged into the admin
-- **CSV import/export** for employees
-- **Badge/ID card generation** (PDF via TCPDF)
-- **BHV print module** — emergency roster printout
-- **WiFi auto check-in** — detect location by IP range
-- **Name display options** — full name, first name, last name, initial + last name
-- **Sort toggle** — sort by first name, last name, or status (IN first)
-- **PWA support** — installable as app on mobile/tablet, offline page
-- **Presentation mode** — auto-start Google Slides after configurable idle period
-- **Backup/restore** functionality in admin panel
-- **Role-based access**: superadmin, admin, user
-- **Per-user feature access control** — enable/disable features per user
+## v2.0.2 — 2026-03-16
 
-### Fixed
-- **Status updates now persist** across page navigation
-  - Root cause: `WHERE (id = ? OR employee_id = ?)` caused MySQL strict mode error 1292
-    when comparing VARCHAR employee ID with INT `id` column
-  - Fix: use `WHERE employee_id = ?` exclusively
-- **PHP warnings no longer corrupt API JSON responses**
-  - `open_basedir` restriction warnings from `file_exists('/usr/local/cpanel')`
-    and `file_exists('/usr/local/psa')` now suppressed with `@`
-  - `error_reporting(0)` added at top of all API files
-- **UI cards no longer freeze after status update**
-  - Root cause: `applyCurrentFilters()` called inside async fetch callbacks
-    destroyed and recreated DOM, making `card` reference stale; disabled buttons
-    could never be re-enabled
-  - Fix: removed `applyCurrentFilters()` from fetch callbacks; update card CSS
-    class directly on valid `card` reference instead
-- **Audit log HTTP 500** — `employee_audit` table has `created_at` column,
-  not `changed_at`; all queries updated
-- **Redirect loop on dashboard** — `session_start()` called before `db.php`
-  in some pages; custom session path now only set for XAMPP/localhost
-- **BASE_PATH hardcoded** — replaced with dynamic detection from URL in `app.js`
-  and `bhv-print/bhv-print.js`
-- **PRG pattern** added to employee/location/department manage pages
-  to prevent form re-submission on F5 refresh
+- Fix: Sluitknop toegevoegd aan BHV overzicht voor kiosk modus
+- Fix: BHV footer-knop gewijzigd van link naar popup-venster
+- Fix: CSS footer-btn genormaliseerd voor button-elementen
 
-### Changed
-- Database connection now uses unified PDO via `includes/db.php`
-- Session handling is environment-aware (no custom path on production)
-- API responses always return clean JSON (no PHP warnings prepended)
-- Employee status update uses `employee_id` (VARCHAR) not `id` (INT)
+## v2.0.0 — 2026-03-09
 
-### Removed
-- Hardcoded client-specific images and logos
-- Database credentials from version control
-- Debug scripts, test files, and development-only code
-- Backup ZIP files and CSV exports containing client data
-- Duplicate/legacy admin scripts
-- Development analysis and debug documentation
-- Duplicate icon directory (`/icons/` — kept `/images/icons/`)
-- Migration scripts (superseded by clean `install.sql`)
+- Nieuw: Licentiesysteem met Starter, Professional en Business tiers
+- Nieuw: 8-staps webinstaller met EULA-acceptatie en licentiesleutelvalidatie
+- Nieuw: Automatisch updatecontrolesysteem via admin.peopledisplay.nl
+- Nieuw: Bezoekersbeheer met e-mailmeldingen en token-gebaseerde in-/uitcheck
+- Nieuw: Kiosk-modus met token-gebaseerde aanmelding
+- Nieuw: Auditlog voor alle statuswijzigingen van medewerkers
+- Nieuw: CSV import/export voor medewerkers
+- Nieuw: Badge- en ID-kaartgeneratie (PDF via TCPDF)
+- Nieuw: WiFi auto-inchecken op basis van IP-bereik
+- Nieuw: PWA-ondersteuning — installeerbaar als app op mobiel/tablet
+- Nieuw: Presentatiemodus met automatische start Google Slides
+- Nieuw: Rol-gebaseerde toegang (superadmin, admin, gebruiker)
+- Fix: Statusupdates blijven nu bewaard na paginanavigatie
+- Fix: PHP-waarschuwingen corrumpeerden geen API JSON-antwoorden meer
+- Fix: UI-kaarten bevriezen niet meer na statusupdate
+- Fix: Auditlog HTTP 500 opgelost (created_at kolom)
+- Fix: Redirect-loop op dashboard opgelost
 
-## Version 1.0 — Original Release
+## v1.0 — 2025-01-01
 
-Initial release. Single-customer deployment on Strato hosting.
-Features: basic employee IN/OUT tracking, admin panel, multi-location support.
+- Eerste release: basis medewerker IN/UIT registratie
+- Beheerpaneel met meerdere locaties
+- Initiele implementatie op Strato hosting
+

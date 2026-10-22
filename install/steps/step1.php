@@ -13,7 +13,7 @@ $allChecksPass = $phpOK && empty($missingExtensions) && empty($permissionIssues)
 
 <h2>Welkom bij PeopleDisplay</h2>
 <p style="color: #666; margin-bottom: 30px;">
-    Deze wizard helpt je bij het installeren van PeopleDisplay v2.1.1 op je webserver.
+    Deze wizard helpt je bij het installeren van PeopleDisplay v<?php echo htmlspecialchars(INSTALLER_VERSION); ?> op je webserver.
     Controleer eerst of je systeem aan alle vereisten voldoet.
 </p>
 
@@ -97,7 +97,7 @@ $allChecksPass = $phpOK && empty($missingExtensions) && empty($permissionIssues)
 <?php if ($allChecksPass && file_exists(__DIR__ . '/../sql/install.sql')): ?>
     <div class="alert alert-success" style="margin-top: 30px;">
         <strong>✓ Systeem voldoet aan alle vereisten!</strong>
-        <p>Je kunt doorgaan met de installatie van PeopleDisplay v2.1.1.</p>
+        <p>Je kunt doorgaan met de installatie van PeopleDisplay v<?php echo htmlspecialchars(INSTALLER_VERSION); ?>.</p>
     </div>
 
     <form method="post" action="?step=2" style="margin-top: 20px;">

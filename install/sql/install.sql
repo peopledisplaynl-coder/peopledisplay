@@ -8,7 +8,10 @@
 -- Run this script ONCE during installation.
 -- All statements use IF NOT EXISTS — safe to re-run.
 --
--- Tables: 28
+-- Tables: 31
+--
+-- Single source: edit THIS file (repository root). install/sql/install.sql
+-- is an exact copy for the install wizard — run `npm run sync-sql` after editing.
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -46,6 +49,8 @@ CREATE TABLE IF NOT EXISTS `config` (
   `license_expires_at`                  datetime                                              DEFAULT NULL,
   `license_status`                      enum('active','expired','revoked','invalid','pending') DEFAULT 'pending',
   `license_notes`                       text                                                  DEFAULT NULL,
+  `continuity_unlocked`                 tinyint(1)                                            NOT NULL DEFAULT 0 COMMENT 'Domeincheck permanent uitgeschakeld via continuity-sleutel',
+  `continuity_unlocked_at`              datetime                                              DEFAULT NULL,
   `eula_accepted`                       tinyint(1)                                            DEFAULT 0,
   `eula_accepted_at`                    datetime                                              DEFAULT NULL,
   `eula_version`                        varchar(10)                                           DEFAULT '1.0',
@@ -120,6 +125,7 @@ CREATE TABLE IF NOT EXISTS `employees` (
   `sub_status_type`             varchar(50)                  DEFAULT NULL,
   `sub_status_until`            datetime                     DEFAULT NULL,
   `locatie`                     varchar(100)                 DEFAULT NULL,
+  `home_locatie`                varchar(100)                 DEFAULT NULL,
   `visible_locations`           text                         DEFAULT NULL,
   `allow_manual_location_change` tinyint(1)                 DEFAULT 0,
   `foto_url`                    varchar(500)                 DEFAULT NULL,
@@ -659,7 +665,7 @@ ON DUPLICATE KEY UPDATE `tier_code` = `tier_code`;
 CREATE TABLE IF NOT EXISTS `license_log` (
   `id`          int(11)                                                       NOT NULL AUTO_INCREMENT,
   `license_key` varchar(100)                                                  DEFAULT NULL,
-  `action`      enum('activated','deactivated','validated','failed','upgraded','expired') NOT NULL,
+  `action`      enum('activated','deactivated','validated','failed','upgraded','expired','continuity_unlocked') NOT NULL,
   `domain`      varchar(255)                                                  DEFAULT NULL,
   `ip_address`  varchar(45)                                                   DEFAULT NULL,
   `user_agent`  text                                                          DEFAULT NULL,
@@ -676,6 +682,5 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ============================================================
 -- END OF SCHEMA
 -- Tables created: 31
--- Version: 2.1.1
 -- Run install.php after this to create your admin account
 -- ============================================================

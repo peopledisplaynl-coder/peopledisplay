@@ -112,7 +112,7 @@ if (!defined(\'BASE_PATH\')) {
 }
 
 // Maak lock bestand aan
-@file_put_contents(__DIR__ . '/../.installed', 'Installed on: ' . date('Y-m-d H:i:s') . PHP_EOL . 'Version: 2.1.1');
+@file_put_contents(__DIR__ . '/../.installed', 'Installed on: ' . date('Y-m-d H:i:s') . PHP_EOL . 'Version: ' . INSTALLER_VERSION);
 
 $adminUsername = $_SESSION['admin_username'] ?? 'admin';
 $dbName = $_SESSION['db_config']['name'] ?? '';
@@ -125,7 +125,7 @@ session_destroy();
     <div style="font-size: 64px; margin-bottom: 16px;">🎉</div>
     <h2 style="font-size: 28px; color: #4caf50; margin-bottom: 12px;">Installatie Voltooid!</h2>
     <p style="font-size: 16px; color: #666;">
-        PeopleDisplay v2.1.1 is succesvol geïnstalleerd en klaar voor gebruik!
+        PeopleDisplay v<?php echo htmlspecialchars(INSTALLER_VERSION); ?> is succesvol geïnstalleerd en klaar voor gebruik!
     </p>
 </div>
 
@@ -195,5 +195,5 @@ session_destroy();
 </div>
 
 <p style="text-align: center; color: #999; font-size: 13px; margin-top: 20px;">
-    PeopleDisplay v2.1.1 — Open Core · © 2026 Ton Labee · peopledisplay.nl
+    PeopleDisplay v<?php echo htmlspecialchars(INSTALLER_VERSION); ?> — Open Core · © 2026 Ton Labee · peopledisplay.nl
 </p>

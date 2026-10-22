@@ -280,7 +280,13 @@ Purchase a license: [peopledisplay.nl/prijzen](https://peopledisplay.nl/prijzen)
 
 © 2026 Ton Labee — https://peopledisplay.nl
 
+## Development
+
+Developer notes live in [`CLAUDE.md`](CLAUDE.md) (rules, commands, release flow) and
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Checks run with `npm test`
+(Node 20+); the release history is in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Version
 
-**Version 2.1.0** — Open Core Release
+See [`CHANGELOG.md`](CHANGELOG.md) for the current version and release history.
 Compatible with: Strato, Mijndomein, cPanel, Plesk

@@ -1,0 +1,21 @@
+{
+  "name": "peopledisplay",
+  "private": true,
+  "description": "Developer tooling for PeopleDisplay (checks, changelog, FTP deploy). Nothing here runs on the server.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "lint": "node scripts/lint.mjs",
+    "check": "npm run lint && npm test",
+    "changelog": "node scripts/changelog.mjs",
+    "sync-sql": "node scripts/sync-sql.mjs",
+    "deploy": "node scripts/deploy.mjs"
+  },
+  "devDependencies": {
+    "basic-ftp": "^6.2.3",
+    "ssh2-sftp-client": "^12.1.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

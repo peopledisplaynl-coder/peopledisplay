@@ -55,7 +55,9 @@ $_SESSION['installer_bypass'] = true;
 // CONFIGURATION
 // ============================================================================
 
-define('INSTALLER_VERSION', '2.1.1');
+// Version comes from includes/version.php (single source, also written by build_update.php)
+require_once __DIR__ . '/../includes/version.php';
+define('INSTALLER_VERSION', PD_CURRENT_VERSION);
 define('MIN_PHP_VERSION', '8.0.0');
 define('MIN_MYSQL_VERSION', '5.7.0');
 

@@ -53,3 +53,14 @@ desktop.ini
 *kopie*
 
 
+
+# Node tooling (deploy script, checks) — never uploaded to the server
+node_modules/
+
+# Deploy script: FTP credentials and upload state stay on this computer only
+deploy.config.json
+.deploy-state/
+update_files.txt
+
+# Diagnostic scripts made during support sessions
+Claude outputs/

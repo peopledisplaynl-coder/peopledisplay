@@ -1,0 +1,31 @@
+{
+  "test": {
+    "protocol": "sftp",
+    "host": "12345678.ssh.w2.strato.hosting",
+    "port": 22,
+    "user": "ftp-gebruiker",
+    "password": "wachtwoord",
+    "remoteDir": "/test.peopledisplay.nl",
+    "profile": "site"
+  },
+  "golden": {
+    "protocol": "sftp",
+    "host": "12345678.ssh.w2.strato.hosting",
+    "port": 22,
+    "user": "ftp-gebruiker",
+    "password": "wachtwoord",
+    "remoteDir": "/admin.peopledisplay.nl/install",
+    "profile": "golden"
+  },
+  "live": {
+    "protocol": "sftp",
+    "host": "12345678.ssh.w2.strato.hosting",
+    "port": 22,
+    "user": "ftp-gebruiker",
+    "password": "wachtwoord",
+    "remoteDir": "/mijn.peopledisplay.nl",
+    "profile": "site",
+    "confirm": true
+  },
+  "_uitleg": "protocol: sftp (Strato *.ssh.*.strato.hosting, poort 22) of ftp (poort 21, met \"secure\": true voor FTPS)"
+}
