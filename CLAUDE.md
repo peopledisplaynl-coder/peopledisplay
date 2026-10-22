@@ -46,6 +46,7 @@ npm run deploy                   # FTP changed files to test.peopledisplay.nl
 npm run deploy -- --target=golden  # FTP changed files to admin.peopledisplay.nl/install/
 npm run deploy -- --target=live    # FTP to mijn.peopledisplay.nl (asks to type "live")
 npm run deploy -- --dry-run      # show what would be uploaded
+npm run release:build            # build dist/peopledisplay-starter.zip (same as the installation ZIP)
 ```
 
 Deploy details: credentials in `deploy.config.json` (git-ignored, copy
@@ -126,5 +127,18 @@ Optional database check (needs PHP + a throw-away MariaDB, never a real DB):
 4. `npm run deploy -- --target=golden`, then in `build_update.php`: publish the version with
    the same changelog lines, build the delta ZIP (update_files.txt is already filled),
    refresh the installation ZIP when install files changed.
-5. Commit, push, tag: `git tag vX.Y.Z` + `git push origin vX.Y.Z` (the tag is what the next
-   update_files.txt is computed from).
+   Click "Nieuwe versie publiceren" ONCE: afterwards the form pre-fills the next number, and a
+   second click publishes an empty version.
+5. Commit and push FIRST, then tag that commit: `git tag vX.Y.Z` + `git push origin vX.Y.Z`.
+   The tag is what the next update_files.txt is computed from, and pushing it starts
+   `.github/workflows/release.yml`: checks, then `scripts/build-release.mjs` builds
+   `peopledisplay-starter.zip` and publishes it as the GitHub release (refused when the tag
+   does not match `version.json`). A moved tag (`git tag -f` + `git push --force`) rebuilds it.
+
+## Downloads for new customers
+
+`website/download.php` is the page on peopledisplay.nl (not part of the app; upload it to the
+website by hand when it changes). It reads the newest GitHub release (cached 1 h) and sends the
+visitor to its `peopledisplay-starter.zip`; stable link:
+`https://github.com/peopledisplaynl-coder/peopledisplay/releases/latest/download/peopledisplay-starter.zip`.
+Existing installations keep updating through admin.peopledisplay.nl (`build_update.php`).

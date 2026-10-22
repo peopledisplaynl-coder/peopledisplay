@@ -1,0 +1,62 @@
+# .github/workflows/release.yml
+# When a version tag (v1.2.3) is pushed, build the installation ZIP and publish it as a
+# GitHub release. The download page on peopledisplay.nl always links to
+#   https://github.com/peopledisplaynl-coder/peopledisplay/releases/latest/download/peopledisplay-starter.zip
+#
+# Re-pushing a moved tag (git tag -f vX.Y.Z && git push origin vX.Y.Z --force) rebuilds
+# and replaces the files of that release.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)build, e.g. v2.1.9'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: none
+
+      - name: Project checks
+        run: npm test
+
+      - name: Build installation ZIP (fails when the tag does not match version.json)
+        run: node scripts/build-release.mjs --tag="$TAG"
+
+      - name: Publish GitHub release
+        run: |
+          VERSION="$(cat dist/version.txt)"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "PeopleDisplay $VERSION" --notes-file dist/release-notes.md --latest
+            gh release upload "$TAG" dist/peopledisplay-starter.zip dist/peopledisplay-starter.zip.sha256 --clobber
+          else
+            gh release create "$TAG" dist/peopledisplay-starter.zip dist/peopledisplay-starter.zip.sha256 \
+              --title "PeopleDisplay $VERSION" --notes-file dist/release-notes.md --latest
+          fi

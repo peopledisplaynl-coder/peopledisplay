@@ -138,6 +138,26 @@ test('deploy never uploads server config, customer data or developer files', () 
   assert.ok(golden.includes('install.sql') && golden.some((f) => f.startsWith('install/')), 'golden master needs the installers');
 });
 
+test('installation ZIP for new customers contains the installers and no config or developer files', () => {
+  const release = filesForProfile('release');
+  for (const f of ['install.php', 'install.sql', 'install/index.php', 'index.php', 'includes/version.php', 'LICENSE']) {
+    assert.ok(release.includes(f), `release ZIP must contain ${f}`);
+  }
+  for (const f of release) {
+    assert.ok(!isExcluded(f, PROTECTED) && !isExcluded(f, DEV_ONLY), `release ZIP must not contain ${f}`);
+  }
+  for (const f of ['includes/config.php', 'config.example.php', 'website/download.php', '.github/workflows/release.yml']) {
+    assert.ok(!release.includes(f), `release ZIP must not contain ${f}`);
+  }
+});
+
+test('release build refuses a tag that does not match version.json', () => {
+  const version = JSON.parse(read('version.json')).version;
+  const wrong = spawnSync(process.execPath, [join(ROOT, 'scripts', 'build-release.mjs'), '--tag=v0.0.0'], { encoding: 'utf8' });
+  assert.notEqual(wrong.status, 0, 'a wrong tag must fail');
+  assert.match(wrong.stderr, new RegExp(version.replace(/\./g, '\\.')));
+});
+
 // ── PHP syntax ─────────────────────────────────────────────────────────
 const hasPhp = spawnSync('php', ['-v']).status === 0;
 test('all PHP files have valid syntax', { skip: hasPhp ? false : 'PHP not installed on this computer' }, () => {

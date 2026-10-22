@@ -64,3 +64,6 @@ update_files.txt
 
 # Diagnostic scripts made during support sessions
 Claude outputs/
+
+# Release build output (npm run release:build)
+dist/

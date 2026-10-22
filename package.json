@@ -9,7 +9,8 @@
     "check": "npm run lint && npm test",
     "changelog": "node scripts/changelog.mjs",
     "sync-sql": "node scripts/sync-sql.mjs",
-    "deploy": "node scripts/deploy.mjs"
+    "deploy": "node scripts/deploy.mjs",
+    "release:build": "node scripts/build-release.mjs"
   },
   "devDependencies": {
     "basic-ftp": "^6.2.3",

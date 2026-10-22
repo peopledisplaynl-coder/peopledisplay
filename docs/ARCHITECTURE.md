@@ -144,6 +144,10 @@ continuity keys (Unlimited/Corporate) that permanently lift the domain lock.
   `CHANGELOG.md`, and builds the delta ZIP from `update_files.txt`.
 - From this repo: `npm run deploy -- --target=golden` fills the golden master and
   `update_files.txt`. See `CLAUDE.md` → Release flow.
+- New customers download from GitHub: pushing a tag `vX.Y.Z` runs `.github/workflows/release.yml`,
+  which builds `peopledisplay-starter.zip` (same content as build_update.php's installation ZIP)
+  and publishes it as a GitHub release; `website/download.php` on peopledisplay.nl points to the
+  latest release.
 
 ## Developer tooling (never on a server)
 
@@ -153,6 +157,9 @@ continuity keys (Unlimited/Corporate) that permanently lift the domain lock.
 | `scripts/lib/files.mjs` | which files go to which server (site / golden profile) |
 | `scripts/deploy.mjs` | FTP upload of changed files |
 | `scripts/changelog.mjs` | CHANGELOG.md from version.json |
+| `scripts/build-release.mjs` | installation ZIP + release notes into `dist/` |
+| `.github/workflows/release.yml` | GitHub release on every version tag |
+| `website/download.php` | download page on peopledisplay.nl (not part of the app) |
 | `scripts/sync-sql.mjs`, `scripts/lint.mjs` | schema copy, PHP syntax check |
 | `tests/foundation.test.mjs` | project checks (`npm test`) |
 | `tests/db_smoke.php` | optional database check against a throw-away MariaDB |
