@@ -97,6 +97,16 @@ Optional database check (needs PHP + a throw-away MariaDB, never a real DB):
 - Feature flags and settings are read server-side; never trust client state for
   status changes (e.g. checkout uses `COALESCE(home_locatie, locatie)` server-side).
 
+## Manuals (docs/nl, docs/en)
+
+- Six manuals: user, administrator and installation guide, each in Dutch and English, with the
+  same screenshots (`docs/images/`). Index: `docs/README.md`. PDF and Word in `docs/pdf`, `docs/word`.
+- When users or administrators will notice a change: update the Dutch AND English text, redo the
+  affected screenshots (`npm run docs:screenshots -- <names>`, needs PHP + a throw-away MariaDB —
+  run in Claude's workspace, Ton has no local PHP server) and rebuild (`npm run docs:build`).
+- Screenshots come from `docs/tools/demo-seed.php` (fictional data, domain demo.peopledisplay.test);
+  never use real customer data. `npm test` checks that every referenced screenshot exists.
+
 ## Gotchas
 
 - `session_config.php` does not exist on the server — never `require` it.

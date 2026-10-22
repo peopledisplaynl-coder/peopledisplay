@@ -67,3 +67,6 @@ Claude outputs/
 
 # Release build output (npm run release:build)
 dist/
+
+# Manual build scratch folder
+docs/.build/

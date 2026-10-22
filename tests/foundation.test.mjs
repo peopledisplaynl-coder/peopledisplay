@@ -164,3 +164,17 @@ test('all PHP files have valid syntax', { skip: hasPhp ? false : 'PHP not instal
   const r = spawnSync(process.execPath, [join(ROOT, 'scripts', 'lint.mjs')], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
+
+// ── Manuals ────────────────────────────────────────────────────────────
+test('manuals: every screenshot exists, and Dutch and English use the same ones', () => {
+  const pairs = [
+    ['docs/nl/gebruikershandleiding.md', 'docs/en/user-guide.md'],
+    ['docs/nl/beheerdershandleiding.md', 'docs/en/admin-guide.md'],
+    ['docs/nl/installatiehandleiding.md', 'docs/en/installation-guide.md'],
+  ];
+  const images = (f) => [...read(f).matchAll(/!\[[^\]]*\]\(\.\.\/images\/([^)]+)\)/g)].map((m) => m[1]);
+  for (const [nl, en] of pairs) {
+    for (const img of images(nl)) assert.ok(existsSync(join(ROOT, 'docs', 'images', img)), `${nl}: missing docs/images/${img}`);
+    assert.deepEqual(images(en), images(nl), `${en} and ${nl} should show the same screenshots in the same order`);
+  }
+});

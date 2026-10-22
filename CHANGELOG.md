@@ -2,6 +2,15 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.1.10 — 2026-10-22
+
+- Fix: install.php sloeg na het accepteren van de voorwaarden de licentiestap over en opende de databasestap met een foutmelding — elke stap wordt nu apart verwerkt
+- Fix: installatie toont het juiste versienummer en aantal tabellen
+- Fix: Bezoekers beheren toont weer naam, tijd en contactpersoon van bezoekers
+- Fix: tijd van verwachte en binnen-zijnde bezoekers op het aanmeldscherm (stond op --:--)
+- Fix: installatie-ZIP bevat de map tmp/badge_photos (stap 1 van de installatie gaf LET OP)
+- Nieuw: gebruikers-, beheerders- en installatiehandleiding in het Nederlands en Engels (PDF en Word), met screenshots
+
 ## v2.1.9 — 2026-10-22
 
 - Onderhoud: versienummers gelijkgetrokken (version.json, version.php en installer)

@@ -10,10 +10,13 @@
     "changelog": "node scripts/changelog.mjs",
     "sync-sql": "node scripts/sync-sql.mjs",
     "deploy": "node scripts/deploy.mjs",
-    "release:build": "node scripts/build-release.mjs"
+    "release:build": "node scripts/build-release.mjs",
+    "docs:build": "node docs/tools/build-docs.mjs",
+    "docs:screenshots": "bash docs/tools/make-screenshots.sh"
   },
   "devDependencies": {
     "basic-ftp": "^6.2.3",
+    "playwright-core": "1.56",
     "ssh2-sftp-client": "^12.1.1"
   },
   "engines": {

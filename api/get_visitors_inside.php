@@ -30,6 +30,7 @@ try {
             locatie,
             tijd,
             status,
+            checked_in_at,
             bezoek_datum,
             is_multi_day,
             start_date,
@@ -57,6 +58,7 @@ try {
             'locatie' => $v['locatie'],
             'tijd' => date('H:i', strtotime($v['tijd'])),
             'status' => $v['status'],
+            'checked_in_at' => $v['checked_in_at'], // shown as check-in time on the screen
             'is_multi_day' => (bool)$v['is_multi_day'],
             'date_display' => $v['is_multi_day'] 
                 ? date('d-m', strtotime($v['start_date'])) . ' t/m ' . date('d-m', strtotime($v['end_date']))

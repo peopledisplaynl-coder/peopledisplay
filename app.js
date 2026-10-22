@@ -2569,7 +2569,8 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
           card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
         });
         
-        const time = visitor.bezoek_tijd ? visitor.bezoek_tijd.substring(0, 5) : '--:--';
+        const rawTime = visitor.bezoek_tijd || visitor.tijd || ''; // API field is 'tijd'
+        const time = rawTime ? String(rawTime).substring(0, 5) : '--:--';
         const naam = (visitor.naam || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const bedrijf = (visitor.bedrijf || 'Geen bedrijf').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const locatie = (visitor.locatie || 'Onbekend').replace(/</g, '&lt;').replace(/>/g, '&gt;');

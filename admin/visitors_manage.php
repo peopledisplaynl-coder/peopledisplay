@@ -71,6 +71,18 @@ $stmt = $db->prepare($query);
 $stmt->execute($params);
 $visitors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// The visitors table stores voornaam/achternaam, tijd and contactpersoon (see install.sql);
+// map them to the names this page displays. Before 2.1.10 the name, time and contact
+// columns stayed empty because the page read columns that do not exist.
+foreach ($visitors as &$v) {
+    $v['naam']                = $v['naam'] ?? trim(($v['voornaam'] ?? '') . ' ' . ($v['achternaam'] ?? ''));
+    $v['functie']             = $v['functie'] ?? '';
+    $v['bezoek_tijd']         = $v['bezoek_tijd'] ?? ($v['tijd'] ?? '');
+    $v['contactpersoon_naam'] = $v['contactpersoon_naam'] ?? (($v['contactpersoon'] ?? '') !== '' ? $v['contactpersoon'] : '-');
+    $v['registratie_type']    = $v['registratie_type'] ?? (!empty($v['is_multi_day']) ? 'MEERDAAGS' : '');
+}
+unset($v);
+
 // Get locations
 $locStmt = $db->query("SELECT DISTINCT locatie FROM visitors WHERE locatie IS NOT NULL AND locatie != '' ORDER BY locatie");
 $filterLocaties = $locStmt->fetchAll(PDO::FETCH_COLUMN);
@@ -376,9 +388,11 @@ $current_display_name = $_SESSION['display_name'] ?? $_SESSION['username'] ?? 'A
                                 </span>
                             </td>
                             <td>
+                                <?php if ($v['registratie_type'] !== ''): ?>
                                 <span class="badge badge-<?php echo strtolower($v['registratie_type']); ?>">
                                     <?php echo htmlspecialchars($v['registratie_type']); ?>
                                 </span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <?php if ($v['status'] === 'AANGEMELD'): ?>

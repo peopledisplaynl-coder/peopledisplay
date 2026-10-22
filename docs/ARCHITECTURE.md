@@ -160,6 +160,7 @@ continuity keys (Unlimited/Corporate) that permanently lift the domain lock.
 | `scripts/build-release.mjs` | installation ZIP + release notes into `dist/` |
 | `.github/workflows/release.yml` | GitHub release on every version tag |
 | `website/download.php` | download page on peopledisplay.nl (not part of the app) |
+| `docs/tools/` | manual screenshots (demo seed + Playwright) and PDF/Word build — see `docs/README.md` |
 | `scripts/sync-sql.mjs`, `scripts/lint.mjs` | schema copy, PHP syntax check |
 | `tests/foundation.test.mjs` | project checks (`npm test`) |
 | `tests/db_smoke.php` | optional database check against a throw-away MariaDB |

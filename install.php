@@ -85,14 +85,20 @@ require_once __DIR__ . '/includes/license.php';
 // ============================================================
 // STEP HANDLING
 // ============================================================
+require_once __DIR__ . '/includes/version.php';
+// ============================================================
 $step   = (int)($_POST['step'] ?? $_GET['step'] ?? 1);
+// Each POST handler below runs only for the step that was actually submitted. Before
+// 2.1.10 they cascaded: accepting the EULA also ran the licence and database handlers in
+// the same request, so the licence step was skipped and step 4 opened with an error.
+$postedStep = $_SERVER['REQUEST_METHOD'] === 'POST' ? (int)($_POST['step'] ?? 0) : 0;
 $errors  = [];
 $success = [];
 
 // ============================================================
 // STEP 2 — EULA Acceptance
 // ============================================================
-if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($postedStep === 2) {
     if (isset($_POST['eula_accepted']) && $_POST['eula_accepted'] === '1') {
         $_SESSION['pd_install']['eula_accepted'] = true;
         $_SESSION['pd_install']['eula_version']  = '1.0';
@@ -106,7 +112,7 @@ if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ============================================================
 // STEP 3 — Validate license key (optional — Starter is free)
 // ============================================================
-if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($postedStep === 3) {
     $licenseKey = strtoupper(trim($_POST['license_key'] ?? ''));
 
     if (empty($licenseKey)) {
@@ -130,7 +136,7 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ============================================================
 // STEP 4 — Test and save database config
 // ============================================================
-if ($step === 4 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($postedStep === 4) {
     $dbHost = trim($_POST['db_host'] ?? '');
     $dbName = trim($_POST['db_name'] ?? '');
     $dbUser = trim($_POST['db_user'] ?? '');
@@ -163,7 +169,7 @@ if ($step === 4 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ============================================================
 // STEP 5 — Import SQL schema
 // ============================================================
-if ($step === 5 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($postedStep === 5) {
     $dbHost = $_SESSION['pd_install']['db_host'] ?? '';
     $dbName = $_SESSION['pd_install']['db_name'] ?? '';
     $dbUser = $_SESSION['pd_install']['db_user'] ?? '';
@@ -206,7 +212,7 @@ if ($step === 5 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ============================================================
 // STEP 6 — Create admin account
 // ============================================================
-if ($step === 6 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($postedStep === 6) {
     $adminUser    = trim($_POST['admin_username'] ?? '');
     $adminPass    = $_POST['admin_password']  ?? '';
     $adminPass2   = $_POST['admin_password2'] ?? '';
@@ -256,7 +262,7 @@ if ($step === 6 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ============================================================
 // STEP 7 — Write db_config.php, activate license, lock installer
 // ============================================================
-if ($step === 7 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($postedStep === 7) {
     $dbHost = $_SESSION['pd_install']['db_host'] ?? '';
     $dbName = $_SESSION['pd_install']['db_name'] ?? '';
     $dbUser = $_SESSION['pd_install']['db_user'] ?? '';
@@ -421,7 +427,7 @@ pre { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; paddin
 
     <div class="header">
         <h1>PeopleDisplay Installatie</h1>
-        <p>Versie 2.1 &mdash; Aanwezigheidsregistratie systeem</p>
+        <p>Versie <?php echo htmlspecialchars(PD_CURRENT_VERSION); ?> &mdash; Aanwezigheidsregistratie systeem</p>
     </div>
 
     <!-- Step indicators -->
@@ -696,7 +702,7 @@ pre { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; paddin
 
         <?php if (empty($errors)): ?>
         <div class="alert alert-info">
-            Dit maakt <strong>30 tabellen</strong> aan in uw database.
+            Dit maakt <strong><?php echo (int)preg_match_all('/CREATE TABLE/i', (string)@file_get_contents(__DIR__ . '/install.sql')); ?> tabellen</strong> aan in uw database.
             Bestaande tabellen worden niet overschreven — veilig om opnieuw uit te voeren.
         </div>
         <?php if (empty($success)): ?>

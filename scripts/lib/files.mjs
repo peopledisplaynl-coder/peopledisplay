@@ -42,7 +42,7 @@ export const RELEASE_ONLY_EXCLUDES = [
 ];
 
 // Empty folders a fresh installation needs (build_update.php adds the same ones).
-export const RELEASE_EMPTY_DIRS = ['uploads/', 'uploads/profiles/', 'logs/', 'tmp/', 'tmp/sessions/', 'backups/'];
+export const RELEASE_EMPTY_DIRS = ['uploads/', 'uploads/profiles/', 'logs/', 'tmp/', 'tmp/sessions/', 'tmp/badge_photos/', 'backups/'];
 
 // Profiles: "site" = a running PeopleDisplay (test.peopledisplay.nl, mijn.peopledisplay.nl);
 // "golden" = the master copy in admin.peopledisplay.nl/install/ that build_update.php zips;

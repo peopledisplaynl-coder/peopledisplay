@@ -219,18 +219,24 @@ The application auto-detects its base path and site URL from the server environm
 
 ## Cron Jobs (Optional)
 
-For automatic features, configure these cron jobs on your server:
+For automatic resets, configure these scheduled tasks in your hosting control panel
+(run with PHP from the command line), or call them over HTTPS with `?key=…` from a
+service such as cron-job.org:
+
+| Script | When | What it does |
+|---|---|---|
+| `cron/cron_reset_expired_sub_status.php` | every 5 minutes | Resets extra statuses whose end date has passed |
+| `cron/daily_reset_cron.php` | daily 23:00 | Sets all staff to OUT |
+| `cron/cron_auto_checkout.php` | daily 23:55 | Checks out visitors (except multi-day visits) |
+| `cron/cron_auto_delete.php` | daily 02:00 | Deletes visitor data after 7 days (GDPR) |
+| `cron/cleanup_tokens_cron.php` | daily 02:00 | Removes expired "remember me" tokens |
 
 ```
-# Reset expired sub-statuses every 5 minutes
-*/5 * * * * curl -s https://yoursite.com/cron_endpoint.php?action=reset_sub_status
-
-# Auto check-out employees at end of day
-0 18 * * * curl -s https://yoursite.com/cron_endpoint.php?action=auto_checkout
-
-# Clean up old visitor records (daily)
-0 2 * * * curl -s https://yoursite.com/cron_endpoint.php?action=cleanup
+*/5 * * * * /usr/bin/php /path/to/peopledisplay/cron/cron_reset_expired_sub_status.php
+0 23 * * *  /usr/bin/php /path/to/peopledisplay/cron/daily_reset_cron.php
 ```
+
+See the [Installation Guide](docs/en/installation-guide.md) for details.
 
 ## Troubleshooting
 
@@ -279,6 +285,14 @@ For licensing questions: support@peopledisplay.nl
 Purchase a license: [peopledisplay.nl/prijzen](https://peopledisplay.nl/prijzen)
 
 © 2026 Ton Labee — https://peopledisplay.nl
+
+## Manuals
+
+User, administrator and installation guides in Dutch and English, with screenshots, as
+Markdown, PDF and Word: see [docs/README.md](docs/README.md).
+
+- 🇳🇱 [Gebruikershandleiding](docs/nl/gebruikershandleiding.md) · [Beheerdershandleiding](docs/nl/beheerdershandleiding.md) · [Installatiehandleiding](docs/nl/installatiehandleiding.md)
+- 🇬🇧 [User Guide](docs/en/user-guide.md) · [Administrator Guide](docs/en/admin-guide.md) · [Installation Guide](docs/en/installation-guide.md)
 
 ## Development
 
