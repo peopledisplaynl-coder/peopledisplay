@@ -99,7 +99,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
     let userLocations = null;     // Komt van user_features.php
     let userAfdelingen = null;    // 🆕 Komt van user_features.php
     let userExtraButtons = null;  // Komt van user_features.php
-    let userLinkedEmployeeId = null; // 🆕 Koppeling gebruiker -> eigen medewerkerskaart (alleen rol 'user')
+    let userLinkedEmployeeId = null; // 🆕 Koppeling gebruiker -> eigen medewerkerskaart (elke rol)
     let showAllLocations = false; // 🆕 Track of ALL geklikt is (toon ook niet-user locaties)
     
     // 🆕 BUTTON CONFIGURATIE (dynamisch geladen)

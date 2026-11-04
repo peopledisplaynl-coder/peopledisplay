@@ -1778,7 +1778,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                         <option value="${emp.employee_id}" ${user.linked_employee_id === emp.employee_id ? 'selected' : ''}>${emp.naam}</option>
                                     `).join('')}
                                 </select>
-                                <small style="color:#666; display:block; margin-top:4px;">Toont bij inloggen standaard alleen de eigen kaart i.p.v. de locatieweergave. Werkt alleen voor rol "User".</small>
+                                <small style="color:#666; display:block; margin-top:4px;">Toont bij inloggen standaard alleen de eigen kaart i.p.v. de locatieweergave of het admin dashboard.</small>
                             </div>
 
                             <div class="form-group">

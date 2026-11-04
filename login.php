@@ -30,17 +30,25 @@ if (file_exists(__DIR__ . '/includes/debug_logger.php')) {
 
 $error = '';
 
+// 🆕 Koppeling gebruiker -> eigen medewerkerskaart: een gekoppeld account landt na
+// inloggen altijd direct op het aanmeldscherm met de eigen kaart, voor elke rol
+// (ook admin/superadmin) — anders heeft koppelen voor die rollen geen effect.
+function pd_post_login_target(PDO $db, int $userId, string $role): string {
+    try {
+        $stmt = $db->prepare("SELECT linked_employee_id FROM users WHERE id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        $linked = $stmt->fetchColumn();
+        if (!empty($linked)) return 'index.php';
+    } catch (PDOException $e) {
+        // Kolom bestaat nog niet op deze installatie — gewoon geen koppeling aannemen.
+    }
+    return in_array($role, ['admin', 'superadmin']) ? 'admin/dashboard.php' : 'frontpage.php';
+}
+
 // Check if already logged in
 if (isset($_SESSION['user_id'])) {
-    // Redirect based on role
-    $userRole = $_SESSION['role'] ?? 'user';
-    if (in_array($userRole, ['admin', 'superadmin'])) {
-        header('Location: admin/dashboard.php');
-        exit;
-    } else {
-        header('Location: frontpage.php');
-        exit;
-    }
+    header('Location: ' . pd_post_login_target($db, (int)$_SESSION['user_id'], $_SESSION['role'] ?? 'user'));
+    exit;
 }
 
 // ✅ CACHE PREVENTION (prevent back button after logout)
@@ -62,14 +70,8 @@ if (isset($_GET['forced_logout'])) {
 
 // Attempt remember-me auto-login before showing the login form.
 if (function_exists('pd_try_remember_me_login') && pd_try_remember_me_login($db)) {
-    $userRole = $_SESSION['role'] ?? 'user';
-    if (in_array($userRole, ['admin', 'superadmin'])) {
-        header('Location: admin/dashboard.php');
-        exit;
-    } else {
-        header('Location: frontpage.php');
-        exit;
-    }
+    header('Location: ' . pd_post_login_target($db, (int)$_SESSION['user_id'], $_SESSION['role'] ?? 'user'));
+    exit;
 }
 
 // Handle login form submission
@@ -146,7 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                     
-                    // Redirect based on role
+                    // Redirect based on role (en koppeling aan eigen medewerkerskaart)
+                    $pdRedirectTarget = pd_post_login_target($db, (int)$user['id'], $user['role']);
                     if (function_exists('pd_debug_log')) {
                         pd_debug_log('LOGIN SUCCESS — redirecting', [
                             'user_id'  => $_SESSION['user_id'] ?? '?',
@@ -155,15 +158,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'session_path' => session_save_path() ?: '(php-default)',
                         ]);
                     }
-                    if (in_array($user['role'], ['admin', 'superadmin'])) {
-                        if (function_exists('pd_debug_redirect')) { pd_debug_redirect('admin/dashboard.php'); }
-                        header('Location: admin/dashboard.php');
-                        exit;
-                    } else {
-                        if (function_exists('pd_debug_redirect')) { pd_debug_redirect('frontpage.php'); }
-                        header('Location: frontpage.php');
-                        exit;
-                    }
+                    if (function_exists('pd_debug_redirect')) { pd_debug_redirect($pdRedirectTarget); }
+                    header('Location: ' . $pdRedirectTarget);
+                    exit;
                 } else {
                     $error = 'Account is gedeactiveerd. Neem contact op met de beheerder.';
                 }

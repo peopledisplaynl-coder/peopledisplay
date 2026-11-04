@@ -109,7 +109,7 @@ try {
         // 🆕 Koppeling gebruiker -> eigen medewerkerskaart. Alleen voor rol 'user' —
         // admins/superadmins behouden altijd de volledige weergave, ook als er per
         // ongeluk een koppeling op hun account zou staan.
-        'linked_employee_id' => ($user['role'] === 'user' && !empty($user['linked_employee_id'])) ? $user['linked_employee_id'] : null,
+        'linked_employee_id' => !empty($user['linked_employee_id']) ? $user['linked_employee_id'] : null,
     ];
     
     // Add custom names if they exist

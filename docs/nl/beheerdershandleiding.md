@@ -102,7 +102,7 @@ Klik op het potlood (✏️) achter een gebruiker. Het bewerkvenster heeft vier 
 
 ![Account-gegevens van een gebruiker](../images/gebruiker-bewerken.png)
 
-- **Account** — weergavenaam, e-mail, rol, groep, **gekoppelde medewerker** (optioneel: koppelt dit account aan één medewerkerskaart, zodat de gebruiker bij het inloggen meteen die eigen kaart ziet in plaats van de locatieweergave — werkt alleen voor rol **User**), een nieuw wachtwoord (leeg laten om niets te wijzigen) en of het account actief is.
+- **Account** — weergavenaam, e-mail, rol, groep, **gekoppelde medewerker** (optioneel: koppelt dit account aan één medewerkerskaart, zodat de gebruiker bij het inloggen meteen die eigen kaart ziet in plaats van de locatieweergave of het admin-dashboard — werkt voor elke rol), een nieuw wachtwoord (leeg laten om niets te wijzigen) en of het account actief is.
 - **Features** — wat deze gebruiker op het aanmeldscherm ziet en mag (zie hieronder).
 - **Presentatie** — een Google Slides-presentatie die automatisch start als het scherm een tijd niet wordt aangeraakt, met het aantal seconden wachttijd. Handig voor een infoscherm in de hal.
 - **Scanner** — of de gebruiker badges mag scannen om medewerkers in en uit te checken.

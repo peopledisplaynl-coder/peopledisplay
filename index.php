@@ -53,7 +53,7 @@ if ($toonInuitBordKnop) {
 }
 unset($_stmtIB, $_ibRow, $_ibFeat);
 
-// 🆕 Koppeling gebruiker -> eigen medewerkerskaart (alleen rol 'user'). Gebruikt om:
+// 🆕 Koppeling gebruiker -> eigen medewerkerskaart (elke rol). Gebruikt om:
 // - de employee-onboarding.js popup over te slaan (koppeling gaat nu via beheer)
 // - de locatie-menuknop te verbergen (locatie wisselen heeft geen effect op de
 //   eigen-kaart-weergave)
@@ -63,7 +63,7 @@ try {
     $_stmtLink = $db->prepare("SELECT role, linked_employee_id FROM users WHERE id = ? LIMIT 1");
     $_stmtLink->execute([(int)$_SESSION['user_id']]);
     $_linkRow = $_stmtLink->fetch(PDO::FETCH_ASSOC);
-    if ($_linkRow && $_linkRow['role'] === 'user' && !empty($_linkRow['linked_employee_id'])) {
+    if ($_linkRow && !empty($_linkRow['linked_employee_id'])) {
         $pdLinkedEmployeeId = $_linkRow['linked_employee_id'];
     }
     unset($_stmtLink, $_linkRow);

@@ -104,7 +104,7 @@ Click the pencil (✏️) behind a user. The edit panel has four tabs.
 
 ![A user's account details](../images/gebruiker-bewerken.png)
 
-- **Account** — display name, email, role, group, **gekoppelde medewerker** (linked staff member — optional: links this account to one staff card, so the user sees that own card right after logging in instead of the location view — only works for the **User** role), a new password (leave empty to keep the current one) and whether the account is active.
+- **Account** — display name, email, role, group, **gekoppelde medewerker** (linked staff member — optional: links this account to one staff card, so the user sees that own card right after logging in instead of the location view or the admin dashboard — works for every role), a new password (leave empty to keep the current one) and whether the account is active.
 - **Features** — what this user sees and may do on the check-in screen (see below).
 - **Presentatie** (presentation) — a Google Slides presentation that starts automatically after the screen has not been touched for a while, with the number of seconds to wait. Handy for an information screen in the hall.
 - **Scanner** — whether the user may scan badges to check staff in and out.
