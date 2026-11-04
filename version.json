@@ -1,12 +1,20 @@
 {
-    "version": "2.1.11",
+    "version": "2.1.12",
     "critical": false,
-    "message": "Nieuw: medewerker koppelen aan eigen kaart + herontwerp medewerkersbeheer",
+    "message": "Fix: koppeling eigen medewerkerskaart werkt nu voor alle rollen, niet alleen User",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
     "release_date": "2026-11-04",
     "changelog": [
+        {
+            "version": "2.1.12",
+            "date": "2026-11-04",
+            "changes": [
+                "Fix: een gekoppelde medewerkerskaart (Account → gekoppelde medewerker) werkte alleen voor rol User — werkt nu voor elke rol, ook Medewerker Beheerder, Gebruiker Beheerder, Admin en SuperAdmin",
+                "Gekoppelde accounts landen na inloggen voortaan altijd direct op de eigen kaart in plaats van het dashboard of de locatieweergave; de Admin Dashboard-knop blijft gewoon bereikbaar"
+            ]
+        },
         {
             "version": "2.1.11",
             "date": "2026-11-04",

@@ -2,6 +2,11 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.1.12 — 2026-11-04
+
+- Fix: een gekoppelde medewerkerskaart (Account → gekoppelde medewerker) werkte alleen voor rol User — werkt nu voor elke rol, ook Medewerker Beheerder, Gebruiker Beheerder, Admin en SuperAdmin
+- Gekoppelde accounts landen na inloggen voortaan altijd direct op de eigen kaart in plaats van het dashboard of de locatieweergave; de Admin Dashboard-knop blijft gewoon bereikbaar
+
 ## v2.1.11 — 2026-11-04
 
 - Nieuw: gebruikers kunnen gekoppeld worden aan hun eigen medewerkerskaart — toont bij inloggen automatisch alleen die kaart met IN/UIT-status, in plaats van de locatieweergave (werkt alleen voor rol User)
