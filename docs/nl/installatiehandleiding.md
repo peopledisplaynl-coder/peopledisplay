@@ -1,6 +1,6 @@
 ---
 title: "PeopleDisplay — Installatiehandleiding"
-subtitle: "Versie 2.1.10"
+subtitle: "Versie 2.1.11"
 lang: nl-NL
 ---
 

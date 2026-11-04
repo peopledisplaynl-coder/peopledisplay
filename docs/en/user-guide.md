@@ -1,6 +1,6 @@
 ---
 title: "PeopleDisplay — User Guide"
-subtitle: "Version 2.1.10"
+subtitle: "Version 2.1.11"
 lang: en-GB
 ---
 
