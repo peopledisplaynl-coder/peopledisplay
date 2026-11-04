@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `profile_photo`            varchar(255)                      DEFAULT NULL,
   `role`                     enum('user','admin','superadmin','employee_manager','user_manager') NOT NULL DEFAULT 'user',
   `group_id`                 int(11)                           DEFAULT NULL,
+  `linked_employee_id`       varchar(100)                      DEFAULT NULL COMMENT 'Koppeling naar employees.employee_id — toont standaard alleen eigen kaart (alleen rol user)',
   `features`                 longtext                          DEFAULT NULL,
   `active`                   tinyint(1)                        NOT NULL DEFAULT 1,
   `can_show_presentation`    tinyint(1)                        NOT NULL DEFAULT 0,
@@ -105,6 +106,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_username`   (`username`),
   KEY `idx_group_id`         (`group_id`),
+  KEY `idx_linked_employee_id` (`linked_employee_id`),
   KEY `idx_deleted_at`       (`deleted_at`),
   KEY `idx_active`           (`active`),
   CONSTRAINT `fk_users_group_id` FOREIGN KEY (`group_id`) REFERENCES `user_groups` (`id`) ON DELETE SET NULL

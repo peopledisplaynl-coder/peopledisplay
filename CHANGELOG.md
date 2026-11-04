@@ -2,6 +2,14 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.1.11 — 2026-11-04
+
+- Nieuw: gebruikers kunnen gekoppeld worden aan hun eigen medewerkerskaart — toont bij inloggen automatisch alleen die kaart met IN/UIT-status, in plaats van de locatieweergave (werkt alleen voor rol User)
+- Nieuw: foto-upload met automatische compressie bij medewerker toevoegen en bewerken
+- Verbeterd: ‘Nieuwe Medewerker Toevoegen’ en het bewerkformulier in Medewerkers Beheren herontworpen naar compacte, overzichtelijke blokken (Basisgegevens, Organisatie, Foto, Zichtbaarheid, Opmerkingen)
+- Verbeterd: filterbalk in Medewerkers Beheren omgezet naar compacte responsive layout
+- Documentatie: gebruikers- en beheerdershandleiding (NL/EN) bijgewerkt met de nieuwe instellingen
+
 ## v2.1.10 — 2026-10-22
 
 - Fix: install.php sloeg na het accepteren van de voorwaarden de licentiestap over en opende de databasestap met een foutmelding — elke stap wordt nu apart verwerkt

@@ -1,12 +1,23 @@
 {
-    "version": "2.1.10",
+    "version": "2.1.11",
     "critical": false,
-    "message": "Fix: installatie sloeg de licentiestap over — nieuw: handleidingen NL\/EN",
+    "message": "Nieuw: medewerker koppelen aan eigen kaart + herontwerp medewerkersbeheer",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
-    "release_date": "2026-10-22",
+    "release_date": "2026-11-04",
     "changelog": [
+        {
+            "version": "2.1.11",
+            "date": "2026-11-04",
+            "changes": [
+                "Nieuw: gebruikers kunnen gekoppeld worden aan hun eigen medewerkerskaart — toont bij inloggen automatisch alleen die kaart met IN\/UIT-status, in plaats van de locatieweergave (werkt alleen voor rol User)",
+                "Nieuw: foto-upload met automatische compressie bij medewerker toevoegen en bewerken",
+                "Verbeterd: ‘Nieuwe Medewerker Toevoegen’ en het bewerkformulier in Medewerkers Beheren herontworpen naar compacte, overzichtelijke blokken (Basisgegevens, Organisatie, Foto, Zichtbaarheid, Opmerkingen)",
+                "Verbeterd: filterbalk in Medewerkers Beheren omgezet naar compacte responsive layout",
+                "Documentatie: gebruikers- en beheerdershandleiding (NL\/EN) bijgewerkt met de nieuwe instellingen"
+            ]
+        },
         {
             "version": "2.1.10",
             "date": "2026-10-22",
