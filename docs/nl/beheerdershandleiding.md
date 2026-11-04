@@ -59,23 +59,23 @@ Boven de lijst zoek en filter je op naam, locatie, afdeling, BHV en foto. **Toon
 
 ## Medewerker toevoegen
 
-Klik op **Nieuwe Medewerker Toevoegen**.
+Klik op **Nieuwe Medewerker Toevoegen**. Het formulier staat in overzichtelijke blokken: Basisgegevens, Organisatie en Foto naast elkaar, met Zichtbaarheid op locaties daaronder.
 
 ![Een nieuwe medewerker toevoegen](../images/medewerker-nieuw.png)
 
-1. Vul **voornaam**, **achternaam**, **afdeling** en **locatie** in (verplicht).
-2. Vul eventueel e-mailadres, telefoon en functie in. Het e-mailadres wordt gebruikt voor bezoekersmeldingen.
-3. Bij **Zichtbaar op locaties** bepaal je waar de kaart verschijnt. Met **Zichtbaar op ALLE locaties** staat de kaart overal, ongeacht de huidige locatie.
-4. Vink **BHV'er** aan voor medewerkers met een BHV-taak.
+1. Vul bij **Basisgegevens** de **voornaam** en **achternaam** in (verplicht), en eventueel e-mailadres, telefoon en functie. Het e-mailadres wordt gebruikt voor bezoekersmeldingen. Vink **BHV'er** aan voor medewerkers met een BHV-taak.
+2. Kies bij **Organisatie** de **afdeling** en **locatie** (verplicht).
+3. Voeg bij **Foto** een foto toe met **Foto kiezen** — PeopleDisplay comprimeert de foto automatisch — of plak een foto-URL.
+4. Bepaal bij **Zichtbaarheid op locaties** waar de kaart verschijnt. Met **Zichtbaar op ALLE locaties** staat de kaart overal, ongeacht de huidige locatie; vink daarbij ook **Mag handmatig locatie kiezen bij check-in** aan als deze medewerker zelf met de Pion (📍) op een andere locatie moet kunnen inchecken.
 5. Klik op **Opslaan**.
 
 ## Medewerker bewerken
 
-Klik op **Bewerken** in de rij van de medewerker. Het formulier opent direct onder die rij.
+Klik op **Bewerken** in de rij van de medewerker. Het formulier opent direct onder die rij, in dezelfde blokken als bij het toevoegen.
 
 ![Een medewerker bewerken](../images/medewerker-bewerken.png)
 
-Hier stel je ook de foto in en of de medewerker met de **Pion (📍)** op een andere locatie mag inchecken.
+Hier pas je ook de foto aan — upload een nieuwe (automatisch gecomprimeerd) of plak een foto-URL — en stel je in of de medewerker met de **Pion (📍)** op een andere locatie mag inchecken: vink bij **Zichtbaarheid op locaties** eerst **Zichtbaar op ALLE locaties** aan, en daarna **Mag handmatig locatie kiezen bij check-in**.
 
 ## Medewerker verwijderen en terugzetten
 
@@ -102,7 +102,7 @@ Klik op het potlood (✏️) achter een gebruiker. Het bewerkvenster heeft vier 
 
 ![Account-gegevens van een gebruiker](../images/gebruiker-bewerken.png)
 
-- **Account** — weergavenaam, e-mail, rol, groep, een nieuw wachtwoord (leeg laten om niets te wijzigen) en of het account actief is.
+- **Account** — weergavenaam, e-mail, rol, groep, **gekoppelde medewerker** (optioneel: koppelt dit account aan één medewerkerskaart, zodat de gebruiker bij het inloggen meteen die eigen kaart ziet in plaats van de locatieweergave — werkt alleen voor rol **User**), een nieuw wachtwoord (leeg laten om niets te wijzigen) en of het account actief is.
 - **Features** — wat deze gebruiker op het aanmeldscherm ziet en mag (zie hieronder).
 - **Presentatie** — een Google Slides-presentatie die automatisch start als het scherm een tijd niet wordt aangeraakt, met het aantal seconden wachttijd. Handig voor een infoscherm in de hal.
 - **Scanner** — of de gebruiker badges mag scannen om medewerkers in en uit te checken.

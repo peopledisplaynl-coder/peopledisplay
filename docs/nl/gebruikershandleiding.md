@@ -49,6 +49,10 @@ Het aanmeldscherm is het hart van PeopleDisplay. Elke medewerker heeft een eigen
 
 Het scherm ververst zichzelf elke 30 seconden, dus wijzigingen van collega's verschijnen vanzelf. Onderaan zie je hoe laat het scherm voor het laatst is ververst.
 
+## Eigen kaart bij een gekoppeld account
+
+Heeft de beheerder jouw account gekoppeld aan je eigen medewerkerskaart? Dan zie je in plaats van het volledige aanmeldscherm alleen je eigen kaart, met daarboven je status: **📍 Ingecheckt op locatie "…"** of **⚪ (Nog) niet ingecheckt**. De zoek- en filterbalk en het locatiemenu worden dan niet getoond. Mag je zelf een andere locatie kiezen, dan staat er onder je kaart een knop met **🔄 Klik om een andere locatie te kiezen**.
+
 ## De bovenbalk
 
 ![De bovenbalk met tellers en knoppen](../images/header.png)

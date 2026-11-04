@@ -51,6 +51,10 @@ The check-in screen is the heart of PeopleDisplay. Every staff member has a card
 
 The screen refreshes itself every 30 seconds, so colleagues' changes appear automatically. At the bottom you can see when the screen was last refreshed.
 
+## Your own card with a linked account
+
+Has your administrator linked your account to your own staff card? Then instead of the full check-in screen you see only your own card, with your status shown above it: **📍 Ingecheckt op locatie "…"** (checked in at location "…") or **⚪ (Nog) niet ingecheckt** (not checked in (yet)). The search bar, filters and location menu are then not shown. If you are allowed to choose another location yourself, a button appears below your card: **🔄 Klik om een andere locatie te kiezen** (click to choose another location).
+
 ## The top bar
 
 ![The top bar with counters and buttons](../images/header.png)

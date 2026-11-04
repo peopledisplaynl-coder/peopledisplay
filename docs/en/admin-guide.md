@@ -61,23 +61,23 @@ Above the list you search and filter by name, location, department, emergency re
 
 ## Adding a staff member
 
-Click **Nieuwe Medewerker Toevoegen** (add new staff member).
+Click **Nieuwe Medewerker Toevoegen** (add new staff member). The form is laid out in clear blocks: Basic details, Organisation and Photo side by side, with Visibility at locations below.
 
 ![Adding a staff member](../images/medewerker-nieuw.png)
 
-1. Enter **first name**, **last name**, **department** and **location** (required).
-2. Optionally enter email, phone and job title. The email address is used for visitor notifications.
-3. Under **Zichtbaar op locaties** (visible at locations) choose where the card appears. With **Zichtbaar op ALLE locaties** the card appears everywhere, regardless of the current location.
-4. Tick **BHV'er** for staff with an emergency-response role.
+1. Under **Basisgegevens** (basic details) enter **first name** and **last name** (required), and optionally email, phone and job title. The email address is used for visitor notifications. Tick **BHV'er** for staff with an emergency-response role.
+2. Under **Organisatie** (organisation) choose **department** and **location** (required).
+3. Under **Foto** (photo) add a photo with **Foto kiezen** (choose photo) — PeopleDisplay compresses it automatically — or paste a photo URL.
+4. Under **Zichtbaarheid op locaties** (visibility at locations) decide where the card appears. With **Zichtbaar op ALLE locaties** (visible at ALL locations) the card appears everywhere, regardless of the current location; also tick **Mag handmatig locatie kiezen bij check-in** (may choose location manually at check-in) if this staff member should be able to use the "Pion" (📍) to check in at another location themselves.
 5. Click **Opslaan** (save).
 
 ## Editing a staff member
 
-Click **Bewerken** (edit) on the staff member's row. The form opens directly below that row.
+Click **Bewerken** (edit) on the staff member's row. The form opens directly below that row, in the same blocks as when adding a staff member.
 
 ![Editing a staff member](../images/medewerker-bewerken.png)
 
-This is also where you set the photo and whether the person may use the **"Pion" (📍)** to check in at another location.
+This is also where you change the photo — upload a new one (compressed automatically) or paste a photo URL — and set whether the staff member may check in at another location with the **"Pion" (📍)**: under **Zichtbaarheid op locaties** (visibility at locations) tick **Zichtbaar op ALLE locaties** (visible at ALL locations) first, then **Mag handmatig locatie kiezen bij check-in** (may choose location manually at check-in).
 
 ## Deleting and restoring
 
@@ -104,7 +104,7 @@ Click the pencil (✏️) behind a user. The edit panel has four tabs.
 
 ![A user's account details](../images/gebruiker-bewerken.png)
 
-- **Account** — display name, email, role, group, a new password (leave empty to keep the current one) and whether the account is active.
+- **Account** — display name, email, role, group, **gekoppelde medewerker** (linked staff member — optional: links this account to one staff card, so the user sees that own card right after logging in instead of the location view — only works for the **User** role), a new password (leave empty to keep the current one) and whether the account is active.
 - **Features** — what this user sees and may do on the check-in screen (see below).
 - **Presentatie** (presentation) — a Google Slides presentation that starts automatically after the screen has not been touched for a while, with the number of seconds to wait. Handy for an information screen in the hall.
 - **Scanner** — whether the user may scan badges to check staff in and out.
