@@ -415,6 +415,256 @@ $afdelingen = $db->query("
             display: inline-block;
         }
         .btn-upgrade:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+        /* 🆕 MODERNE TOOLBAR — CSV-acties links (secundair), Toevoegen rechts (primair) */
+        .page-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .toolbar-csv-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .toolbar-csv-group .toolbar-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #8795a1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 2px;
+        }
+        .btn-csv-sm {
+            background: #f1f3f5;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+        }
+        .btn-csv-sm:hover { background: #e9ecef; }
+
+        .btn-add-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 28px;
+            font-size: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+            transition: all 0.2s;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .btn-add-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+        }
+
+        /* 🆕 MODERNE BLOKKEN in het toevoegformulier */
+        .inline-add-form {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 1100px;
+        }
+        /* 🆕 CSS Grid met benoemde gebieden: Basisgegevens staat links en
+           beslaat de volle hoogte; Organisatie + Foto staan rechtsboven naast
+           elkaar; Zichtbaarheid (en in het bewerkformulier ook Opmerkingen)
+           vult de rechterkolom daaronder op — in plaats van over de VOLLE
+           breedte (incl. onder Basisgegevens) te gaan, wat lege ruimte gaf
+           naast de kortere blokken. */
+        .form-blocks {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-areas:
+                "basis org   foto"
+                "basis zicht zicht";
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+        .form-blocks.form-blocks-edit {
+            grid-template-areas:
+                "basis org   foto"
+                "basis zicht zicht"
+                "basis opm   opm";
+        }
+        @media (max-width: 820px) {
+            .form-blocks {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-areas:
+                    "basis basis"
+                    "org   foto"
+                    "zicht zicht";
+            }
+            .form-blocks.form-blocks-edit {
+                grid-template-areas:
+                    "basis basis"
+                    "org   foto"
+                    "zicht zicht"
+                    "opm   opm";
+            }
+        }
+        @media (max-width: 560px) {
+            .form-blocks,
+            .form-blocks.form-blocks-edit {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "basis"
+                    "org"
+                    "foto"
+                    "zicht"
+                    "opm";
+            }
+        }
+        .form-blocks .block-basis { grid-area: basis; }
+        .form-blocks .block-org { grid-area: org; }
+        .form-blocks .block-foto { grid-area: foto; }
+        .form-blocks .block-zicht { grid-area: zicht; }
+        .form-blocks .block-opm { grid-area: opm; }
+        .form-block {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 15px;
+        }
+        .form-blocks .form-block { margin-bottom: 0; }
+        .form-block.form-block-full { grid-column: 1 / -1; }
+        .form-block-title {
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            opacity: 0.9;
+            letter-spacing: 0.3px;
+        }
+        .form-block-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 180px));
+            gap: 10px;
+        }
+        .form-block-grid .form-field-wide { grid-column: 1 / -1; }
+        .form-field input[type="text"],
+        .form-field input[type="email"],
+        .form-field input[type="tel"],
+        .form-field select {
+            width: 100%;
+        }
+        /* Checkbox-velden (BHV'er e.d.) mogen nooit de volle 100%/150px breedte
+           van hun form-field erven — anders worden het reuzenvinkjes. */
+        .form-field input[type="checkbox"] { width: 16px; max-width: 16px; height: 16px; }
+
+        /* Lichte (witte) variant van dezelfde moderne blokken — gebruikt in het
+           bewerkformulier, dat op een licht rijtje i.p.v. het paarse verloop staat */
+        .form-block-light {
+            background: #f8f9fa;
+            border: 1px solid #e2e5e9;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 15px;
+        }
+        .form-blocks .form-block-light { margin-bottom: 0; }
+        .form-block-light.form-block-full { grid-column: 1 / -1; }
+        .form-block-light .form-block-title {
+            color: #2c3e50;
+            opacity: 1;
+        }
+        .form-block-light .form-field label { color: #555; }
+        .form-block-light .form-field input,
+        .form-block-light .form-field select { background: white; border: 1px solid #ddd; }
+        .inline-edit-form { max-width: 1100px; }
+
+        /* 🆕 FILTER TOOLBAR — compacte, responsive grid i.p.v. losse selects die
+           door de universele input/select/textarea{width:100%} regel hierboven
+           elk een volle rij innamen. */
+        .filter-toolbar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            align-items: center;
+        }
+        .filter-toolbar-grid input,
+        .filter-toolbar-grid select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+        }
+        .filter-toolbar-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        /* 🆕 FOTO UPLOAD WIDGET (toevoegen + bewerken) */
+        .photo-upload-widget {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .photo-upload-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: 2px dashed rgba(255,255,255,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+            font-size: 22px;
+        }
+        .photo-upload-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .photo-upload-controls { display: flex; flex-direction: column; gap: 6px; width: 170px; }
+        .btn-upload-photo {
+            display: inline-block;
+            background: rgba(255,255,255,0.95);
+            color: #4a4a4a;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .btn-upload-photo:hover { background: white; }
+        .photo-status { font-size: 11px; color: rgba(255,255,255,0.85); min-height: 14px; }
+        .photo-url-fallback {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            font-size: 11px;
+            background: rgba(255,255,255,0.9);
+        }
+        /* Variant van de upload-widget binnen de (lichte) bewerk-rij */
+        .form-group .photo-upload-preview { border-color: #ced4da; background: #f1f3f5; color: #adb5bd; }
+        .form-group .photo-status { color: #6c757d; }
+        .form-group .btn-upload-photo { background: #e9ecef; color: #495057; }
+        .form-group .btn-upload-photo:hover { background: #dee2e6; }
+        .form-group .photo-url-fallback { background: white; border: 1px solid #ced4da; color: #495057; }
     </style>
 </head>
 <body>
@@ -443,132 +693,155 @@ $afdelingen = $db->query("
             <div class="error">❌ <?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
         
-        <!-- CSV TOOLBAR -->
-        <div class="csv-toolbar">
-            <h2>📊 CSV Import/Export</h2>
-            <div class="csv-buttons">
-                <button onclick="exportCSV()" class="btn-success">📥 Export CSV</button>
-                <button onclick="openImportModal()" class="btn-warning">📤 Import CSV</button>
+        <!-- 🆕 MODERNE TOOLBAR: CSV-acties (secundair, links) + Toevoegen (primair, rechts) -->
+        <div class="page-toolbar">
+            <div class="toolbar-csv-group">
+                <span class="toolbar-label">📊 CSV</span>
+                <button onclick="exportCSV()" class="btn-csv-sm">📥 Export</button>
+                <button onclick="openImportModal()" class="btn-csv-sm">📤 Import</button>
             </div>
-        </div>
-        
-        <!-- COMPACT INLINE ADD FORM -->
-        <div class="inline-add-container">
-            <button onclick="toggleAddForm()" class="toggle-add-btn" id="toggleBtn">
+            <button onclick="toggleAddForm()" class="btn-add-primary" id="toggleBtn">
                 ➕ Nieuwe Medewerker Toevoegen
             </button>
-            
+        </div>
+
+        <!-- COMPACT INLINE ADD FORM — in moderne blokken, alleen essentiële velden -->
+        <div class="inline-add-container">
             <div id="inlineAddForm" class="inline-add-form" style="display: none;">
                 <form method="POST">
                     <input type="hidden" name="action" value="create">
-                    
-                    <div class="inline-form-grid">
-                        <div class="form-field">
-                            <label>Voornaam *</label>
-                            <input type="text" name="voornaam" required placeholder="Jan">
+                    <input type="hidden" name="foto_url" id="add_foto_url" value="">
+
+                    <div class="form-blocks">
+                        <div class="form-block block-basis">
+                            <div class="form-block-title">👤 Basisgegevens</div>
+                            <div class="form-block-grid">
+                                <div class="form-field">
+                                    <label>Voornaam *</label>
+                                    <input type="text" name="voornaam" required placeholder="Jan">
+                                </div>
+                                <div class="form-field">
+                                    <label>Achternaam *</label>
+                                    <input type="text" name="achternaam" required placeholder="Jansen">
+                                </div>
+                                <div class="form-field">
+                                    <label>Email</label>
+                                    <input type="email" name="email" placeholder="jan@bedrijf.nl">
+                                </div>
+                                <div class="form-field">
+                                    <label>Telefoon</label>
+                                    <input type="tel" name="telefoon" placeholder="+31 6 12345678">
+                                </div>
+                                <div class="form-field">
+                                    <label>Functie</label>
+                                    <input type="text" name="functie" placeholder="Pedagogisch medewerker">
+                                </div>
+                                <div class="form-field">
+                                    <label style="display: block; margin-bottom: 8px;">
+                                        <input type="checkbox" name="bhv" style="margin-right: 5px;">
+                                        BHV'er
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="form-field">
-                            <label>Achternaam *</label>
-                            <input type="text" name="achternaam" required placeholder="Jansen">
+
+                        <div class="form-block block-org">
+                            <div class="form-block-title">🏢 Organisatie</div>
+                            <div class="form-block-grid">
+                                <div class="form-field">
+                                    <label>Afdeling *</label>
+                                    <select name="afdeling" required>
+                                        <option value="">Selecteer afdeling</option>
+                                        <?php foreach ($afdelingen as $afd): ?>
+                                            <option value="<?= htmlspecialchars($afd) ?>"><?= htmlspecialchars($afd) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label>Locatie *</label>
+                                    <select name="locatie" required>
+                                        <option value="">Selecteer locatie</option>
+                                        <?php foreach ($locations as $loc): ?>
+                                            <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="form-field">
-                            <label>Email</label>
-                            <input type="email" name="email" placeholder="jan@bedrijf.nl">
+
+                        <div class="form-block block-foto">
+                            <div class="form-block-title">📷 Foto (optioneel)</div>
+                            <div class="photo-upload-widget">
+                                <div class="photo-upload-preview" id="add_photo_preview">
+                                    <img id="add_photo_preview_img" style="display:none;" alt="">
+                                    <span id="add_photo_placeholder">📷</span>
+                                </div>
+                                <div class="photo-upload-controls">
+                                    <label class="btn-upload-photo">
+                                        📤 Foto kiezen
+                                        <input type="file" accept="image/*" style="display:none" onchange="uploadEmployeePhoto(this, 'add')">
+                                    </label>
+                                    <input type="text" class="photo-url-fallback" placeholder="of plak een foto-URL" id="add_foto_url_text" oninput="document.getElementById('add_foto_url').value = this.value;">
+                                    <span id="add_photo_status" class="photo-status"></span>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="form-field">
-                            <label>Telefoon</label>
-                            <input type="tel" name="telefoon" placeholder="+31 6 12345678">
-                        </div>
-                        
-                        <div class="form-field">
-                            <label>Functie</label>
-                            <input type="text" name="functie" placeholder="Pedagogisch medewerker">
-                        </div>
-                        
-                        <div class="form-field">
-                            <label>Afdeling *</label>
-                            <select name="afdeling" required>
-                                <option value="">Selecteer afdeling</option>
-                                <?php foreach ($afdelingen as $afd): ?>
-                                    <option value="<?= htmlspecialchars($afd) ?>"><?= htmlspecialchars($afd) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="form-field">
-                            <label>Locatie *</label>
-                            <select name="locatie" required>
-                                <option value="">Selecteer locatie</option>
-                                <?php foreach ($locations as $loc): ?>
-                                    <option value="<?= htmlspecialchars($loc) ?>"><?= htmlspecialchars($loc) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <!-- 🆕 MULTI-LOCATION ZICHTBAARHEID -->
-<div class="form-field" style="grid-column: 1 / -1;">
-    <label style="font-size: 15px; margin-bottom: 10px; display: block;">🌍 Zichtbaar Op Locaties</label>
-    <p style="color: rgba(255,255,255,0.8); font-size: 12px; margin: 0 0 15px 0;">
-        Bepaal op welke locaties deze medewerker zijn/haar kaart moet verschijnen
-    </p>
-    
-    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid rgba(255,255,255,0.2);">
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px;">
-            <input 
-                type="checkbox" 
-                id="visible_all_locations" 
-                name="visible_all_locations"
-                value="1"
-                onchange="toggleLocationCheckboxes(this); toggleManualLocationOption(this);"
-                style="width: 20px; height: 20px; cursor: pointer;"
-            >
-            <span style="font-weight: 600;">
-                🌐 Zichtbaar op ALLE locaties
-            </span>
-        </label>
-        <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 5px 0 0 30px;">
-            Kaart verschijnt overal, ongeacht huidige locatie
-        </p>
-        
-        <!-- 🆕 MANUAL LOCATION CHANGE OPTION -->
-        <div id="manual-location-option" style="display: none; margin-top: 12px; margin-left: 30px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
-                <input 
-                    type="checkbox" 
-                    id="allow_manual_location_change" 
-                    name="allow_manual_location_change"
-                    value="1"
-                    style="width: 18px; height: 18px; cursor: pointer;"
-                >
-                <span style="font-weight: 500;">
-                    📍 Mag handmatig locatie kiezen bij check-in
-                </span>
-            </label>
-            <p style="color: rgba(255,255,255,0.6); font-size: 10px; margin: 4px 0 0 26px;">
-                Toont 📍 knop op kaart voor check-in op andere locatie
-            </p>
-        </div>
-    </div>
-    
-    <div id="specific-locations" style="display: none;">
-        <p style="font-weight: 600; margin-bottom: 10px; font-size: 13px;">
-            Of selecteer specifieke locaties:
-        </p>
-        <div id="locations-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
-            <!-- Wordt gevuld via JavaScript -->
-        </div>
-    </div>
-</div>
-                        <div class="form-field">
-                            <label style="display: block; margin-bottom: 8px;">
-                                <input type="checkbox" name="bhv" style="margin-right: 5px;">
-                                BHV'er
-                            </label>
+
+                        <div class="form-block block-zicht">
+                            <div class="form-block-title">🌍 Zichtbaarheid op locaties</div>
+                            <p style="color: rgba(255,255,255,0.8); font-size: 12px; margin: 0 0 12px 0;">
+                                Bepaal op welke locaties deze medewerker zijn/haar kaart moet verschijnen
+                            </p>
+
+                            <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid rgba(255,255,255,0.2); max-width: 420px;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px;">
+                                    <input
+                                        type="checkbox"
+                                        id="visible_all_locations"
+                                        name="visible_all_locations"
+                                        value="1"
+                                        onchange="toggleLocationCheckboxes(this); toggleManualLocationOption(this);"
+                                        style="width: 20px; height: 20px; cursor: pointer;"
+                                    >
+                                    <span style="font-weight: 600;">
+                                        🌐 Zichtbaar op ALLE locaties
+                                    </span>
+                                </label>
+                                <p style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 5px 0 0 30px;">
+                                    Kaart verschijnt overal, ongeacht huidige locatie
+                                </p>
+
+                                <!-- 🆕 MANUAL LOCATION CHANGE OPTION -->
+                                <div id="manual-location-option" style="display: none; margin-top: 12px; margin-left: 30px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                                        <input
+                                            type="checkbox"
+                                            id="allow_manual_location_change"
+                                            name="allow_manual_location_change"
+                                            value="1"
+                                            style="width: 18px; height: 18px; cursor: pointer;"
+                                        >
+                                        <span style="font-weight: 500;">
+                                            📍 Mag handmatig locatie kiezen bij check-in
+                                        </span>
+                                    </label>
+                                    <p style="color: rgba(255,255,255,0.6); font-size: 10px; margin: 4px 0 0 26px;">
+                                        Toont 📍 knop op kaart voor check-in op andere locatie
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div id="specific-locations" style="display: none;">
+                                <p style="font-weight: 600; margin-bottom: 10px; font-size: 13px;">
+                                    Of selecteer specifieke locaties:
+                                </p>
+                                <div id="locations-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
+                                    <!-- Wordt gevuld via JavaScript -->
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
+
                     <div class="inline-form-actions">
                         <button type="submit" class="btn-success">✓ Opslaan</button>
                         <button type="button" onclick="toggleAddForm()" class="btn-secondary">Annuleren</button>
@@ -576,28 +849,28 @@ $afdelingen = $db->query("
                 </form>
             </div>
         </div>
-        
+
         
         <!-- FILTER TOOLBAR -->
         <div class="filter-toolbar" style="background: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                <div style="flex: 2; min-width: 200px;">
-                    <input type="text" id="search-input" placeholder="🔎 Zoeken..." style="width: 100%; padding: 10px 15px; border: 2px solid #ddd; border-radius: 6px;">
-                </div>
-                <select id="filter-locatie" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px;"><option value="">📍 Alle locaties</option></select>
-                <select id="filter-afdeling" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px;">
+            <div class="filter-toolbar-grid">
+                <input type="text" id="search-input" placeholder="🔎 Zoeken...">
+                <select id="filter-locatie"><option value="">📍 Alle locaties</option></select>
+                <select id="filter-afdeling">
                     <option value="">🏢 Alle afdelingen</option>
                     <?php foreach ($afdelingen as $afd): ?>
                         <option value="<?= htmlspecialchars($afd) ?>"><?= htmlspecialchars($afd) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <select id="filter-bhv" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px;"><option value="">🚨 BHV</option><option value="Ja">Alleen BHV</option><option value="Nee">Geen BHV</option></select>
-                <select id="filter-foto" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px;"><option value="">📷 Foto</option><option value="heeft">Heeft foto</option><option value="geen">Geen foto</option></select>
+                <select id="filter-bhv"><option value="">🚨 BHV</option><option value="Ja">Alleen BHV</option><option value="Nee">Geen BHV</option></select>
+                <select id="filter-foto"><option value="">📷 Foto</option><option value="heeft">Heeft foto</option><option value="geen">Geen foto</option></select>
+            </div>
+            <div class="filter-toolbar-bottom">
                 <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; cursor: pointer;" onclick="toggleInactive()">
-                    <input type="checkbox" id="show-inactive" <?= $showInactive ? 'checked' : '' ?> onclick="event.stopPropagation(); toggleInactive()" style="cursor:pointer;">
+                    <input type="checkbox" id="show-inactive" <?= $showInactive ? 'checked' : '' ?> onclick="event.stopPropagation(); toggleInactive()" style="cursor:pointer; width:18px; height:18px;">
                     <label for="show-inactive" style="cursor:pointer; font-weight:600; color:#856404; white-space:nowrap;">👁 Toon inactief</label>
                 </div>
-                <div style="margin-left: auto; display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px;">
                     <div style="padding: 8px 15px; background: #e8f5e9; border: 2px solid #4caf50; border-radius: 6px; font-weight: bold; color: #2e7d32;"><span id="filtered-count">0</span> / <span id="total-count">0</span></div>
                     <button type="button" id="reset-filters-btn" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">🔄</button>
                 </div>
@@ -696,149 +969,165 @@ $afdelingen = $db->query("
                             </td>
                         </tr>
                         
-                        <!-- HIDDEN EDIT FORM -->
+                        <!-- HIDDEN EDIT FORM — zelfde compacte moderne blokken als het toevoegformulier,
+                             maar lichtgethemed (.form-block-light) zodat 'ie past in de witte tabelrij -->
                         <tr id="edit-form-<?= $emp['id'] ?>" style="display: none;">
                             <td colspan="10" style="background: #f8f9fa; padding: 20px;">
-                                <form method="POST">
+                                <form method="POST" class="inline-edit-form">
                                     <input type="hidden" name="action" value="update">
                                     <input type="hidden" name="id" value="<?= $emp['id'] ?>">
-                                    
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label>Voornaam <span class="required">*</span></label>
-                                            <input type="text" name="voornaam" value="<?= htmlspecialchars($emp['voornaam'] ?? '') ?>" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Achternaam <span class="required">*</span></label>
-                                            <input type="text" name="achternaam" value="<?= htmlspecialchars($emp['achternaam'] ?? '') ?>" required>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label>Email</label>
-                                            <input type="email" name="email" value="<?= htmlspecialchars($emp['email'] ?? '') ?>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Telefoon</label>
-                                            <input type="tel" name="telefoon" value="<?= htmlspecialchars($emp['telefoon'] ?? '') ?>">
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label>Functie</label>
-                                            <input type="text" name="functie" value="<?= htmlspecialchars($emp['functie'] ?? '') ?>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>BHV Status</label>
-                                            <div class="checkbox-group">
-                                                <input type="checkbox" name="bhv" id="bhv-edit-<?= $emp['id'] ?>" <?= $emp['bhv'] === 'Ja' ? 'checked' : '' ?>>
-                                                <label for="bhv-edit-<?= $emp['id'] ?>">Deze medewerker is BHV'er</label>
+
+                                    <div class="form-blocks form-blocks-edit">
+                                        <div class="form-block-light block-basis">
+                                            <div class="form-block-title">👤 Basisgegevens</div>
+                                            <div class="form-block-grid">
+                                                <div class="form-field">
+                                                    <label>Voornaam *</label>
+                                                    <input type="text" name="voornaam" value="<?= htmlspecialchars($emp['voornaam'] ?? '') ?>" required>
+                                                </div>
+                                                <div class="form-field">
+                                                    <label>Achternaam *</label>
+                                                    <input type="text" name="achternaam" value="<?= htmlspecialchars($emp['achternaam'] ?? '') ?>" required>
+                                                </div>
+                                                <div class="form-field">
+                                                    <label>Email</label>
+                                                    <input type="email" name="email" value="<?= htmlspecialchars($emp['email'] ?? '') ?>">
+                                                </div>
+                                                <div class="form-field">
+                                                    <label>Telefoon</label>
+                                                    <input type="tel" name="telefoon" value="<?= htmlspecialchars($emp['telefoon'] ?? '') ?>">
+                                                </div>
+                                                <div class="form-field">
+                                                    <label>Functie</label>
+                                                    <input type="text" name="functie" value="<?= htmlspecialchars($emp['functie'] ?? '') ?>">
+                                                </div>
+                                                <div class="form-field">
+                                                    <label style="display: block; margin-bottom: 8px;">
+                                                        <input type="checkbox" name="bhv" id="bhv-edit-<?= $emp['id'] ?>" <?= $emp['bhv'] === 'Ja' ? 'checked' : '' ?> style="margin-right: 5px;">
+                                                        BHV'er
+                                                    </label>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label>Afdeling <span class="required">*</span></label>
-                                            <select name="afdeling" required>
-                                                <?php foreach ($afdelingen as $afd): ?>
-                                                    <option value="<?= htmlspecialchars($afd) ?>" <?= $emp['afdeling'] === $afd ? 'selected' : '' ?>>
-                                                        <?= htmlspecialchars($afd) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
+
+                                        <div class="form-block-light block-org">
+                                            <div class="form-block-title">🏢 Organisatie</div>
+                                            <div class="form-block-grid">
+                                                <div class="form-field">
+                                                    <label>Afdeling *</label>
+                                                    <select name="afdeling" required>
+                                                        <?php foreach ($afdelingen as $afd): ?>
+                                                            <option value="<?= htmlspecialchars($afd) ?>" <?= $emp['afdeling'] === $afd ? 'selected' : '' ?>>
+                                                                <?= htmlspecialchars($afd) ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <div class="form-field">
+                                                    <label>Locatie *</label>
+                                                    <select name="locatie" required>
+                                                        <?php foreach ($locations as $loc): ?>
+                                                            <option value="<?= htmlspecialchars($loc) ?>" <?= $emp['locatie'] === $loc ? 'selected' : '' ?>>
+                                                                <?= htmlspecialchars($loc) ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="form-group">
-                                            <label>Locatie <span class="required">*</span></label>
-                                            <select name="locatie" required>
-                                                <?php foreach ($locations as $loc): ?>
-                                                    <option value="<?= htmlspecialchars($loc) ?>" <?= $emp['locatie'] === $loc ? 'selected' : '' ?>>
-                                                        <?= htmlspecialchars($loc) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
+
+                                        <div class="form-block-light block-foto">
+                                            <div class="form-block-title">📷 Foto</div>
+                                            <input type="hidden" name="foto_url" id="edit<?= $emp['id'] ?>_foto_url" value="<?= htmlspecialchars($emp['foto_url'] ?? '') ?>">
+                                            <div class="photo-upload-widget">
+                                                <div class="photo-upload-preview" id="edit<?= $emp['id'] ?>_photo_preview">
+                                                    <img id="edit<?= $emp['id'] ?>_photo_preview_img" src="<?= $heeftFoto ? htmlspecialchars($fotoUrl) : '' ?>" style="display:<?= $heeftFoto ? 'block' : 'none' ?>;" alt="">
+                                                    <span id="edit<?= $emp['id'] ?>_photo_placeholder" style="display:<?= $heeftFoto ? 'none' : 'inline' ?>;">📷</span>
+                                                </div>
+                                                <div class="photo-upload-controls">
+                                                    <label class="btn-upload-photo">
+                                                        📤 Andere foto kiezen
+                                                        <input type="file" accept="image/*" style="display:none" onchange="uploadEmployeePhoto(this, 'edit<?= $emp['id'] ?>')">
+                                                    </label>
+                                                    <input type="text" class="photo-url-fallback" placeholder="of plak een foto-URL" id="edit<?= $emp['id'] ?>_foto_url_text" value="<?= htmlspecialchars($emp['foto_url'] ?? '') ?>" oninput="document.getElementById('edit<?= $emp['id'] ?>_foto_url').value = this.value;">
+                                                    <span id="edit<?= $emp['id'] ?>_photo_status" class="photo-status"></span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    <!-- 🆕 MULTI-LOCATION ZICHTBAARHEID (EDIT FORM) -->
-                                    <div class="form-group" style="grid-column: 1 / -1; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6; margin: 15px 0;">
-                                        <label style="font-size: 15px; margin-bottom: 10px; display: block; color: #2c3e50; font-weight: 700;">🌍 Zichtbaar Op Locaties</label>
-                                        <p style="color: #6c757d; font-size: 12px; margin: 0 0 15px 0;">
-                                            Bepaal op welke locaties deze medewerker zijn/haar kaart moet verschijnen
-                                        </p>
-                                        
-                                        <?php 
-                                        $visLocs = json_decode($emp['visible_locations'] ?? '["ALL"]', true);
-                                        $isAllVisible = in_array('ALL', $visLocs);
-                                        ?>
-                                        
-                                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #e9ecef;">
-                                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px;">
-                                                <input 
-                                                    type="checkbox" 
-                                                    id="visible_all_locations_<?= $emp['id'] ?>" 
-                                                    name="visible_all_locations"
-                                                    value="1"
-                                                    onchange="toggleLocationCheckboxesEdit(this, <?= $emp['id'] ?>); toggleManualLocationOptionEdit(this, <?= $emp['id'] ?>);"
-                                                    style="width: 20px; height: 20px; cursor: pointer;"
-                                                    <?= $isAllVisible ? 'checked' : '' ?>
-                                                >
-                                                <span style="font-weight: 600; color: #2c3e50;">
-                                                    🌐 Zichtbaar op ALLE locaties
-                                                </span>
-                                            </label>
-                                            <p style="color: #6c757d; font-size: 11px; margin: 5px 0 0 30px;">
-                                                Kaart verschijnt overal, ongeacht huidige locatie
+
+                                        <!-- 🆕 MULTI-LOCATION ZICHTBAARHEID (EDIT FORM) -->
+                                        <div class="form-block-light block-zicht">
+                                            <div class="form-block-title">🌍 Zichtbaarheid op locaties</div>
+                                            <p style="color: #6c757d; font-size: 12px; margin: 0 0 12px 0;">
+                                                Bepaal op welke locaties deze medewerker zijn/haar kaart moet verschijnen
                                             </p>
-                                            
-                                            <!-- 🆕 MANUAL LOCATION CHANGE OPTION (EDIT) -->
-                                            <div id="manual-location-option-<?= $emp['id'] ?>" style="display: <?= $isAllVisible ? 'block' : 'none' ?>; margin-top: 12px; margin-left: 30px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        id="allow_manual_location_change_<?= $emp['id'] ?>" 
-                                                        name="allow_manual_location_change"
+
+                                            <?php
+                                            $visLocs = json_decode($emp['visible_locations'] ?? '["ALL"]', true);
+                                            $isAllVisible = in_array('ALL', $visLocs);
+                                            ?>
+
+                                            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #e9ecef; max-width: 420px;">
+                                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px;">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="visible_all_locations_<?= $emp['id'] ?>"
+                                                        name="visible_all_locations"
                                                         value="1"
-                                                        style="width: 18px; height: 18px; cursor: pointer;"
-                                                        <?= ($emp['allow_manual_location_change'] ?? 0) == 1 ? 'checked' : '' ?>
+                                                        onchange="toggleLocationCheckboxesEdit(this, <?= $emp['id'] ?>); toggleManualLocationOptionEdit(this, <?= $emp['id'] ?>);"
+                                                        style="width: 20px; height: 20px; cursor: pointer;"
+                                                        <?= $isAllVisible ? 'checked' : '' ?>
                                                     >
-                                                    <span style="font-weight: 500; color: #495057;">
-                                                        📍 Mag handmatig locatie kiezen bij check-in
+                                                    <span style="font-weight: 600; color: #2c3e50;">
+                                                        🌐 Zichtbaar op ALLE locaties
                                                     </span>
                                                 </label>
-                                                <p style="color: #6c757d; font-size: 10px; margin: 4px 0 0 26px;">
-                                                    Toont 📍 knop op kaart voor check-in op andere locatie
+                                                <p style="color: #6c757d; font-size: 11px; margin: 5px 0 0 30px;">
+                                                    Kaart verschijnt overal, ongeacht huidige locatie
                                                 </p>
+
+                                                <!-- 🆕 MANUAL LOCATION CHANGE OPTION (EDIT) -->
+                                                <div id="manual-location-option-<?= $emp['id'] ?>" style="display: <?= $isAllVisible ? 'block' : 'none' ?>; margin-top: 12px; margin-left: 30px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="allow_manual_location_change_<?= $emp['id'] ?>"
+                                                            name="allow_manual_location_change"
+                                                            value="1"
+                                                            style="width: 18px; height: 18px; cursor: pointer;"
+                                                            <?= ($emp['allow_manual_location_change'] ?? 0) == 1 ? 'checked' : '' ?>
+                                                        >
+                                                        <span style="font-weight: 500; color: #495057;">
+                                                            📍 Mag handmatig locatie kiezen bij check-in
+                                                        </span>
+                                                    </label>
+                                                    <p style="color: #6c757d; font-size: 10px; margin: 4px 0 0 26px;">
+                                                        Toont 📍 knop op kaart voor check-in op andere locatie
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div id="specific-locations-<?= $emp['id'] ?>" style="display: <?= $isAllVisible ? 'none' : 'block' ?>;">
+                                                <p style="font-weight: 600; margin-bottom: 10px; font-size: 13px; color: #2c3e50;">
+                                                    Of selecteer specifieke locaties:
+                                                </p>
+                                                <div class="locations-checkboxes-edit" data-employee-id="<?= $emp['id'] ?>" data-visible-locations='<?= htmlspecialchars(json_encode($visLocs)) ?>' style="display: grid; grid-template-columns: repeat(auto-fill, 180px); gap: 10px;">
+                                                    <!-- Wordt gevuld via JavaScript -->
+                                                </div>
                                             </div>
                                         </div>
-                                        
-                                        <div id="specific-locations-<?= $emp['id'] ?>" style="display: <?= $isAllVisible ? 'none' : 'block' ?>;">
-                                            <p style="font-weight: 600; margin-bottom: 10px; font-size: 13px; color: #2c3e50;">
-                                                Of selecteer specifieke locaties:
-                                            </p>
-                                            <div class="locations-checkboxes-edit" data-employee-id="<?= $emp['id'] ?>" data-visible-locations='<?= htmlspecialchars(json_encode($visLocs)) ?>' style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
-                                                <!-- Wordt gevuld via JavaScript -->
-                                            </div>
+
+                                        <div class="form-block-light block-opm">
+                                            <div class="form-block-title">📝 Opmerkingen</div>
+                                            <textarea name="notities" rows="3" style="width: 100%; max-width: 500px; box-sizing: border-box;"><?= htmlspecialchars($emp['notities'] ?? '') ?></textarea>
                                         </div>
                                     </div>
-                                    
-                                    <div class="form-group">
-                                        <label>Foto URL</label>
-                                        <input type="text" name="foto_url" value="<?= htmlspecialchars($emp['foto_url'] ?? '') ?>">
+
+                                    <div class="inline-form-actions" style="justify-content: flex-start; margin-top: 15px;">
+                                        <button type="submit" class="btn-success">✓ Opslaan</button>
+                                        <button type="button" onclick="cancelEdit(<?= $emp['id'] ?>)" class="btn-danger">✕ Annuleren</button>
                                     </div>
-                                    
-                                    <div class="form-group">
-                                        <label>Opmerkingen</label>
-                                        <textarea name="notities" rows="3"><?= htmlspecialchars($emp['notities'] ?? '') ?></textarea>
-                                    </div>
-                                    
-                                    <button type="submit" class="btn-success">✓ Opslaan</button>
-                                    <button type="button" onclick="cancelEdit(<?= $emp['id'] ?>)" class="btn-danger">✕ Annuleren</button>
                                 </form>
-                            </td>
-                        </tr>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -863,6 +1152,60 @@ $afdelingen = $db->query("
     </div>
     
     <script>
+        // 🆕 Medewerkersfoto uploaden + comprimeren (gebruikt bij zowel het
+        // toevoegformulier (prefix 'add') als elk bewerkformulier (prefix 'edit<id>'))
+        async function uploadEmployeePhoto(input, prefix) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const statusEl    = document.getElementById(prefix + '_photo_status');
+            const hiddenInput = document.getElementById(prefix + '_foto_url');
+            const textInput   = document.getElementById(prefix + '_foto_url_text');
+            const previewImg  = document.getElementById(prefix + '_photo_preview_img');
+            const placeholder = document.getElementById(prefix + '_photo_placeholder');
+
+            if (statusEl) { statusEl.textContent = '⏳ Uploaden...'; statusEl.style.color = ''; }
+
+            const formData = new FormData();
+            formData.append('photo', file);
+
+            try {
+                const response = await fetch('api/upload_employee_photo.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    if (hiddenInput) hiddenInput.value = data.url;
+                    if (textInput) textInput.value = data.url;
+                    if (previewImg) {
+                        previewImg.src = data.url;
+                        previewImg.style.display = 'block';
+                    }
+                    if (placeholder) placeholder.style.display = 'none';
+                    if (statusEl) {
+                        statusEl.textContent = '✓ Foto geüpload' + (data.compressed ? ' en gecomprimeerd' : '');
+                        statusEl.style.color = '#8fd19e';
+                    }
+                } else {
+                    if (statusEl) {
+                        statusEl.textContent = '❌ ' + (data.error || 'Upload mislukt');
+                        statusEl.style.color = '#ff8a80';
+                    }
+                }
+            } catch (error) {
+                if (statusEl) {
+                    statusEl.textContent = '❌ Fout bij uploaden';
+                    statusEl.style.color = '#ff8a80';
+                }
+                console.error('Photo upload error:', error);
+            }
+
+            // Zelfde input opnieuw kunnen gebruiken voor een volgende selectie
+            input.value = '';
+        }
+
         // Toggle inline add form
         function toggleAddForm() {
             const form = document.getElementById('inlineAddForm');

@@ -28,9 +28,21 @@ $user_id = $_SESSION['user_id'];
 
 try {
     // Get user data
-    $stmt = $db->prepare("SELECT username, display_name, role, features, profile_photo FROM users WHERE id = ?");
-    $stmt->execute([$user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    // 🆕 linked_employee_id kan ontbreken op installaties waar nog geen admin is
+    // ingelogd sinds de upgrade (migrations.php draait alleen voor admin-sessies) —
+    // val terug op de oude SELECT als de kolom nog niet bestaat.
+    try {
+        $stmt = $db->prepare("SELECT username, display_name, role, features, profile_photo, linked_employee_id FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $stmt = $db->prepare("SELECT username, display_name, role, features, profile_photo FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user) {
+            $user['linked_employee_id'] = null;
+        }
+    }
     
     if (!$user) {
         echo json_encode(['error' => 'User not found']);
@@ -94,6 +106,10 @@ try {
         'sorteerStandaard' => $features['sorteerStandaard'] ?? 'voornaam_status',   // ← NIEUW
         'zoomFunctie' => isset($features['zoomFunctie']) && $features['zoomFunctie'] ? true : false,
         'zoomStandaard' => isset($features['zoomStandaard']) ? (int)$features['zoomStandaard'] : 100,
+        // 🆕 Koppeling gebruiker -> eigen medewerkerskaart. Alleen voor rol 'user' —
+        // admins/superadmins behouden altijd de volledige weergave, ook als er per
+        // ongeluk een koppeling op hun account zou staan.
+        'linked_employee_id' => ($user['role'] === 'user' && !empty($user['linked_employee_id'])) ? $user['linked_employee_id'] : null,
     ];
     
     // Add custom names if they exist

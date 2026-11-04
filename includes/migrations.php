@@ -68,6 +68,13 @@ try {
         $pd_migrations_changes[] = 'Added users.group_id column';
     }
 
+    // Ensure users.linked_employee_id column exists (koppeling gebruiker -> eigen medewerkerskaart).
+    $col = $db->query("SHOW COLUMNS FROM `users` LIKE 'linked_employee_id'")->fetch();
+    if (!$col) {
+        $db->exec("ALTER TABLE `users` ADD COLUMN `linked_employee_id` varchar(100) DEFAULT NULL COMMENT 'Koppeling naar employees.employee_id — toont standaard alleen eigen kaart (alleen rol user)' AFTER `group_id`");
+        $pd_migrations_changes[] = 'Added users.linked_employee_id column';
+    }
+
     // Ensure foreign key constraint exists.
     $fkStmt = $db->prepare("SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
         WHERE TABLE_SCHEMA = DATABASE()

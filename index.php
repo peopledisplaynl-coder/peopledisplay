@@ -53,6 +53,24 @@ if ($toonInuitBordKnop) {
 }
 unset($_stmtIB, $_ibRow, $_ibFeat);
 
+// 🆕 Koppeling gebruiker -> eigen medewerkerskaart (alleen rol 'user'). Gebruikt om:
+// - de employee-onboarding.js popup over te slaan (koppeling gaat nu via beheer)
+// - de locatie-menuknop te verbergen (locatie wisselen heeft geen effect op de
+//   eigen-kaart-weergave)
+// Val stil terug op "geen koppeling" als de kolom nog niet gemigreerd is.
+$pdLinkedEmployeeId = null;
+try {
+    $_stmtLink = $db->prepare("SELECT role, linked_employee_id FROM users WHERE id = ? LIMIT 1");
+    $_stmtLink->execute([(int)$_SESSION['user_id']]);
+    $_linkRow = $_stmtLink->fetch(PDO::FETCH_ASSOC);
+    if ($_linkRow && $_linkRow['role'] === 'user' && !empty($_linkRow['linked_employee_id'])) {
+        $pdLinkedEmployeeId = $_linkRow['linked_employee_id'];
+    }
+    unset($_stmtLink, $_linkRow);
+} catch (PDOException $e) {
+    // Kolom bestaat nog niet op deze installatie — gewoon geen koppeling aannemen.
+}
+
 // ✅ CHECK FOR FORCED LOGOUT
 require_once __DIR__ . '/includes/logout_checker.php';
 
@@ -336,38 +354,42 @@ $user_id = $_SESSION['user_id'];
         </div>
     </header>
     
+    <!-- 🆕 MENU + FILTERS verborgen in eigen-kaart-modus: locatie/afdeling wisselen,
+         zoeken en filteren hebben geen effect op een vastgezette eigen kaart -->
+    <?php if (!$pdLinkedEmployeeId): ?>
     <!-- MENU -->
     <div class="controls">
         <button id="toggle-menu-btn">TOON MENU</button>
     </div>
-    
+
     <div id="building-menu" style="display:none;"></div>
-    
-    <!-- FILTERS - ALTIJD ZICHTBAAR -->
+
+    <!-- FILTERS - ALTIJD ZICHTBAAR (behalve eigen-kaart-modus) -->
     <div id="filters" class="filters-section">
         <input type="text" id="search-input" placeholder="🔍 Zoek op naam..." class="search-input">
-        
+
         <select id="filter-status" class="filter-select">
             <option value="">📊 Status (alles)</option>
             <option value="IN">IN</option>
             <option value="OUT">OUT</option>
         </select>
-        
+
         <select id="filter-bhv" class="filter-select">
             <option value="">🚨 BHV (alles)</option>
             <option value="ja">Alleen BHV</option>
             <option value="nee">Geen BHV</option>
         </select>
-        
+
         <select id="filter-locatie" class="filter-select">
             <option value="">📍 Locatie (alles)</option>
         </select>
-        
+
         <select id="filter-afdeling" class="filter-select">
             <option value="">🏢 Afdeling (alles)</option>
         </select>
     </div>
-    
+    <?php endif; ?>
+
     <!-- === VISITORS SECTIE === -->
     <style>
         /* Visitors Sectie Styling */
@@ -584,6 +606,9 @@ $user_id = $_SESSION['user_id'];
     <script src="/wifi-auto-checkin.js"></script>
     
     <!-- Employee Onboarding (ALLEEN MOBIEL PWA) -->
+    <!-- 🆕 Koppeling via beheer (users_manage.php) maakt deze self-service popup
+         overbodig voor gekoppelde gebruikers — zie employee-onboarding.js -->
+    <script>window.PD_LINKED_EMPLOYEE_ID = <?= json_encode($pdLinkedEmployeeId) ?>;</script>
     <script src="/employee-onboarding.js"></script>
     
     <script>

@@ -45,6 +45,13 @@
      * Check if should show onboarding
      */
     function shouldShowOnboarding() {
+        // 🆕 Al gekoppeld via beheer (users_manage.php)? Dan hoeft deze self-service
+        // koppel-popup niet meer getoond te worden.
+        if (window.PD_LINKED_EMPLOYEE_ID) {
+            console.log('ℹ️ [Onboarding] Skipped — account is al gekoppeld via beheer');
+            return false;
+        }
+
         // Already linked? Skip
         if (isEmployeeLinked()) {
             return false;

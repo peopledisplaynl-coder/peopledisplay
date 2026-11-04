@@ -78,6 +78,14 @@ function ensureUserGroupsSchema(PDO $db): void
             $db->exec("ALTER TABLE users ADD COLUMN group_id INT NULL AFTER role");
         }
 
+        // 🆕 Koppeling gebruiker -> eigen medewerkerskaart. Hier ook zelf-herstellend
+        // toevoegen (naast includes/migrations.php), zodat deze pagina ook werkt als
+        // er nog niet eerder via het dashboard gemigreerd is.
+        $linkCol = $db->query("SHOW COLUMNS FROM users LIKE 'linked_employee_id'")->fetch();
+        if (!$linkCol) {
+            $db->exec("ALTER TABLE users ADD COLUMN linked_employee_id VARCHAR(100) DEFAULT NULL AFTER group_id");
+        }
+
         // Add foreign key constraint if it doesn't exist
         $fk = $db->prepare("SELECT COUNT(*) as cnt FROM information_schema.KEY_COLUMN_USAGE
             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'group_id' AND REFERENCED_TABLE_NAME = 'user_groups'");
@@ -105,6 +113,16 @@ try {
     error_log('users_manage.php: failed to load user groups: ' . $e->getMessage());
     $groups = [];
     $error = 'Gebruikersgroepen konden niet geladen worden; controleer de database migratie.';
+}
+
+// 🆕 Load active employees for the "Gekoppelde medewerker" dropdown (koppeling
+// gebruiker -> eigen medewerkerskaart). Alleen employee_id + naam nodig.
+try {
+    $employeesLinkStmt = $db->query("SELECT employee_id, naam FROM employees WHERE actief = 1 ORDER BY naam ASC");
+    $employeesForLink = $employeesLinkStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log('users_manage.php: failed to load employees for linking: ' . $e->getMessage());
+    $employeesForLink = [];
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -244,7 +262,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $role = $_POST['role'];
     $active = isset($_POST['active']) ? 1 : 0;
     $groupId = isset($_POST['group_id']) && $_POST['group_id'] !== '' ? intval($_POST['group_id']) : null;
-    
+    // 🆕 Koppeling gebruiker -> eigen medewerkerskaart (werkt alleen voor rol 'user',
+    // zie app.js / get-user-features.php — hier gewoon opslaan zoals opgegeven)
+    $linkedEmployeeId = isset($_POST['linked_employee_id']) && $_POST['linked_employee_id'] !== '' ? trim($_POST['linked_employee_id']) : null;
+
     // Presentatie settings
     $canShowPresentation = isset($_POST['can_show_presentation']) ? 1 : 0;
     $presentationId = trim($_POST['presentation_id'] ?? '');
@@ -337,31 +358,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $logData .= "Preparing UPDATE statement...\n";
         
         $stmt = $db->prepare("
-            UPDATE users 
-            SET display_name = ?, 
-                email = ?, 
-                role = ?, 
+            UPDATE users
+            SET display_name = ?,
+                email = ?,
+                role = ?,
                 group_id = ?,
-                active = ?, 
+                linked_employee_id = ?,
+                active = ?,
                 features = ?,
-                can_show_presentation = ?, 
-                presentation_id = ?, 
+                can_show_presentation = ?,
+                presentation_id = ?,
                 presentation_idle_seconds = ?,
                 can_use_scanner = ?,
                 updated_at = NOW()
             WHERE id = ?
         ");
-        
+
         $logData .= "Executing UPDATE...\n";
         $result = $stmt->execute([
-            $displayName, 
-            $email, 
-            $role, 
+            $displayName,
+            $email,
+            $role,
             $groupId,
-            $active, 
+            $linkedEmployeeId,
+            $active,
             $features,
-            $canShowPresentation, 
-            $presentationId, 
+            $canShowPresentation,
+            $presentationId,
             $presentationIdleSeconds,
             $canUseScanner,
             $userId
@@ -496,8 +519,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete_user' && isset($_GET['
 
 // FORCE NO CACHE - get fresh data every time
 $usersStmt = $db->query("
-    SELECT SQL_NO_CACHE u.id, u.username, u.display_name, u.email, u.role, u.active, 
+    SELECT SQL_NO_CACHE u.id, u.username, u.display_name, u.email, u.role, u.active,
            u.group_id, g.name AS group_name,
+           u.linked_employee_id,
            u.can_show_presentation, u.presentation_id, u.presentation_idle_seconds,
            u.can_use_scanner,
            u.features,
@@ -1473,6 +1497,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         
         const allUsers = <?= json_encode($users) ?>;
         const allGroups = <?= json_encode($groups) ?>;
+        const allEmployeesForLink = <?= json_encode($employeesForLink) ?>; // 🆕 Voor "Gekoppelde medewerker" dropdown
         const isSuperAdmin = <?= json_encode($isSuperAdmin) ?>;
 
         // Admin features beschikbaar voor admin rechten
@@ -1744,7 +1769,18 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                     `).join('')}
                                 </select>
                             </div>
-                            
+
+                            <div class="form-group">
+                                <label>Gekoppelde medewerker (eigen kaart)</label>
+                                <select name="linked_employee_id">
+                                    <option value="">— Geen koppeling —</option>
+                                    ${allEmployeesForLink.map(emp => `
+                                        <option value="${emp.employee_id}" ${user.linked_employee_id === emp.employee_id ? 'selected' : ''}>${emp.naam}</option>
+                                    `).join('')}
+                                </select>
+                                <small style="color:#666; display:block; margin-top:4px;">Toont bij inloggen standaard alleen de eigen kaart i.p.v. de locatieweergave. Werkt alleen voor rol "User".</small>
+                            </div>
+
                             <div class="form-group">
                                 <label>Nieuw Wachtwoord (optioneel)</label>
                                 <input type="password" name="new_password" placeholder="Leeg laten om niet te wijzigen">

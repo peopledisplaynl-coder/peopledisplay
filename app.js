@@ -99,6 +99,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
     let userLocations = null;     // Komt van user_features.php
     let userAfdelingen = null;    // 🆕 Komt van user_features.php
     let userExtraButtons = null;  // Komt van user_features.php
+    let userLinkedEmployeeId = null; // 🆕 Koppeling gebruiker -> eigen medewerkerskaart (alleen rol 'user')
     let showAllLocations = false; // 🆕 Track of ALL geklikt is (toon ook niet-user locaties)
     
     // 🆕 BUTTON CONFIGURATIE (dynamisch geladen)
@@ -823,6 +824,11 @@ console.log('BASE_PATH detected:', BASE_PATH);
         employees[idx].Status = (status||"").toString().trim().toUpperCase();
         employees[idx].SubStatus = subStatus ? subStatus.toString().trim().toUpperCase() : null; // 🆕
         employees[idx].Tijdstip = now;
+        // 🆕 Houd Locatie ook direct lokaal bij (anders toont de "Ingecheckt op
+        // locatie"-knop pas de nieuwe locatie na de volgende periodieke refresh)
+        if (tempLocation && status.toUpperCase() === 'IN') {
+          employees[idx].Locatie = tempLocation;
+        }
         console.log("✅ Optimistic update:", employees[idx].Naam, "→", status, subStatus ? `+ ${subStatus}` : "", tempLocation ? `@ ${tempLocation}` : "");
       }
       
@@ -847,8 +853,13 @@ console.log('BASE_PATH detected:', BASE_PATH);
         if (typeof clearTempLocation === 'function') {
           clearTempLocation(id);
         }
+
+        // 🆕 Zelfde als boven: Locatie ook direct lokaal terugzetten voor de knoptekst
+        if (idx !== -1 && checkoutResetLocation) {
+          employees[idx].Locatie = checkoutResetLocation;
+        }
       }
-      
+
       // 🔧 Update UI direct zonder te wachten op server
       applyCurrentFilters();
       
@@ -1380,7 +1391,16 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
       const list = document.getElementById("employee-list");
       if(!list) return;
       list.innerHTML = "";
-      
+
+      // 🆕 Eigen-kaart-modus: toon altijd alleen de gekoppelde medewerker, ongeacht
+      // overige filters (zoekveld, locatie-dropdown, etc.). Overstappen naar de
+      // volledige weergave gaat via het bestaande "📋 Overzicht"-scherm, niet via
+      // deze lijst.
+      if (userLinkedEmployeeId) {
+        listOverride = employees.filter(e => String(e.ID) === String(userLinkedEmployeeId));
+        console.log("🪪 renderEmployees(): eigen-kaart-modus, employee_id =", userLinkedEmployeeId, "-> aantal kaarten:", listOverride.length);
+      }
+
       // 🔧 Als listOverride is gegeven, gebruik die (komt van applyCurrentFilters)
       // Anders filter op locaties
       let filtered;
@@ -1578,8 +1598,11 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
         // Foto en/of pion kolom
         const showFoto = (visibleFields.includes("Foto") || visibleFields.includes("FotoURL")) && photo;
         const hasPion = emp.allow_manual_location_change == 1 && emp.visible_locations;
+        // 🆕 Is dit de ene kaart die getoond wordt in eigen-kaart-modus? Dan komt de
+        // locatiewissel verderop als volwaardige knop i.p.v. het kleine icoontje hier.
+        const isOwnCard = !!(userLinkedEmployeeId && String(emp.ID) === String(userLinkedEmployeeId));
 
-        if (showFoto || hasPion) {
+        if (showFoto || (hasPion && !isOwnCard)) {
           html += '<div class="emp-photo-side">';
 
           // Foto alleen als feature aan staat
@@ -1587,8 +1610,9 @@ function shouldShowEmployeeOnLocation(employee, currentLocationFilter) {
             html += `<img src="${photo}" alt="${emp.Naam||''}" onerror="this.src='${BASE_PHOTO_URL}/no-photo.png'"/>`;
           }
 
-          // 📍 MANUAL LOCATION BUTTON — onder de foto
-          if (hasPion) {
+          // 📍 MANUAL LOCATION BUTTON — onder de foto (niet in eigen-kaart-modus,
+          // daar komt een volwaardige knop verderop op de kaart)
+          if (hasPion && !isOwnCard) {
             try {
               const visLocs = typeof emp.visible_locations === 'string' ? JSON.parse(emp.visible_locations) : emp.visible_locations;
               if (visLocs && visLocs.includes('ALL')) {
@@ -1746,6 +1770,40 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
           if(parts.length) html += `<div class="emp-meta">${parts.join(" – ")}</div>`;
         }
 
+        // 🆕 Eigen-kaart-modus: altijd een duidelijke locatie-/check-in-aanduiding
+        // tonen, ook als de features "Afdeling"/"Locatie" uitstaan in featurebeheer —
+        // anders is voor een gekoppelde gebruiker niet te zien waar hij/zij incheckt.
+        // Alleen als losse balk tonen wanneer er GEEN Pion-knop verderop komt
+        // (anders staat de locatie dubbel op de kaart — de brede knop hieronder
+        // toont 'm dan al, samen met de "kies een andere locatie"-actie).
+        if (isOwnCard && !hasPion) {
+          const huidigeLocatie = emp.Locatie || emp.Gebouw || '';
+          const isIngecheckt = (emp.Status || '').toString().trim().toUpperCase() === 'IN';
+          if (isIngecheckt && huidigeLocatie) {
+            html += `<div class="own-location-status" style="
+                font-weight: bold;
+                font-size: 14px;
+                color: #1a5276;
+                background: #eaf2f8;
+                border-radius: 6px;
+                padding: 6px 8px;
+                margin: 4px 0 8px 0;
+                text-align: center;
+            ">📍 Ingecheckt op locatie "${huidigeLocatie}"</div>`;
+          } else if (!isIngecheckt) {
+            html += `<div class="own-location-status" style="
+                font-weight: bold;
+                font-size: 14px;
+                color: #555;
+                background: #eceff1;
+                border-radius: 6px;
+                padding: 6px 8px;
+                margin: 4px 0 8px 0;
+                text-align: center;
+            ">⚪ (Nog) niet ingecheckt</div>`;
+          }
+        }
+
         html += '<div class="btn-wrap">';
         html += '<button class="status-btn in">IN</button>';
         html += '<button class="status-btn out">UIT</button>';
@@ -1793,6 +1851,51 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
           
           html += '</div>';
         }
+
+        // 🆕 Eigen-kaart-modus: volwaardige status+actie-knop i.p.v. het kleine
+        // 📍-icoontje — toont altijd de huidige status/locatie (ook de eigen/thuis-
+        // locatie) en heeft een duidelijke tweede regel die uitnodigt om te klikken
+        // (anders oogt de knop na de statustekst als niet-klikbaar). Tekst en kleur
+        // volgen de werkelijke IN/UIT-status — bij UIT mag hier nooit "ingecheckt"
+        // staan, ook al staat er nog wel een (laatst bekende/thuis-)locatie in Locatie.
+        if (hasPion && isOwnCard) {
+          try {
+            const visLocs = typeof emp.visible_locations === 'string' ? JSON.parse(emp.visible_locations) : emp.visible_locations;
+            if (visLocs && visLocs.includes('ALL')) {
+              const empData = JSON.stringify(emp).replace(/"/g, '&quot;');
+              const isIngecheckt = (emp.Status || '').toString().trim().toUpperCase() === 'IN';
+              const btnGradient = isIngecheckt
+                  ? 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)'
+                  : 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)';
+              const btnLine1 = isIngecheckt
+                  ? `📍 Ingecheckt op locatie "${emp.Locatie || emp.Gebouw || ''}"`
+                  : `⚪ (Nog) niet ingecheckt`;
+              const btnLine2 = isIngecheckt
+                  ? `🔄 Klik om een andere locatie te kiezen`
+                  : `📍 Klik om een locatie te kiezen`;
+              html += `<button
+                  class="manual-location-btn manual-location-btn-wide"
+                  onclick="event.stopPropagation(); showManualLocationSelector(${empData})"
+                  style="
+                      display: block;
+                      margin: 8px 0 0 0;
+                      background: ${btnGradient};
+                      color: white;
+                      border: none;
+                      padding: 8px 10px;
+                      border-radius: 6px;
+                      cursor: pointer;
+                      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                      width: 100%;
+                      line-height: 1.3;
+                  "
+              ><div style="font-size:14px; font-weight:bold;">${btnLine1}</div><div style="font-size:11px; font-weight:normal; opacity:0.9; margin-top:2px;">${btnLine2}</div></button>`;
+            }
+          } catch(e) {
+            console.warn('Failed to parse visible_locations for employee (eigen kaart)', emp.ID, e);
+          }
+        }
+
         html += '</div></div>';
         card.innerHTML = html;
 
@@ -2220,12 +2323,20 @@ if (subOriginal) {  // Gebruik origineel (BUTTON1/BUTTON2/BUTTON3)
             console.log("⚠️ No user afdelingen found - showing all");
             selectedAfdelingen = []; // Toon alles als geen afdelingen ingesteld
           }
-          
+
+          // 🆕 Koppeling gebruiker -> eigen medewerkerskaart (server stuurt dit alleen
+          // door voor rol 'user' — zie get-user-features.php)
+          userLinkedEmployeeId = userFeatures.linked_employee_id || null;
+          if (userLinkedEmployeeId) {
+            console.log("🪪 Eigen-kaart-modus actief voor employee_id:", userLinkedEmployeeId);
+          }
+
           console.log("📊 Final user settings:", {
             visibleFields: userVisibleFields,
             locations: selectedLocations,
             afdelingen: selectedAfdelingen, // 🆕
-            extraButtons: userExtraButtons
+            extraButtons: userExtraButtons,
+            linkedEmployeeId: userLinkedEmployeeId // 🆕
           });
         } else {
           console.warn("⚠️ User features not available or error:", userFeatures);
