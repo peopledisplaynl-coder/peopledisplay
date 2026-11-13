@@ -2,6 +2,10 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.1.13 — 2026-11-13
+
+- Fix: foto uploaden/wijzigen bij een medewerker gaf ‘Geen rechten’ voor de rollen Medewerker Beheerder en Gebruiker Beheerder — werkt nu voor elke rol die de medewerkersbeheerpagina mag gebruiken (ook Admin en SuperAdmin)
+
 ## v2.1.12 — 2026-11-04
 
 - Fix: een gekoppelde medewerkerskaart (Account → gekoppelde medewerker) werkte alleen voor rol User — werkt nu voor elke rol, ook Medewerker Beheerder, Gebruiker Beheerder, Admin en SuperAdmin

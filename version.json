@@ -1,12 +1,19 @@
 {
-    "version": "2.1.12",
+    "version": "2.1.13",
     "critical": false,
-    "message": "Fix: koppeling eigen medewerkerskaart werkt nu voor alle rollen, niet alleen User",
+    "message": "Fix: Medewerkerbeheerder en Gebruikerbeheerder konden geen medewerkersfoto's uploaden",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
-    "release_date": "2026-11-04",
+    "release_date": "2026-11-13",
     "changelog": [
+        {
+            "version": "2.1.13",
+            "date": "2026-11-13",
+            "changes": [
+                "Fix: foto uploaden\/wijzigen bij een medewerker gaf ‘Geen rechten’ voor de rollen Medewerker Beheerder en Gebruiker Beheerder — werkt nu voor elke rol die de medewerkersbeheerpagina mag gebruiken (ook Admin en SuperAdmin)"
+            ]
+        },
         {
             "version": "2.1.12",
             "date": "2026-11-04",
@@ -282,5 +289,6 @@
                 "Initiele implementatie op Strato hosting"
             ]
         }
-    ]
+    ],
+    "delta_download_url": ""
 }
