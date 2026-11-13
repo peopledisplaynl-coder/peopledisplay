@@ -1,12 +1,19 @@
 {
-    "version": "2.1.13",
+    "version": "2.1.14",
     "critical": false,
-    "message": "Fix: Medewerkerbeheerder en Gebruikerbeheerder konden geen medewerkersfoto's uploaden",
+    "message": "Fix: CSV im-\\\/export van medewerkers werkte niet voor Medewerker\/Gebruiker Beheerder",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
     "release_date": "2026-11-13",
     "changelog": [
+        {
+            "version": "2.1.14",
+            "date": "2026-11-13",
+            "changes": [
+                "Fix: medewerkers exporteren\\\/importeren als CSV gaf ‘Unauthorized’ voor de rollen Medewerker Beheerder en Gebruiker Beheerder — werkt nu voor elke rol die de medewerkersbeheerpagina mag gebruiken (ook Admin en SuperAdmin)"
+            ]
+        },
         {
             "version": "2.1.13",
             "date": "2026-11-13",

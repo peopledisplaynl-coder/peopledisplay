@@ -2,6 +2,10 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.1.14 — 2026-11-13
+
+- Fix: medewerkers exporteren\/importeren als CSV gaf ‘Unauthorized’ voor de rollen Medewerker Beheerder en Gebruiker Beheerder — werkt nu voor elke rol die de medewerkersbeheerpagina mag gebruiken (ook Admin en SuperAdmin)
+
 ## v2.1.13 — 2026-11-13
 
 - Fix: foto uploaden/wijzigen bij een medewerker gaf ‘Geen rechten’ voor de rollen Medewerker Beheerder en Gebruiker Beheerder — werkt nu voor elke rol die de medewerkersbeheerpagina mag gebruiken (ook Admin en SuperAdmin)
