@@ -29,12 +29,14 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Alleen admin/superadmin mag medewerkersfoto's uploaden (geen requireAdmin()
-// hier — die redirect op falen, en dit endpoint moet altijd JSON teruggeven).
+// Iedere rol die ook de medewerkersbeheerpagina mag gebruiken (zelfde set als
+// requireAdmin() in admin/auth_helper.php) mag ook medewerkersfoto's uploaden
+// (geen requireAdmin() hier — die redirect op falen, en dit endpoint moet
+// altijd JSON teruggeven).
 $_roleStmt = $db->prepare("SELECT role FROM users WHERE id = ?");
 $_roleStmt->execute([(int)$_SESSION['user_id']]);
 $_role = $_roleStmt->fetchColumn();
-if (!in_array($_role, ['admin', 'superadmin'], true)) {
+if (!in_array($_role, ['admin', 'superadmin', 'employee_manager', 'user_manager'], true)) {
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Geen rechten']);
     exit;
