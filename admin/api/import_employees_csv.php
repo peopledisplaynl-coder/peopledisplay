@@ -19,8 +19,9 @@ require_once __DIR__ . '/../../includes/db.php';
 
 header('Content-Type: application/json');
 
-// Check admin
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? 'user', ['admin', 'superadmin'])) {
+// Iedere rol die ook de medewerkersbeheerpagina mag gebruiken (zelfde set als
+// requireAdmin() in admin/auth_helper.php) mag ook medewerkers importeren.
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? 'user', ['admin', 'superadmin', 'employee_manager', 'user_manager'])) {
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
 }
