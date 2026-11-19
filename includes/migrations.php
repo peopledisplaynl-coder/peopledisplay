@@ -20,6 +20,18 @@ if (!isset($db) || !($db instanceof \PDO)) {
     return;
 }
 
+// Oude en onveilige bestanden opruimen (eenmalig per update; zie includes/obsolete_files.php).
+// Draait voor elk verzoek, dus ook zonder dat een admin het dashboard opent.
+$pd_obsolete_file = __DIR__ . '/obsolete_files.php';
+if (is_file($pd_obsolete_file)) {
+    require_once $pd_obsolete_file;
+    try {
+        pd_remove_obsolete_files(dirname(__DIR__));
+    } catch (\Throwable $e) {
+        error_log('obsolete_files cleanup failed: ' . $e->getMessage());
+    }
+}
+
 // Only run for admin/superadmin users.
 $role = $_SESSION['role'] ?? null;
 if (!in_array($role, ['admin', 'superadmin'], true)) {

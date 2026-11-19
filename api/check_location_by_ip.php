@@ -13,7 +13,6 @@
  */
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
 
 try {
     require_once __DIR__ . '/../includes/db.php';

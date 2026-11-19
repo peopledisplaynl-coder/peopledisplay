@@ -68,12 +68,7 @@ try {
         SELECT 
             employee_id,
             CONCAT(TRIM(Voornaam), ' ', TRIM(Achternaam)) as naam,
-            functie,
-            locatie,
-            email,
-            status,
-            sub_status,
-            sub_status_until
+            functie
         FROM employees
         WHERE locatie = ?
         AND actief = 1
@@ -97,8 +92,10 @@ try {
     ]);
     
 } catch (Exception $e) {
+    error_log('get_employees_by_location: ' . $e->getMessage());
+    http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'error' => 'Kon medewerkers niet laden'
     ]);
 }

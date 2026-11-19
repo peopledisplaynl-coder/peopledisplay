@@ -875,18 +875,25 @@ console.log('BASE_PATH detected:', BASE_PATH);
       }
       
       // Server update met sub_status en temp_location OF reset_location
-      let url = window.DATA_API_URL + `?action=updatestatus&id=${encodeURIComponent(id)}&status=${encodeURIComponent(status)}`;
+      // Wijzigen gaat via POST (niet via de URL), zodat een andere website dit niet kan nabootsen
+      const updatePayload = { id: id, status: status };
       if (subStatus) {
-        url += `&substatus=${encodeURIComponent(subStatus)}`;
+        updatePayload.substatus = subStatus;
       }
       if (tempLocation && status.toUpperCase() === 'IN') {
-        url += `&temp_location=${encodeURIComponent(tempLocation)}`;
+        updatePayload.temp_location = tempLocation;
       }
       if (checkoutResetLocation && status.toUpperCase() === 'OUT') {
-        url += `&temp_location=${encodeURIComponent(checkoutResetLocation)}`;
+        updatePayload.temp_location = checkoutResetLocation;
       }
       
-      fetch(url, { cache: "no-store" })
+      fetch(window.DATA_API_URL + '?action=updatestatus', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatePayload),
+          credentials: 'same-origin',
+          cache: 'no-store'
+        })
         .then(r => r.json().catch(()=>null))
         .then(data => {
           if (data === null) {

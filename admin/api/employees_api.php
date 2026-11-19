@@ -25,6 +25,15 @@ ini_set('display_errors', '0');
 
 session_start();
 require_once __DIR__ . '/../../includes/db.php';
+require_once __DIR__ . '/../../includes/request_guard.php';
+
+// Beveiliging: alleen voor ingelogde gebruikers (gewone inlog of kiosk-inlog)
+header('Content-Type: application/json');
+if (!requireAuth()) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Niet ingelogd']);
+    exit;
+}
 
 header('Content-Type: application/json');
 
@@ -81,10 +90,13 @@ try {
     
     if ($action === 'updatestatus') {
         // ✅ UPDATE STATUS (met sub-status + temp_location support)
-        $id = $_GET['id'] ?? null;
-        $status = $_GET['status'] ?? null;
-        $subStatus = $_GET['substatus'] ?? null;  // 🆕 SUB-STATUS
-        $tempLocation = $_GET['temp_location'] ?? null;  // 🆕 MANUAL LOCATION
+        // Beveiliging: wijzigen mag alleen via POST vanaf de eigen website
+        pd_require_post_same_origin();
+        $in = pd_read_json_or_post();
+        $id = $in['id'] ?? null;
+        $status = $in['status'] ?? null;
+        $subStatus = $in['substatus'] ?? null;  // 🆕 SUB-STATUS
+        $tempLocation = $in['temp_location'] ?? null;  // 🆕 MANUAL LOCATION
         
         if (!$id || !$status) {
             throw new Exception('Missing id or status');

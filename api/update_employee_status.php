@@ -13,6 +13,18 @@
 
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/request_guard.php';
+
+// Beveiliging: alleen voor ingelogde gebruikers (gewone inlog of kiosk-inlog)
+header('Content-Type: application/json');
+if (!requireAuth()) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Niet ingelogd']);
+    exit;
+}
+
+// Beveiliging: wijzigen mag alleen via POST vanaf de eigen website
+pd_require_post_same_origin();
 
 // Get JSON input
 $input = file_get_contents('php://input');

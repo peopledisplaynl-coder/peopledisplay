@@ -2,6 +2,20 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.1.16 — 2026-11-18
+
+- Beveiliging: de status van een medewerker wijzigen (aanmeldscherm en WiFi-incheck) kan alleen nog via POST vanaf de eigen website. Voorheen kon dat via een gewone link (GET), die een andere website of e-mail kon laten uitvoeren met de sessie van een ingelogde gebruiker
+- Let op na het updaten: laat kiosk- en displayschermen één keer verversen (F5), zodat ze de nieuwe app.js laden
+
+## v2.1.15 — 2026-11-18
+
+- Beveiliging: het tijdelijke script reset_password.php (waarmee zonder inloggen elk wachtwoord kon worden gewijzigd) is uit het product gehaald en wordt bij het eerste verzoek na de update automatisch van de server verwijderd
+- Beveiliging: email-proxy.php (BHV-overzicht per e-mail) vereist nu inloggen, alleen POST, een verzoek vanaf de eigen website en maximaal 10 e-mails per 10 minuten; voorheen kon iedereen via dit bestand e-mails laten versturen
+- Beveiliging: de API's voor medewerkers, bezoekers, locaties, filters en knopnamen (o.a. employees_api, update_employee_status, get_employee, get_all_employees, get_todays_visitors, get_visitors_inside) geven alleen nog gegevens aan ingelogde gebruikers (gewone inlog of kiosk-inlog)
+- Beveiliging: het bezoekersformulier geeft bij het kiezen van een contactpersoon geen e-mailadressen en statussen van medewerkers meer prijs
+- Opgeruimd: ongebruikte en onbeveiligde bestanden verwijderd (admin/api/features_update, features, users_list, proxy, get-config en get_button_config, api/send_visitor_notification, de verouderde pagina user_permissions, mobile-status-view.js); oude hulpscripts zoals license_debug.php en db_check.php worden bij de update automatisch opgeruimd als ze nog op de server staan
+- Nieuw in de tests: controle dat elke API inlog vraagt en dat er geen tijdelijke of debugscripts in het product komen
+
 ## v2.1.14 — 2026-11-13
 
 - Fix: medewerkers exporteren\/importeren als CSV gaf ‘Unauthorized’ voor de rollen Medewerker Beheerder en Gebruiker Beheerder — werkt nu voor elke rol die de medewerkersbeheerpagina mag gebruiken (ook Admin en SuperAdmin)

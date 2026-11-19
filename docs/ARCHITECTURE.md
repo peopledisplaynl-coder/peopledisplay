@@ -22,7 +22,7 @@ Browser / PWA / kiosk screen
 - `includes/db.php` reads credentials from `admin/db_config.php` (written by the installer,
   never in git) and exposes one PDO connection as `$db`.
 - Roles (`users.role`): `user`, `employee_manager`, `user_manager`, `admin`, `superadmin`.
-  SuperAdmin can restrict what an admin may do per feature (`admin/user_permissions.php`).
+  SuperAdmin can restrict what an admin may do per feature.
 - Per-user screen features are flags in the JSON column `users.features`
   (e.g. `inuitBord`, `sorteerFunctie`, `sorteerStandaard`, `zoomFunctie`, `zoomStandaard`),
   managed in `admin/users_manage.php` / `admin/features_manage.php`.
@@ -31,7 +31,7 @@ Browser / PWA / kiosk screen
 
 | File | Purpose |
 |---|---|
-| `login.php`, `logout.php`, `reset_password.php` | sign-in (with remember-me tokens) |
+| `login.php`, `logout.php` | sign-in (with remember-me tokens) |
 | `kiosk_login.php` | automatic sign-in for kiosk screens via a kiosk token |
 | `frontpage.php` | start screen with navigation buttons |
 | `index.php` + `app.js`, `style.css` | the card check-in screen (IN/OUT, sub-status, location pin, filters, sort, zoom, BHV) |
@@ -65,12 +65,12 @@ All return JSON and check the session/role themselves.
 | `import_employees_csv.php`, `export_employees_csv.php` | CSV import/export |
 | `bulk_actions_api.php` | bulk status/field changes |
 | `update_status.php` | set an employee's status |
-| `users_list.php`, `users_create.php`, `users_update.php`, `users_delete.php`, `user_delete.php`, `users_password.php` | user management |
+| `users_create.php`, `users_update.php`, `users_delete.php`, `user_delete.php`, `users_password.php` | user management |
 | `force_logout_user.php`, `get_online_users.php` | online users and forced logout |
 | `features.php`, `features_update.php`, `user_features.php`, `get-user-features.php` | per-user feature flags |
 | `afdelingen_api.php` | departments |
 | `get_locations_ordered.php`, `save_locations_order.php`, `sync_locations_smart.php` | locations and their order |
-| `get_button_config.php`, `save_user_button_names.php`, `check_button_names_api.php` | button labels / status buttons |
+| `save_user_button_names.php`, `check_button_names_api.php` | button labels / status buttons |
 | `kiosk_token_actions.php` | kiosk tokens |
 | `inuitbord-api.php` | data for the IN/UIT board |
 | `get-config.php` | configuration for screens |
@@ -91,7 +91,7 @@ All return JSON and check the session/role themselves.
 | `process_scan.php` | badge scans |
 | `generate_badges.php`, `generate_badge_png.php` | badge PDF/PNG |
 | `get_user_presentation.php` | presentation mode settings |
-| `get_todays_visitors.php`, `get_visitors_inside.php`, `visitor_checkin.php`, `visitor_checkout.php`, `send_visitor_notification.php` | visitors |
+| `get_todays_visitors.php`, `get_visitors_inside.php`, `visitor_checkin.php`, `visitor_checkout.php` | visitors |
 
 Root endpoints: `email-proxy.php` (BHV overview e-mail), `cron_endpoint.php` (external cron).
 

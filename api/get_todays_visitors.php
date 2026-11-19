@@ -18,6 +18,14 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/../includes/db.php';
 
+// Beveiliging: alleen voor ingelogde gebruikers (gewone inlog of kiosk-inlog)
+header('Content-Type: application/json');
+if (!requireAuth()) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Niet ingelogd']);
+    exit;
+}
+
 try {
     // Get visitors for today OR multi-day visitors within their date range
     $stmt = $db->prepare("

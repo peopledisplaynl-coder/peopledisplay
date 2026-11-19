@@ -158,6 +158,54 @@ test('release build refuses a tag that does not match version.json', () => {
   assert.match(wrong.stderr, new RegExp(version.replace(/\./g, '\\.')));
 });
 
+// ── Security ───────────────────────────────────────────────────────────
+test('no temporary helper scripts, debug scripts or files from the obsolete list ship in the product', () => {
+  const files = filesForProfile('golden');
+  const bad = files.filter((f) => /(^|\/)(reset_password|[^/]*_debug)\.php$/.test(f));
+  assert.deepEqual(bad, [], `temporary or debug scripts in the product: ${bad.join(', ')}`);
+
+  const list = read('includes/obsolete_files.php');
+  const obsolete = [...list.matchAll(/^\s*'([^']+\.(?:php|js))',\s*(?:\/\/.*)?$/gm)].map((m) => m[1]);
+  assert.ok(obsolete.length > 5, 'could not read the obsolete list');
+  const stillThere = obsolete.filter((f) => existsSync(join(ROOT, f)));
+  assert.deepEqual(stillThere, [], `files on the obsolete list still exist: ${stillThere.join(', ')}`);
+});
+
+test('every API script checks the login, except the few that are public on purpose', () => {
+  const PUBLIC_ON_PURPOSE = [
+    'api/app-version.php',               // only the version number
+    'api/check_location_by_ip.php',      // location name for the WiFi check-in
+    'api/get_employees_by_location.php', // visitor form: names only, no e-mail addresses
+    'admin/api/changelog.php',           // public version history
+  ];
+  const isApi = (f) => /^(api|admin\/api)\/[^/]+\.php$/.test(f);
+  const hasCheck = (text) => /requireAuth\(|requireAdmin\(|\$_SESSION\[\s*['"](user_id|role)['"]\s*\]/.test(text);
+  const missing = filesForProfile('golden')
+    .filter(isApi)
+    .filter((f) => !PUBLIC_ON_PURPOSE.includes(f))
+    .filter((f) => !hasCheck(read(f)));
+  assert.deepEqual(missing, [], `API without login check (add requireAuth(), or list it as public on purpose): ${missing.join(', ')}`);
+});
+
+test('email-proxy.php requires a login, POST and the same site', () => {
+  const t = read('email-proxy.php');
+  assert.match(t, /\$_SESSION\['user_id'\]/, 'email-proxy.php must require a login');
+  assert.match(t, /REQUEST_METHOD/, 'email-proxy.php must only accept POST');
+  assert.match(t, /HTTP_ORIGIN/, 'email-proxy.php must check the Origin header');
+});
+
+test('changing an employee status needs POST from the same site, and app.js no longer changes it through the URL', () => {
+  for (const f of ['admin/api/employees_api.php', 'api/update_employee_status.php']) {
+    assert.match(read(f), /pd_require_post_same_origin\(\)/, `${f} must call pd_require_post_same_origin()`);
+  }
+  assert.doesNotMatch(read('app.js'), /action=updatestatus&id=/, 'app.js still changes the status with a GET URL');
+  assert.match(read('app.js'), /method:\s*'POST'/, 'app.js should POST the status change');
+});
+
+test('get_employees_by_location.php (public) does not return e-mail addresses', () => {
+  assert.doesNotMatch(read('api/get_employees_by_location.php'), /^\s*email\b/m);
+});
+
 // ── PHP syntax ─────────────────────────────────────────────────────────
 const hasPhp = spawnSync('php', ['-v']).status === 0;
 test('all PHP files have valid syntax', { skip: hasPhp ? false : 'PHP not installed on this computer' }, () => {
