@@ -2,6 +2,14 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.1.18 — 2026-11-20
+
+- Fix: bij een gebruiker die aan een medewerkerskaart is gekoppeld, toonde de locatiekeuze (Check-in op andere locatie) een verouderde lijst: een niet meer bestaande locatie (TEST) stond erin en een nieuwe locatie ontbrak. De lijst komt nu altijd uit de locaties in beheer
+
+## v2.1.17 — 2026-11-20
+
+- Beveiliging: in het BHV-overzicht (e-mail versturen) is de vaste keuze emailadres@email.com verwijderd. Voorheen ging het overzicht met namen, functies en BHV-status naar dat voorbeeldadres als je niets veranderde; nu vul je zelf een e-mailadres in
+
 ## v2.1.16 — 2026-11-18
 
 - Beveiliging: de status van een medewerker wijzigen (aanmeldscherm en WiFi-incheck) kan alleen nog via POST vanaf de eigen website. Voorheen kon dat via een gewone link (GET), die een andere website of e-mail kon laten uitvoeren met de sessie van een ingelogde gebruiker

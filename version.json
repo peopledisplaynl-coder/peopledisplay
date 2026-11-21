@@ -1,12 +1,26 @@
 {
-    "version": "2.1.16",
-    "critical": true,
-    "message": "Beveiliging: status wijzigen alleen nog via POST vanaf de eigen website; onbeveiligde scripts verwijderd en API's achter inlog. Update aanbevolen.",
+    "version": "2.1.18",
+    "critical": false,
+    "message": "Locatiekeuze (📍) bij een gekoppelde medewerkerskaart toont nu de actuele locaties uit beheer.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
-    "release_date": "2026-11-18",
+    "release_date": "2026-11-20",
     "changelog": [
+        {
+            "version": "2.1.18",
+            "date": "2026-11-20",
+            "changes": [
+                "Fix: bij een gebruiker die aan een medewerkerskaart is gekoppeld, toonde de locatiekeuze (Check-in op andere locatie) een verouderde lijst: een niet meer bestaande locatie (TEST) stond erin en een nieuwe locatie ontbrak. De lijst komt nu altijd uit de locaties in beheer"
+            ]
+        },
+        {
+            "version": "2.1.17",
+            "date": "2026-11-20",
+            "changes": [
+                "Beveiliging: in het BHV-overzicht (e-mail versturen) is de vaste keuze emailadres@email.com verwijderd. Voorheen ging het overzicht met namen, functies en BHV-status naar dat voorbeeldadres als je niets veranderde; nu vul je zelf een e-mailadres in"
+            ]
+        },
         {
             "version": "2.1.16",
             "date": "2026-11-18",

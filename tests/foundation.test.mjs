@@ -206,6 +206,20 @@ test('get_employees_by_location.php (public) does not return e-mail addresses', 
   assert.doesNotMatch(read('api/get_employees_by_location.php'), /^\s*email\b/m);
 });
 
+test('BHV print page has no preset example e-mail recipient', () => {
+  assert.doesNotMatch(read('bhv-print/bhv-print.html'), /@email\.com/i);
+});
+
+test('location list is loaded even when the building menu is absent (own-card mode)', () => {
+  const app = read('app.js');
+  const start = app.indexOf('async function renderBuildings');
+  const body = app.slice(start, start + 6000);
+  const setList = body.indexOf('window.__allLocations = [...orderedLocs]');
+  const earlyReturn = body.indexOf('if(!menu) return;');
+  assert.ok(setList > -1 && earlyReturn > -1, 'renderBuildings structure changed');
+  assert.ok(setList < earlyReturn, 'window.__allLocations must be set before the menu check');
+});
+
 // ── PHP syntax ─────────────────────────────────────────────────────────
 const hasPhp = spawnSync('php', ['-v']).status === 0;
 test('all PHP files have valid syntax', { skip: hasPhp ? false : 'PHP not installed on this computer' }, () => {

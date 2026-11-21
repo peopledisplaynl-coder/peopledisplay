@@ -610,7 +610,9 @@ console.log('BASE_PATH detected:', BASE_PATH);
     async function renderBuildings(){
       console.log("🏢 renderBuildings() called - selectedLocations:", selectedLocations);
       const menu = document.getElementById("building-menu");
-      if(!menu) return;
+      // Let op: hier NIET meteen returnen als het menu ontbreekt. In eigen-kaart-modus
+      // is #building-menu niet aanwezig, maar de locatiekeuze-popup (📍) heeft de lijst
+      // uit de database (window.__allLocations) wel nodig.
       
       // 🆕 Haal ALLE locaties uit database (niet alleen uit employee data!)
       let orderedLocs = [];
@@ -647,6 +649,9 @@ console.log('BASE_PATH detected:', BASE_PATH);
       
       // 🆕 Sla alle locaties op voor gebruik door getAllLocations() (locatie pion modal)
       window.__allLocations = [...orderedLocs];
+      
+      // Eigen-kaart-modus: geen menu op de pagina, dus niets om te tekenen
+      if(!menu) return;
       
       menu.innerHTML = "";
       
@@ -3173,23 +3178,25 @@ async function showManualLocationSelector(employee) {
         return;
     }
     
-    // Haal locaties op — probeer eerst API als __allLocations leeg is
-    let allLocations = getAllLocations();
+    // Haal locaties op — altijd eerst de actuele lijst uit de database (API).
+    // De lijst uit medewerkerdata is alleen een noodoplossing: die bevat oude
+    // locaties (die nog bij een medewerker staan) en mist nieuwe locaties zonder medewerkers.
+    let allLocations = [];
+    try {
+        const response = await fetch(BASE_PATH + '/admin/api/get_locations_ordered.php');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.locations && data.locations.length > 0) {
+                window.__allLocations = data.locations;
+                allLocations = [...data.locations].sort();
+            }
+        }
+    } catch(e) {
+        console.warn('📍 Could not fetch locations from API:', e);
+    }
     
     if (!allLocations || allLocations.length === 0) {
-        console.log('📍 Fetching fresh locations from API...');
-        try {
-            const response = await fetch(BASE_PATH + '/admin/api/get_locations_ordered.php');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.locations && data.locations.length > 0) {
-                    window.__allLocations = data.locations;
-                    allLocations = [...data.locations].sort();
-                }
-            }
-        } catch(e) {
-            console.warn('📍 Could not fetch locations from API:', e);
-        }
+        allLocations = getAllLocations();
     }
     
     if (!allLocations || allLocations.length === 0) {
