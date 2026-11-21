@@ -22,12 +22,24 @@ if (session_status() === PHP_SESSION_NONE) {
         session_set_cookie_params([
             'lifetime' => PD_REMEMBER_ME_SECONDS,
             'path' => '/',
-            'domain' => $_SERVER['HTTP_HOST'] ?? '',
+            'domain' => explode(':', (string)($_SERVER['HTTP_HOST'] ?? ''))[0],
             'secure' => $secure,
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
         @ini_set('session.gc_maxlifetime', (string)PD_REMEMBER_ME_SECONDS);
+    } else {
+        // Gewone sessie: cookie alleen via HTTPS (als de site HTTPS gebruikt), niet leesbaar
+        // voor scripts en niet meesturen bij verzoeken vanaf andere websites.
+        $pdHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path' => '/',
+            'secure' => $pdHttps,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
     }
     session_start();
 }
@@ -35,7 +47,14 @@ if (session_status() === PHP_SESSION_NONE) {
 // If a remember-me session is active, refresh the cookie expiration on every request.
 if (!empty($_SESSION['remember_me']) || $rememberCookiePresent) {
     $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-    setcookie(session_name(), session_id(), time() + PD_REMEMBER_ME_SECONDS, '/', $_SERVER['HTTP_HOST'] ?? '', $secure, true);
+    setcookie(session_name(), session_id(), [
+        'expires'  => time() + PD_REMEMBER_ME_SECONDS,
+        'path'     => '/',
+        'domain'   => explode(':', (string)($_SERVER['HTTP_HOST'] ?? ''))[0],
+        'secure'   => $secure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
 }
 
 $cfg = __DIR__ . '/../admin/db_config.php';
@@ -86,3 +105,12 @@ define('DB_PREFIX', '');
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', pd_detect_base_path());
 }
+
+// Beveiliging (2.2.0): verplichte wachtwoordwijziging afdwingen voor ingelogde gebruikers.
+// Staat helemaal onderaan, zodat BASE_PATH en de database al bekend zijn.
+$pdSecurityFile = __DIR__ . '/security.php';
+if (is_file($pdSecurityFile)) {
+    require_once $pdSecurityFile;
+    pd_enforce_password_change($db);
+}
+unset($pdSecurityFile);

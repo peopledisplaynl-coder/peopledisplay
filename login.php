@@ -16,6 +16,7 @@
 
 // Include db.php first (this already starts session!)
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/security.php';
 
 // DEBUG LOGGING — disable by setting PD_DEBUG_LOG=false in db_config.php or deleting debug_logger.php
 if (file_exists(__DIR__ . '/includes/debug_logger.php')) {
@@ -34,6 +35,10 @@ $error = '';
 // inloggen altijd direct op het aanmeldscherm met de eigen kaart, voor elke rol
 // (ook admin/superadmin) — anders heeft koppelen voor die rollen geen effect.
 function pd_post_login_target(PDO $db, int $userId, string $role): string {
+    // Verplichte wachtwoordwijziging gaat voor alles
+    if (!empty($_SESSION['must_change_password'])) {
+        return 'force_password_change.php';
+    }
     try {
         $stmt = $db->prepare("SELECT linked_employee_id FROM users WHERE id = ? LIMIT 1");
         $stmt->execute([$userId]);
@@ -81,74 +86,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remember = isset($_POST['remember_me']);
     
     if ($username && $password) {
+        $waitSeconds = pd_login_wait_seconds($db, $username);
+        if ($waitSeconds > 0) {
+            // Geblokkeerd: het wachtwoord wordt niet eens gecontroleerd
+            pd_login_record($db, $username, false, 'blocked');
+            $error = pd_login_blocked_message($waitSeconds);
+        } else {
         try {
-            // Get user
-            $stmt = $db->prepare("SELECT id, username, password_hash, display_name, role, active FROM users WHERE username = ?");
+            pd_security_ensure_schema($db);
+            $stmt = $db->prepare("SELECT id, username, password_hash, display_name, role, active, must_change_password FROM users WHERE username = ?");
             $stmt->execute([$username]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($user && password_verify($password, $user['password_hash'])) {
+
+            // Ook bij een onbekende gebruikersnaam een wachtwoordcontrole doen, zodat de
+            // reactietijd niets verraadt over welke accounts bestaan.
+            $pdDummyHash = '$2y$10$wwV4le6iIVQbHIxdhHX7B.X25K.JGZbiSvWnG.T8ErgLmJw.13TXi';
+            $passwordOk = password_verify($password, $user ? $user['password_hash'] : $pdDummyHash);
+
+            if ($user && $passwordOk) {
                 if ($user['active']) {
-                    // Login successful - Set session vars
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['username'] = $user['username'];
-                    $_SESSION['display_name'] = $user['display_name'];
-                    $_SESSION['role'] = $user['role'];
-                    
-                    // Force session write
-                    session_write_close();
-                    session_start();
-                    
-                    // Update last_login (don't let this fail the login!)
+                    pd_login_record($db, $username, true, 'login');
+                    pd_login_start_session($db, $user);
+
                     try {
                         $updateStmt = $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
                         $updateStmt->execute([$user['id']]);
                     } catch (Exception $e) {
                         error_log("Last login update failed: " . $e->getMessage());
                     }
-                    
-                    // ✅ START SESSION TRACKING
+
+                    // START SESSION TRACKING
                     try {
                         require_once __DIR__ . '/includes/session_tracker.php';
                         $tracker = new SessionTracker($db);
                         $tracker->startSession($user['id']);
                     } catch (Exception $e) {
-                        // Silent fail - don't block login
                         error_log("Session tracking start failed: " . $e->getMessage());
                     }
-                    
-                    // Handle remember me (don't let this fail the login!)
+
+                    // Remember me: token in de database + cookies (Secure/HttpOnly/SameSite)
                     if ($remember) {
                         try {
-                            // Check if table exists first
                             $checkTable = $db->query("SHOW TABLES LIKE 'remember_tokens'");
-                            
                             if ($checkTable && $checkTable->rowCount() > 0) {
-                                // Generate secure tokens
                                 $selector = bin2hex(random_bytes(16));
                                 $token = bin2hex(random_bytes(32));
                                 $hashedToken = hash('sha256', $token);
                                 $expiresAt = date('Y-m-d H:i:s', time() + (30 * 24 * 60 * 60)); // 30 days
-                                
-                                // Store in database
+
                                 $tokenStmt = $db->prepare("
                                     INSERT INTO remember_tokens (user_id, selector, token, expires_at)
                                     VALUES (?, ?, ?, ?)
                                 ");
                                 $tokenStmt->execute([$user['id'], $selector, $hashedToken, $expiresAt]);
-                                
-                                // Set cookies (30 days)
+
                                 $cookieExpire = time() + (30 * 24 * 60 * 60);
-                                setcookie('remember_selector', $selector, $cookieExpire, '/', '', false, true);
-                                setcookie('remember_token', $token, $cookieExpire, '/', '', false, true);
+                                pd_set_remember_cookie('remember_selector', $selector, $cookieExpire);
+                                pd_set_remember_cookie('remember_token', $token, $cookieExpire);
                             }
                         } catch (Exception $e) {
-                            // Silent fail - don't block login!
                             error_log("Remember me token creation failed: " . $e->getMessage());
                         }
                     }
-                    
-                    // Redirect based on role (en koppeling aan eigen medewerkerskaart)
+
                     $pdRedirectTarget = pd_post_login_target($db, (int)$user['id'], $user['role']);
                     if (function_exists('pd_debug_log')) {
                         pd_debug_log('LOGIN SUCCESS — redirecting', [
@@ -162,9 +162,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: ' . $pdRedirectTarget);
                     exit;
                 } else {
+                    pd_login_record($db, $username, false, 'inactive');
                     $error = 'Account is gedeactiveerd. Neem contact op met de beheerder.';
                 }
             } else {
+                pd_login_record($db, $username, false, $user ? 'bad_password' : 'unknown_user');
+                usleep(random_int(150000, 350000));
                 $error = 'Ongeldige gebruikersnaam of wachtwoord.';
             }
         } catch (PDOException $e) {
@@ -174,8 +177,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             // Other error
             error_log("Login error: " . $e->getMessage());
-            $error = 'Onverwachte fout: ' . $e->getMessage();
+            $error = 'Er ging iets mis bij het inloggen. Probeer het opnieuw of neem contact op met de beheerder.';
         }
+        } // einde: niet geblokkeerd
     } else {
         $error = 'Vul alle velden in.';
     }

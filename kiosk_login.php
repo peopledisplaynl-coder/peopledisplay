@@ -64,15 +64,16 @@ if ($user['allowed_ip']) {
 $db->prepare("UPDATE kiosk_tokens SET last_used = NOW() WHERE token = ?")
    ->execute([$token]);
 
-// Login successful - Set session vars (EXACT zoals login.php)
+// Login successful - nieuw sessie-ID en sessiegegevens
+require_once __DIR__ . '/includes/security.php';
+session_regenerate_id(true);
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['username'] = $user['username'];
 $_SESSION['display_name'] = $user['display_name'];
 $_SESSION['role'] = $user['role'];
-
-// Force session write (EXACT zoals login.php)
-session_write_close();
-session_start();
+// Kiosk-sessie: uitgezonderd van verplichte wachtwoordwijziging (er is geen persoon die een wachtwoord typt)
+$_SESSION['kiosk_login'] = true;
+unset($_SESSION['must_change_password']);
 
 // Update last_login
 try {

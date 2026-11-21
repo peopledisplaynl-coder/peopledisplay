@@ -51,6 +51,13 @@ if (!canAddUser()) {
     exit;
 }
 
+require_once __DIR__ . '/../../includes/security.php';
+$policyError = pd_password_policy_error((string)$password);
+if ($policyError !== null) {
+  echo $policyError;
+  exit;
+}
+
 $hash = password_hash($password, PASSWORD_DEFAULT);
 
 try {

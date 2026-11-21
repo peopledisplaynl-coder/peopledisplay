@@ -26,7 +26,9 @@ Open the address of your PeopleDisplay environment in your browser, for example 
 
 After logging in you arrive at the welcome screen. Administrators go straight to the admin dashboard.
 
-> **Forgot your password?** Ask your administrator to set a new one.
+> **Forgot your password?** Ask your administrator to set a new one. You will then choose a new password yourself at your next login.
+>
+> **Too many failed attempts?** After 5 wrong passwords you cannot log in for a while (15 minutes at first). Wait a moment and try again.
 
 # The welcome screen
 
@@ -196,7 +198,7 @@ Use **Mijn Profiel** (welcome screen, or the menu under your initial) to change 
 
 - **Profielgegevens** (profile details) — display name and email address. Your role and username are shown for information.
 - **Profielfoto** (profile photo) — upload a JPG, PNG or GIF file (max. 5 MB) or paste a link to a photo.
-- **Wachtwoord wijzigen** (change password) — enter your current password and the new one twice (at least 8 characters).
+- **Wachtwoord wijzigen** (change password) — enter your current password and the new one twice (at least 10 characters).
 
 If your administrator allows it, you can also choose your own names for the extra buttons here.
 

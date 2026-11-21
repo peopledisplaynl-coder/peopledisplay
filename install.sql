@@ -8,7 +8,7 @@
 -- Run this script ONCE during installation.
 -- All statements use IF NOT EXISTS — safe to re-run.
 --
--- Tables: 31
+-- Tables: 32
 --
 -- Single source: edit THIS file (repository root). install/sql/install.sql
 -- is an exact copy for the install wizard — run `npm run sync-sql` after editing.
@@ -103,6 +103,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `updated_at`               datetime                          DEFAULT NULL ON UPDATE current_timestamp(),
   `deleted_at`               datetime                          DEFAULT NULL,
   `last_login`               datetime                          DEFAULT NULL,
+  `must_change_password`     tinyint(1)                        NOT NULL DEFAULT 0 COMMENT 'Verplicht wachtwoord wijzigen bij eerstvolgende inlog',
+  `password_changed_at`      datetime                          DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_username`   (`username`),
   KEY `idx_group_id`         (`group_id`),
@@ -286,6 +288,25 @@ CREATE TABLE IF NOT EXISTS `remember_tokens` (
   UNIQUE KEY `uq_selector` (`selector`),
   KEY `idx_token`   (`token`(64)),
   KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: login_attempts
+-- Log of login attempts (successful and failed); used for the automatic block
+-- after too many failed attempts (includes/security.php). Kept 90 days.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `login_attempts` (
+  `id`         bigint(20)   NOT NULL AUTO_INCREMENT,
+  `username`   varchar(100) NOT NULL DEFAULT '',
+  `ip_address` varchar(45)  NOT NULL DEFAULT '',
+  `user_agent` varchar(255) DEFAULT NULL,
+  `success`    tinyint(1)   NOT NULL DEFAULT 0,
+  `reason`     varchar(40)  DEFAULT NULL,
+  `created_at` datetime     NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_ip_time`   (`ip_address`, `created_at`),
+  KEY `idx_user_time` (`username`, `created_at`),
+  KEY `idx_created`   (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -683,6 +704,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
 -- END OF SCHEMA
--- Tables created: 31
+-- Tables created: 32
 -- Run install.php after this to create your admin account
 -- ============================================================

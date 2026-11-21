@@ -19,6 +19,7 @@
 
 session_start();
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/security.php';
 
 $message = '';
 $error = '';
@@ -46,16 +47,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user && password_verify($currentPassword, $user['password_hash'])) {
             // Check new passwords match
             if ($newPassword === $confirmPassword) {
-                // Check password strength (min 8 characters)
-                if (strlen($newPassword) >= 8) {
+                // Wachtwoordbeleid (minimale lengte, zie includes/security.php)
+                $policyError = pd_password_policy_error($newPassword);
+                if ($policyError === null) {
                     // Update password
                     $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
                     $updateStmt = $db->prepare("UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?");
                     $updateStmt->execute([$newHash, $userId]);
+                    pd_password_changed($db, (int)$userId);
                     
                     $message = 'Wachtwoord succesvol gewijzigd!';
                 } else {
-                    $error = 'Nieuw wachtwoord moet minimaal 8 karakters bevatten.';
+                    $error = $policyError;
                 }
             } else {
                 $error = 'Nieuwe wachtwoorden komen niet overeen.';
@@ -210,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <div class="form-group">
-                    <label for="new_password">Nieuw Wachtwoord (min. 8 karakters)</label>
+                    <label for="new_password">Nieuw Wachtwoord (min. <?= (int)PD_MIN_PASSWORD_LENGTH ?> tekens)</label>
                     <input 
                         type="password" 
                         id="new_password" 

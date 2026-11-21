@@ -2,6 +2,16 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.2.0 — 2026-11-21
+
+- Nieuw: verplicht een nieuw wachtwoord. In Gebruikers beheren staat nu per gebruiker het vinkje 'Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen', en met de knop 'Wachtwoord wijzigen verplichten' zet je dit in één keer aan voor alle gebruikers van gekozen rollen (kiosk- en tabletaccounts worden overgeslagen). De gebruiker kiest zelf een nieuw wachtwoord voordat hij verder kan; wie al is ingelogd krijgt dit binnen 5 minuten
+- Nieuw: automatische blokkade na te veel foute inlogpogingen (5 pogingen met dezelfde gebruikersnaam vanaf hetzelfde adres, daarna 15 minuten, bij herhaling langer tot maximaal 24 uur). Alle inlogpogingen worden 90 dagen bewaard (nieuwe tabel login_attempts)
+- Nieuw: een nieuw wachtwoord moet minimaal 10 tekens zijn (was 8), overal waar een wachtwoord wordt ingesteld
+- Nieuw: in Gebruikers beheren staat bij elke gebruiker wanneer die voor het laatst is ingelogd
+- Beveiliging: bij het opslaan in Gebruikers beheren werd alles wat in het formulier stond, ook een nieuw wachtwoord, in leesbare tekst in een logbestand op de server gezet (users_manage_debug.log). Dat loggen is verwijderd en het oude logbestand wordt bij de update automatisch opgeruimd
+- Beveiliging: bij elke inlog krijgt de sessie een nieuw ID (tegen sessie-overname); de cookies voor de sessie en voor 'ingelogd blijven' zijn alleen via HTTPS, niet leesbaar voor scripts en niet te gebruiken vanaf andere websites; een onverwachte fout bij inloggen toont geen interne foutmelding meer
+- Fix: het tijdstip van de laatste inlog werd op sommige installaties niet bewaard (kolom last_login ontbrak); die wordt nu automatisch aangemaakt
+
 ## v2.1.18 — 2026-11-20
 
 - Fix: bij een gebruiker die aan een medewerkerskaart is gekoppeld, toonde de locatiekeuze (Check-in op andere locatie) een verouderde lijst: een niet meer bestaande locatie (TEST) stond erin en een nieuwe locatie ontbrak. De lijst komt nu altijd uit de locaties in beheer

@@ -24,7 +24,9 @@ Open het adres van jouw PeopleDisplay-omgeving in de browser, bijvoorbeeld `http
 
 Na het inloggen kom je op het welkomstscherm. Beheerders komen direct in het admin-dashboard.
 
-> **Wachtwoord vergeten?** Vraag je beheerder om een nieuw wachtwoord in te stellen.
+> **Wachtwoord vergeten?** Vraag je beheerder om een nieuw wachtwoord in te stellen. Je kiest dan bij de eerstvolgende inlog zelf een nieuw wachtwoord.
+>
+> **Te veel foute pogingen?** Na 5 keer een verkeerd wachtwoord kun je een tijdje niet inloggen (eerst 15 minuten). Wacht even en probeer het opnieuw.
 
 # Het welkomstscherm
 
@@ -194,7 +196,7 @@ Via **Mijn Profiel** (welkomstscherm of het menu onder je initiaal) pas je je ei
 
 - **Profielgegevens** — weergavenaam en e-mailadres. Je rol en gebruikersnaam zie je ter informatie.
 - **Profielfoto** — upload een JPG-, PNG- of GIF-bestand (maximaal 5 MB) of plak de link naar een foto.
-- **Wachtwoord wijzigen** — vul je huidige wachtwoord in en twee keer het nieuwe (minimaal 8 tekens).
+- **Wachtwoord wijzigen** — vul je huidige wachtwoord in en twee keer het nieuwe (minimaal 10 tekens).
 
 Als de beheerder dat toestaat, kun je hier ook je eigen namen voor de extra knoppen instellen.
 

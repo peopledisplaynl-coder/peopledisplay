@@ -17,12 +17,16 @@
  * Voeg hier nooit een map of een patroon toe.
  */
 
-const PD_OBSOLETE_FILES_VERSION = '2.1.16';
+const PD_OBSOLETE_FILES_VERSION = '2.2.0';
 
 /** @return string[] */
 function pd_obsolete_files_list(): array
 {
     return [
+        // Debuglog van gebruikersbeheer (2.2.0): bevatte alles wat in het bewerkformulier
+        // werd ingevuld, dus ook nieuwe wachtwoorden in leesbare tekst
+        'users_manage_debug.log',
+
         // Onbeveiligd wachtwoord-resetscript (iedereen kon elk wachtwoord resetten)
         'reset_password.php',
 

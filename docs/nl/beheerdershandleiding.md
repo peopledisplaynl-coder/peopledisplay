@@ -102,12 +102,19 @@ Klik op het potlood (✏️) achter een gebruiker. Het bewerkvenster heeft vier 
 
 ![Account-gegevens van een gebruiker](../images/gebruiker-bewerken.png)
 
-- **Account** — weergavenaam, e-mail, rol, groep, **gekoppelde medewerker** (optioneel: koppelt dit account aan één medewerkerskaart, zodat de gebruiker bij het inloggen meteen die eigen kaart ziet in plaats van de locatieweergave of het admin-dashboard — werkt voor elke rol), een nieuw wachtwoord (leeg laten om niets te wijzigen) en of het account actief is.
+- **Account** — weergavenaam, e-mail, rol, groep, **gekoppelde medewerker** (optioneel: koppelt dit account aan één medewerkerskaart, zodat de gebruiker bij het inloggen meteen die eigen kaart ziet in plaats van de locatieweergave of het admin-dashboard — werkt voor elke rol), een nieuw wachtwoord (leeg laten om niets te wijzigen; minimaal 10 tekens), het vinkje **Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen** en of het account actief is.
 - **Features** — wat deze gebruiker op het aanmeldscherm ziet en mag (zie hieronder).
 - **Presentatie** — een Google Slides-presentatie die automatisch start als het scherm een tijd niet wordt aangeraakt, met het aantal seconden wachttijd. Handig voor een infoscherm in de hal.
 - **Scanner** — of de gebruiker badges mag scannen om medewerkers in en uit te checken.
 
 Klik op **Opslaan** om de wijzigingen te bewaren.
+
+## Wachtwoorden en inloggen
+
+- **Verplicht nieuw wachtwoord.** Zet je bij een gebruiker het vinkje *Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen* aan, dan kan die persoon pas verder nadat hij of zij zelf een nieuw wachtwoord heeft gekozen. Het vinkje staat standaard aan als je een wachtwoord instelt of een gebruiker aanmaakt, zodat alleen de gebruiker zelf het wachtwoord kent. In het overzicht zie je welke gebruikers nog moeten wijzigen (🔑 *nieuw ww*) en wanneer iemand voor het laatst is ingelogd.
+- **Iedereen tegelijk.** Met de knop **Wachtwoord wijzigen verplichten** bovenin kies je rollen en zet je de verplichting voor alle actieve accounts met die rol aan (of op). Kiosk- en tabletaccounts, dus accounts met een kiosk-token, worden overgeslagen. Wie al is ingelogd, wordt binnen 5 minuten naar de wijzigpagina gestuurd.
+- **Wachtwoordbeleid.** Een nieuw wachtwoord bestaat uit minimaal 10 tekens. Een zin van drie of vier woorden is sterk en makkelijk te onthouden.
+- **Te veel foute pogingen.** Na 5 foute pogingen met dezelfde gebruikersnaam vanaf hetzelfde adres kan er 15 minuten niet worden ingelogd; bij herhaling duurt het langer (maximaal 24 uur). Ook een goed wachtwoord werkt dan niet tot de wachttijd voorbij is. Andere gebruikers op hetzelfde adres kunnen gewoon inloggen. Alle pogingen worden 90 dagen bewaard (tabel `login_attempts`).
 
 ## Features per gebruiker
 

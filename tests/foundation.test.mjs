@@ -69,7 +69,8 @@ test('install.sql table count comment matches its CREATE TABLE statements', () =
 });
 
 test('every table and column that migrations.php adds also exists in install.sql', () => {
-  const migrations = read('includes/migrations.php');
+  // includes/security.php maakt zijn eigen tabel/kolommen aan (de migraties draaien alleen voor beheerders)
+  const migrations = read('includes/migrations.php') + '\n' + read('includes/security.php');
   const tables = tablesIn(read('install.sql'));
 
   for (const m of migrations.matchAll(/CREATE TABLE IF NOT EXISTS `(\w+)`/g)) {
@@ -218,6 +219,36 @@ test('location list is loaded even when the building menu is absent (own-card mo
   const earlyReturn = body.indexOf('if(!menu) return;');
   assert.ok(setList > -1 && earlyReturn > -1, 'renderBuildings structure changed');
   assert.ok(setList < earlyReturn, 'window.__allLocations must be set before the menu check');
+});
+
+test('login checks the block list before the password and records every attempt', () => {
+  const login = read('login.php');
+  assert.match(login, /pd_login_wait_seconds\(/, 'login.php must check for a block before verifying the password');
+  assert.match(login, /pd_login_record\(/, 'login.php must record login attempts');
+  assert.ok(login.indexOf('pd_login_wait_seconds(') < login.indexOf('password_verify('), 'block check must come before password_verify');
+  assert.match(login, /pd_login_start_session\(/, 'login.php must start the session through pd_login_start_session (new session id)');
+  assert.doesNotMatch(login, /Onverwachte fout: ' \. \$e->getMessage/, 'login.php must not show internal error messages');
+});
+
+test('user management does not write a debug log with the submitted form (passwords)', () => {
+  const um = read('admin/users_manage.php');
+  assert.doesNotMatch(um, /users_manage_debug/);
+  assert.doesNotMatch(um, /json_encode\(\$_POST\)/);
+  assert.match(read('includes/obsolete_files.php'), /'users_manage_debug\.log'/, 'old debug log must be removed by the cleanup list');
+});
+
+test('every place that sets a password in the app uses the password policy', () => {
+  for (const f of ['admin/users_manage.php', 'admin/change_password.php', 'admin/api/change_password.php',
+                   'admin/api/users_create.php', 'user/profile.php', 'force_password_change.php']) {
+    assert.match(read(f), /pd_password_policy_error\(/, `${f} must check the password policy`);
+  }
+});
+
+test('forced password change is enforced centrally from includes/db.php', () => {
+  assert.match(read('includes/db.php'), /pd_enforce_password_change\(/);
+  assert.match(read('includes/security.php'), /function pd_enforce_password_change/);
+  assert.ok(existsSync(join(ROOT, 'force_password_change.php')), 'force_password_change.php must exist');
+  assert.match(read('kiosk_login.php'), /\$_SESSION\['kiosk_login'\] = true/, 'kiosk sessions must be marked so they are exempt');
 });
 
 // ── PHP syntax ─────────────────────────────────────────────────────────

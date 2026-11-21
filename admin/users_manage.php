@@ -34,6 +34,8 @@ require_once __DIR__ . '/auth_helper.php';
 
 requireAdmin();
 requireAdminFeature('manage_users');
+require_once __DIR__ . '/../includes/security.php';
+pd_security_ensure_schema($db);
 
 $message    = '';
 $error      = '';
@@ -248,13 +250,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_user' && isset($_GET['use
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_user') {
     header('Content-Type: application/json');
     
-    // DEBUG LOGGING - Write to accessible file
-    $logFile = __DIR__ . '/../users_manage_debug.log';
-    $logData = "\n=== SAVE USER DEBUG - " . date('Y-m-d H:i:s') . " ===\n";
-    $logData .= "POST data: " . json_encode($_POST) . "\n";
-    $logData .= "btn_pauze isset: " . (isset($_POST['btn_pauze']) ? 'TRUE' : 'FALSE') . "\n";
-    $logData .= "btn_thuiswerken isset: " . (isset($_POST['btn_thuiswerken']) ? 'TRUE' : 'FALSE') . "\n";
-    $logData .= "btn_vakantie isset: " . (isset($_POST['btn_vakantie']) ? 'TRUE' : 'FALSE') . "\n";
     
     $userId = intval($_POST['user_id']);
     $displayName = trim($_POST['display_name']);
@@ -281,10 +276,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'THUISWERKEN' => ($_POST['btn_thuiswerken'] ?? '0') === '1',
         'VAKANTIE' => ($_POST['btn_vakantie'] ?? '0') === '1'
     ];
-    $logData .= "btn_pauze value: " . ($_POST['btn_pauze'] ?? 'NOT SET') . "\n";
-    $logData .= "btn_thuiswerken value: " . ($_POST['btn_thuiswerken'] ?? 'NOT SET') . "\n";
-    $logData .= "btn_vakantie value: " . ($_POST['btn_vakantie'] ?? 'NOT SET') . "\n";
-    $logData .= "extraButtons array: " . json_encode($extraButtons) . "\n";
     
     $locations = $_POST['locations'] ?? [];
 
@@ -327,18 +318,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'inuitBord' => $inuitBord,            // ← IN/UIT Bord weergave
         'admin_features' => $adminFeatures    // ← NEW: Admin feature permissions
     ]);
-    $logData .= "features JSON: " . $features . "\n";
-    $logData .= "sorteerFunctie: " . ($sorteerFunctie ? 'TRUE' : 'FALSE') . "\n";
-    $logData .= "User ID: " . $userId . "\n";
-    $logData .= "======================\n";
     
-    file_put_contents($logFile, $logData, FILE_APPEND);
     
     // Validation
     if (empty($displayName)) {
         echo json_encode(['success' => false, 'error' => 'Display name is verplicht']);
         exit;
     }
+
+    // Nieuw wachtwoord: eerst controleren, zodat er niets half wordt opgeslagen
+    $newPasswordInput = (string)($_POST['new_password'] ?? '');
+    if ($newPasswordInput !== '') {
+        $policyError = pd_password_policy_error($newPasswordInput);
+        if ($policyError !== null) {
+            echo json_encode(['success' => false, 'error' => $policyError]);
+            exit;
+        }
+    }
+    $mustChangePassword = isset($_POST['must_change_password']) ? 1 : 0;
     
     // Check permissions
     $targetUser = $db->query("SELECT role FROM users WHERE id = $userId")->fetch();
@@ -352,10 +349,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
     
     try {
-        $logData .= "=== STARTING SAVE ===\n";
         
         // NO TRANSACTION - Direct update
-        $logData .= "Preparing UPDATE statement...\n";
         
         $stmt = $db->prepare("
             UPDATE users
@@ -374,7 +369,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             WHERE id = ?
         ");
 
-        $logData .= "Executing UPDATE...\n";
         $result = $stmt->execute([
             $displayName,
             $email,
@@ -391,32 +385,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ]);
         
         $rowsAffected = $stmt->rowCount();
-        $logData .= "UPDATE executed. Result: " . ($result ? 'TRUE' : 'FALSE') . ", Rows affected: $rowsAffected\n";
         
         // CRITICAL: Verify IMMEDIATELY in separate query
-        $logData .= "Verifying saved data...\n";
         $verifyStmt = $db->prepare("SELECT presentation_idle_seconds, updated_at, LENGTH(features) as flen FROM users WHERE id = ?");
         $verifyStmt->execute([$userId]);
         $savedData = $verifyStmt->fetch(PDO::FETCH_ASSOC);
-        $logData .= "VERIFY RESULT:\n";
-        $logData .= "  - presentation_idle_seconds: " . $savedData['presentation_idle_seconds'] . "\n";
-        $logData .= "  - updated_at: " . $savedData['updated_at'] . "\n";
-        $logData .= "  - features length: " . $savedData['flen'] . "\n";
         
         // Update password if provided
-        if (!empty($_POST['new_password'])) {
-            $passwordHash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
+        if ($newPasswordInput !== '') {
+            $passwordHash = password_hash($newPasswordInput, PASSWORD_DEFAULT);
             $db->prepare("UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?")->execute([$passwordHash, $userId]);
-            $logData .= "Password updated\n";
         }
+
+        // Verplichte wachtwoordwijziging bij eerstvolgende inlog (vinkje)
+        $db->prepare("UPDATE users SET must_change_password = ? WHERE id = ?")->execute([$mustChangePassword, $userId]);
         
         // Update user_afdelingen
         $afdelingen = $_POST['afdelingen'] ?? [];
-        $logData .= "Afdelingen to save: " . json_encode($afdelingen) . "\n";
         
         // Delete existing afdelingen for this user
         $deleteResult = $db->prepare("DELETE FROM user_afdelingen WHERE user_id = ?")->execute([$userId]);
-        $logData .= "Deleted existing afdelingen\n";
         
         // Insert new afdelingen
         if (!empty($afdelingen)) {
@@ -424,11 +412,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             foreach ($afdelingen as $afdelingId) {
                 $insertStmt->execute([$userId, intval($afdelingId)]);
             }
-            $logData .= "Inserted " . count($afdelingen) . " afdelingen\n";
         }
         
-        $logData .= "=== SAVE COMPLETE ===\n";
-        file_put_contents($logFile, $logData, FILE_APPEND);
         
         echo json_encode([
             'success' => true, 
@@ -442,9 +427,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             ]
         ]);
     } catch (PDOException $e) {
-        $logData .= "DATABASE ERROR: " . $e->getMessage() . "\n";
-        $logData .= "Stack trace: " . $e->getTraceAsString() . "\n";
-        file_put_contents($logFile, $logData, FILE_APPEND);
         echo json_encode(['success' => false, 'error' => 'Database fout: ' . $e->getMessage()]);
     }
     exit;
@@ -465,6 +447,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         echo json_encode(['success' => false, 'error' => 'Username en wachtwoord verplicht']);
         exit;
     }
+    $policyError = pd_password_policy_error((string)$password);
+    if ($policyError !== null) {
+        echo json_encode(['success' => false, 'error' => $policyError]);
+        exit;
+    }
+    $mustChangePassword = isset($_POST['must_change_password']) ? 1 : 0;
     
     if (!$isSuperAdmin && $role === 'superadmin') {
         echo json_encode(['success' => false, 'error' => 'Alleen SuperAdmin kan andere SuperAdmins maken']);
@@ -475,10 +463,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     
     try {
         $stmt = $db->prepare("
-            INSERT INTO users (username, password_hash, display_name, email, role, active, features)
-            VALUES (?, ?, ?, ?, ?, 1, '{}')
+            INSERT INTO users (username, password_hash, display_name, email, role, active, features, must_change_password)
+            VALUES (?, ?, ?, ?, ?, 1, '{}', ?)
         ");
-        $stmt->execute([$username, $passwordHash, $displayName, $email, $role]);
+        $stmt->execute([$username, $passwordHash, $displayName, $email, $role, $mustChangePassword]);
         
         echo json_encode(['success' => true, 'message' => "Gebruiker '$username' succesvol aangemaakt"]);
     } catch (PDOException $e) {
@@ -487,6 +475,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         } else {
             echo json_encode(['success' => false, 'error' => 'Database fout: ' . $e->getMessage()]);
         }
+    }
+    exit;
+}
+
+// Bulk: verplichte wachtwoordwijziging voor meerdere rollen tegelijk aan- of uitzetten
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'bulk_must_change') {
+    header('Content-Type: application/json');
+
+    $allowedRoles = ['user', 'employee_manager', 'user_manager', 'admin'];
+    if ($isSuperAdmin) {
+        $allowedRoles[] = 'superadmin';
+    }
+    $roles = array_values(array_intersect($allowedRoles, (array)($_POST['roles'] ?? [])));
+    if (!$roles) {
+        echo json_encode(['success' => false, 'error' => 'Kies minimaal één rol']);
+        exit;
+    }
+    $value = (($_POST['value'] ?? '1') === '1') ? 1 : 0;
+    $placeholders = implode(',', array_fill(0, count($roles), '?'));
+
+    try {
+        // Alleen actieve accounts; kiosk-/tabletaccounts (met een kiosk-token) blijven buiten schot.
+        $sql = "UPDATE users u SET u.must_change_password = ?
+                WHERE u.role IN ($placeholders) AND u.active = 1
+                  AND NOT EXISTS (SELECT 1 FROM kiosk_tokens kt WHERE kt.user_id = u.id)";
+        $stmt = $db->prepare($sql);
+        $stmt->execute(array_merge([$value], $roles));
+        echo json_encode([
+            'success' => true,
+            'count'   => $stmt->rowCount(),
+            'message' => $value
+                ? 'Verplichte wachtwoordwijziging ingesteld voor ' . $stmt->rowCount() . ' gebruiker(s).'
+                : 'Verplichte wachtwoordwijziging uitgezet voor ' . $stmt->rowCount() . ' gebruiker(s).',
+        ]);
+    } catch (PDOException $e) {
+        error_log('bulk_must_change: ' . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'Database fout bij het instellen']);
     }
     exit;
 }
@@ -525,6 +550,8 @@ $usersStmt = $db->query("
            u.can_show_presentation, u.presentation_id, u.presentation_idle_seconds,
            u.can_use_scanner,
            u.features,
+           u.must_change_password,
+           u.last_login,
            u.created_at,
            u.updated_at
     FROM users u
@@ -1264,6 +1291,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php if ($isSuperAdmin): ?>
                 <button onclick="openGroupModal()" class="btn btn-secondary">⚙️ Groepen beheren</button>
                 <?php endif; ?>
+                <button onclick="openMustChangeModal()" class="btn btn-secondary" title="Laat gebruikers bij hun volgende inlog een nieuw wachtwoord kiezen">🔑 Wachtwoord wijzigen verplichten</button>
                 <button onclick="openCreateModal()" class="btn btn-primary">+ Nieuwe Gebruiker</button>
             </div>
         </div>
@@ -1362,6 +1390,12 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php else: ?>
                                 <span class="status-badge status-inactive">❌ Inactief</span>
                             <?php endif; ?>
+                            <?php if (!empty($user['must_change_password'])): ?>
+                                <span class="status-badge" style="background:#fefcbf; color:#744210; margin-left:4px;" title="Moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen">🔑 nieuw ww</span>
+                            <?php endif; ?>
+                            <div style="font-size:11px; color:#718096; margin-top:3px;">
+                                <?= !empty($user['last_login']) ? 'Laatste inlog: ' . htmlspecialchars(date('d-m-Y H:i', strtotime($user['last_login']))) : 'Nog niet ingelogd' ?>
+                            </div>
                         </td>
                         <td>
                             <?php if ($user['can_show_presentation'] && $user['presentation_id']): ?>
@@ -1413,8 +1447,12 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
                 
                 <div class="form-group">
-                    <label>Wachtwoord *</label>
-                    <input type="password" name="password" required>
+                    <label>Wachtwoord * (minimaal <?= (int)PD_MIN_PASSWORD_LENGTH ?> tekens)</label>
+                    <input type="password" name="password" required minlength="<?= (int)PD_MIN_PASSWORD_LENGTH ?>" autocomplete="new-password">
+                    <label style="display:flex; gap:8px; align-items:flex-start; font-weight:normal; margin-top:8px;">
+                        <input type="checkbox" name="must_change_password" value="1" checked style="width:auto; padding:0; border:none; margin:3px 0 0 0; flex:none;">
+                        <span>Gebruiker moet bij de eerste inlog zelf een nieuw wachtwoord kiezen <small style="color:#666;">(aanbevolen: dan kent alleen de gebruiker het wachtwoord)</small></span>
+                    </label>
                 </div>
                 
                 <div class="form-group">
@@ -1449,6 +1487,34 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <!-- GROUP MANAGEMENT MODAL -->
+    <!-- Modal: wachtwoord wijzigen verplichten -->
+    <div id="mustchange-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔑 Wachtwoord wijzigen verplichten</h3>
+            </div>
+            <p style="font-size:14px; color:#4a5568; margin-bottom:12px;">
+                Gebruikers met de gekozen rol moeten bij hun eerstvolgende inlog (of binnen 5 minuten als ze nu ingelogd zijn) een nieuw wachtwoord kiezen.
+                Alleen actieve accounts. Kiosk- en tabletaccounts (met een kiosk-token) worden overgeslagen.
+                <strong>Let op:</strong> jijzelf valt er ook onder als je rol is aangevinkt.
+            </p>
+            <div class="form-group">
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="mcp-role" value="user" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 👤 User</label>
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="mcp-role" value="employee_manager" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 👷 Medewerker Beheerder</label>
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="mcp-role" value="user_manager" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 👥 Gebruiker Beheerder</label>
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="mcp-role" value="admin" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 🔧 Admin</label>
+                <?php if ($isSuperAdmin): ?>
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="mcp-role" value="superadmin" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 👑 SuperAdmin</label>
+                <?php endif; ?>
+            </div>
+            <div class="modal-footer" style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn btn-secondary" onclick="closeMustChangeModal()">Annuleren</button>
+                <button class="btn btn-secondary" onclick="bulkMustChange(0)">Verplichting opheffen</button>
+                <button class="btn btn-success" onclick="bulkMustChange(1)">✓ Verplichten</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="group-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1782,8 +1848,14 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
 
                             <div class="form-group">
-                                <label>Nieuw Wachtwoord (optioneel)</label>
-                                <input type="password" name="new_password" placeholder="Leeg laten om niet te wijzigen">
+                                <label>Nieuw Wachtwoord (optioneel, minimaal <?= (int)PD_MIN_PASSWORD_LENGTH ?> tekens)</label>
+                                <input type="password" name="new_password" placeholder="Leeg laten om niet te wijzigen" autocomplete="new-password"
+                                       oninput="if(this.value){ document.getElementById('mcp-${userId}').checked = true; }">
+                                <label style="display:flex; gap:8px; align-items:flex-start; font-weight:normal; margin-top:8px;">
+                                    <input type="checkbox" id="mcp-${userId}" name="must_change_password" value="1" ${Number(user.must_change_password) === 1 ? 'checked' : ''} style="width:auto; padding:0; border:none; margin:3px 0 0 0; flex:none;">
+                                    <span>Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen
+                                        ${user.last_login ? `<small style="color:#666; display:block;">Laatste inlog: ${user.last_login}</small>` : `<small style="color:#666; display:block;">Nog niet ingelogd (of laatste inlog onbekend)</small>`}</span>
+                                </label>
                             </div>
                         </div>
                         
@@ -2030,14 +2102,6 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
             formData.append('action', 'save_user');
             formData.append('user_id', userId);
             
-            // DEBUG: Log ALL form data
-            console.log('📝 Form data being sent:');
-            const formDataObj = {};
-            for (let [key, value] of formData.entries()) {
-                console.log(`  ${key}:`, value);
-                formDataObj[key] = value;
-            }
-            
             // Log to see if checkboxes are included
             console.log('🔍 Button checkboxes:');
             console.log('  btn_pauze:', formData.get('btn_pauze'));
@@ -2128,6 +2192,47 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             } catch (error) {
                 showToast('Fout bij aanmaken: ' + error.message, 'error');
+            }
+        }
+
+        // ═══ VERPLICHTE WACHTWOORDWIJZIGING (bulk) ═══
+
+        function openMustChangeModal() {
+            document.getElementById('mustchange-modal').classList.add('active');
+        }
+
+        function closeMustChangeModal() {
+            document.getElementById('mustchange-modal').classList.remove('active');
+        }
+
+        async function bulkMustChange(value) {
+            const roles = Array.from(document.querySelectorAll('.mcp-role:checked')).map(el => el.value);
+            if (roles.length === 0) {
+                showToast('Kies minimaal één rol', 'error');
+                return;
+            }
+            const text = value
+                ? 'Alle actieve gebruikers met de gekozen rollen moeten bij hun volgende inlog een nieuw wachtwoord kiezen. Doorgaan?'
+                : 'De verplichting wordt voor alle gekozen rollen opgeheven. Doorgaan?';
+            if (!confirm(text)) return;
+
+            const formData = new FormData();
+            formData.append('action', 'bulk_must_change');
+            formData.append('value', value ? '1' : '0');
+            roles.forEach(r => formData.append('roles[]', r));
+
+            try {
+                const response = await fetch('', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeMustChangeModal();
+                    setTimeout(() => { window.location.href = window.location.pathname + '?t=' + Date.now(); }, 1200);
+                } else {
+                    showToast(data.error || 'Instellen mislukt', 'error');
+                }
+            } catch (error) {
+                showToast('Fout: ' + error.message, 'error');
             }
         }
 

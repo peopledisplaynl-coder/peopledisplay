@@ -102,8 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Vul alle wachtwoord velden in';
         } elseif ($new !== $confirm) {
             $error = 'Nieuwe wachtwoorden komen niet overeen';
-        } elseif (strlen($new) < 8) {
-            $error = 'Nieuw wachtwoord moet minimaal 8 karakters zijn';
+        } elseif (($policyError = pd_password_policy_error($new)) !== null) {
+            $error = $policyError;
         } elseif (!password_verify($current, $user['password_hash'])) {
             $error = 'Huidig wachtwoord is onjuist';
         } else {
@@ -111,10 +111,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $new_hash = password_hash($new, PASSWORD_DEFAULT);
                 $stmt = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
                 $stmt->execute([$new_hash, $user_id]);
+                pd_password_changed($db, (int)$user_id);
                 
                 $message = 'Wachtwoord gewijzigd!';
             } catch (PDOException $e) {
-                $error = 'Fout bij wijzigen wachtwoord: ' . $e->getMessage();
+                error_log('profile password change: ' . $e->getMessage());
+                $error = 'Het wijzigen van het wachtwoord is niet gelukt.';
             }
         }
     }
@@ -401,7 +403,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <div class="form-group">
                     <label>Nieuw Wachtwoord</label>
-                    <input type="password" name="new_password" required minlength="8">
+                    <input type="password" name="new_password" required minlength="<?= (int)PD_MIN_PASSWORD_LENGTH ?>">
                     <small>Minimaal 8 karakters</small>
                 </div>
                 

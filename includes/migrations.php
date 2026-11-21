@@ -87,6 +87,14 @@ try {
         $pd_migrations_changes[] = 'Added users.linked_employee_id column';
     }
 
+    // Beveiliging (2.2.0): tabel login_attempts en de kolommen users.must_change_password,
+    // users.password_changed_at en users.last_login. De definitie staat in includes/security.php,
+    // want het inlogscherm moet dit ook kunnen aanmaken als er nog geen beheerder is langs geweest.
+    require_once __DIR__ . '/security.php';
+    if (pd_security_ensure_schema($db)) {
+        $pd_migrations_changes[] = 'security schema (login_attempts, must_change_password) ensured';
+    }
+
     // Ensure foreign key constraint exists.
     $fkStmt = $db->prepare("SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
         WHERE TABLE_SCHEMA = DATABASE()

@@ -41,7 +41,11 @@ if (!function_exists('pd_try_remember_me_login')) {
             return false;
         }
 
-        $stmt = $db->prepare("SELECT rt.user_id, rt.token, u.username, u.display_name, u.role, u.active
+        // Kolom must_change_password moet bestaan (de gewone migraties draaien alleen voor beheerders)
+        require_once __DIR__ . '/security.php';
+        pd_security_ensure_schema($db);
+
+        $stmt = $db->prepare("SELECT rt.user_id, rt.token, u.username, u.display_name, u.role, u.active, u.must_change_password
             FROM remember_tokens rt
             JOIN users u ON rt.user_id = u.id
             WHERE rt.selector = ? AND rt.expires_at > NOW()");
@@ -59,11 +63,14 @@ if (!function_exists('pd_try_remember_me_login')) {
             return false;
         }
 
-        // Valid token: restore session
-        $_SESSION['user_id'] = $tokenData['user_id'];
-        $_SESSION['username'] = $tokenData['username'];
-        $_SESSION['display_name'] = $tokenData['display_name'];
-        $_SESSION['role'] = $tokenData['role'];
+        // Valid token: restore session (met nieuw sessie-ID)
+        pd_login_start_session($db, [
+            'id' => $tokenData['user_id'],
+            'username' => $tokenData['username'],
+            'display_name' => $tokenData['display_name'],
+            'role' => $tokenData['role'],
+            'must_change_password' => $tokenData['must_change_password'] ?? 0,
+        ]);
         $_SESSION['remember_me'] = true;
 
         // Update last_login

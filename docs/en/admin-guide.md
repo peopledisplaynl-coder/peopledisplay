@@ -104,12 +104,19 @@ Click the pencil (✏️) behind a user. The edit panel has four tabs.
 
 ![A user's account details](../images/gebruiker-bewerken.png)
 
-- **Account** — display name, email, role, group, **gekoppelde medewerker** (linked staff member — optional: links this account to one staff card, so the user sees that own card right after logging in instead of the location view or the admin dashboard — works for every role), a new password (leave empty to keep the current one) and whether the account is active.
+- **Account** — display name, email, role, group, **gekoppelde medewerker** (linked staff member — optional: links this account to one staff card, so the user sees that own card right after logging in instead of the location view or the admin dashboard — works for every role), a new password (leave empty to keep the current one; at least 10 characters), the checkbox **Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen** (user must choose a new password at next login) and whether the account is active.
 - **Features** — what this user sees and may do on the check-in screen (see below).
 - **Presentatie** (presentation) — a Google Slides presentation that starts automatically after the screen has not been touched for a while, with the number of seconds to wait. Handy for an information screen in the hall.
 - **Scanner** — whether the user may scan badges to check staff in and out.
 
 Click **Opslaan** (save) to keep the changes.
+
+## Passwords and logging in
+
+- **Forced new password.** With the checkbox *Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen* ticked, that person can only continue after choosing a new password themselves. The box is ticked by default when you set a password or create a user, so only the user knows the password. The overview shows who still has to change (🔑 *nieuw ww*) and when someone last logged in.
+- **Everyone at once.** The button **Wachtwoord wijzigen verplichten** at the top lets you pick roles and switch the requirement on (or off) for all active accounts with those roles. Kiosk and tablet accounts (accounts with a kiosk token) are skipped. People who are already logged in are sent to the change page within 5 minutes.
+- **Password policy.** A new password has at least 10 characters. A phrase of three or four words is strong and easy to remember.
+- **Too many failed attempts.** After 5 failed attempts with the same username from the same address, logging in is blocked for 15 minutes; repeat offences wait longer (up to 24 hours). Even the correct password does not work until the wait is over. Other users on the same address can still log in. All attempts are kept for 90 days (table `login_attempts`).
 
 ## Features per user
 

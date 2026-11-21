@@ -12,6 +12,7 @@
  */
 
 require_once __DIR__ . '/../../includes/db.php';
+require_once __DIR__ . '/../../includes/security.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -42,9 +43,10 @@ if (empty($currentPassword) || empty($newPassword)) {
     exit;
 }
 
-if (strlen($newPassword) < 8) {
+$policyError = pd_password_policy_error($newPassword);
+if ($policyError !== null) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Nieuw wachtwoord moet minimaal 8 karakters zijn']);
+    echo json_encode(['success' => false, 'error' => $policyError]);
     exit;
 }
 
@@ -80,6 +82,7 @@ try {
     ");
     
     $stmt->execute([$newHash, $userId]);
+    pd_password_changed($db, (int)$userId);
     
     echo json_encode([
         'success' => true,
