@@ -112,5 +112,12 @@ $pdSecurityFile = __DIR__ . '/security.php';
 if (is_file($pdSecurityFile)) {
     require_once $pdSecurityFile;
     pd_enforce_password_change($db);
+    // Tweestapsverificatie (2.3.0): als 2FA verplicht is en het uitstel voorbij, eerst instellen
+    $pdTwofaFile = __DIR__ . '/twofa.php';
+    if (is_file($pdTwofaFile)) {
+        require_once $pdTwofaFile;
+        pd_enforce_2fa_setup($db);
+    }
+    unset($pdTwofaFile);
 }
 unset($pdSecurityFile);

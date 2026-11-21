@@ -17,6 +17,7 @@
 // Include db.php first (this already starts session!)
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/security.php';
+require_once __DIR__ . '/includes/twofa.php';
 
 // DEBUG LOGGING — disable by setting PD_DEBUG_LOG=false in db_config.php or deleting debug_logger.php
 if (file_exists(__DIR__ . '/includes/debug_logger.php')) {
@@ -31,24 +32,7 @@ if (file_exists(__DIR__ . '/includes/debug_logger.php')) {
 
 $error = '';
 
-// 🆕 Koppeling gebruiker -> eigen medewerkerskaart: een gekoppeld account landt na
-// inloggen altijd direct op het aanmeldscherm met de eigen kaart, voor elke rol
-// (ook admin/superadmin) — anders heeft koppelen voor die rollen geen effect.
-function pd_post_login_target(PDO $db, int $userId, string $role): string {
-    // Verplichte wachtwoordwijziging gaat voor alles
-    if (!empty($_SESSION['must_change_password'])) {
-        return 'force_password_change.php';
-    }
-    try {
-        $stmt = $db->prepare("SELECT linked_employee_id FROM users WHERE id = ? LIMIT 1");
-        $stmt->execute([$userId]);
-        $linked = $stmt->fetchColumn();
-        if (!empty($linked)) return 'index.php';
-    } catch (PDOException $e) {
-        // Kolom bestaat nog niet op deze installatie — gewoon geen koppeling aannemen.
-    }
-    return in_array($role, ['admin', 'superadmin']) ? 'admin/dashboard.php' : 'frontpage.php';
-}
+// pd_post_login_target() en pd_complete_login() staan in includes/security.php
 
 // Check if already logged in
 if (isset($_SESSION['user_id'])) {
@@ -71,6 +55,11 @@ if (isset($_GET['logout'])) {
 // ✅ FORCED LOGOUT MESSAGE
 if (isset($_GET['forced_logout'])) {
     $logoutMessage = '<div style="background: #fed7d7; border: 2px solid #f56565; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #742a2a; font-size: 14px; text-align: center;">⚠️ Je bent uitgelogd door een beheerder</div>';
+}
+
+// Noodoverride voor 2FA actief (bestand twofa_uit.txt in de hoofdmap): duidelijk laten zien
+if (pd_2fa_override_active()) {
+    $logoutMessage .= '<div style="background: #feebc8; border: 2px solid #ed8936; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #7b341e; font-size: 14px; text-align: center;">⚠️ Tweestapsverificatie is uitgeschakeld (bestand twofa_uit.txt staat op de server). Verwijder dat bestand zodra het kan.</div>';
 }
 
 // Attempt remember-me auto-login before showing the login form.
@@ -105,51 +94,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($user && $passwordOk) {
                 if ($user['active']) {
-                    pd_login_record($db, $username, true, 'login');
-                    pd_login_start_session($db, $user);
-
-                    try {
-                        $updateStmt = $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-                        $updateStmt->execute([$user['id']]);
-                    } catch (Exception $e) {
-                        error_log("Last login update failed: " . $e->getMessage());
+                    // Tweestapsverificatie (2.3.0): code nodig als 2FA aan staat en dit apparaat niet vertrouwd is
+                    if (pd_2fa_challenge_needed($db, (int)$user['id'])) {
+                        // Het wachtwoord was goed, maar de inlog is pas klaar na de code. Dit telt
+                        // niet als geslaagde inlog (dat zou de teller voor foute codes weer op nul zetten).
+                        pd_login_record($db, $username, false, 'pw_ok_2fa');
+                        pd_2fa_set_pending($user, $remember);
+                        header('Location: login_2fa.php');
+                        exit;
                     }
 
-                    // START SESSION TRACKING
-                    try {
-                        require_once __DIR__ . '/includes/session_tracker.php';
-                        $tracker = new SessionTracker($db);
-                        $tracker->startSession($user['id']);
-                    } catch (Exception $e) {
-                        error_log("Session tracking start failed: " . $e->getMessage());
-                    }
-
-                    // Remember me: token in de database + cookies (Secure/HttpOnly/SameSite)
-                    if ($remember) {
-                        try {
-                            $checkTable = $db->query("SHOW TABLES LIKE 'remember_tokens'");
-                            if ($checkTable && $checkTable->rowCount() > 0) {
-                                $selector = bin2hex(random_bytes(16));
-                                $token = bin2hex(random_bytes(32));
-                                $hashedToken = hash('sha256', $token);
-                                $expiresAt = date('Y-m-d H:i:s', time() + (30 * 24 * 60 * 60)); // 30 days
-
-                                $tokenStmt = $db->prepare("
-                                    INSERT INTO remember_tokens (user_id, selector, token, expires_at)
-                                    VALUES (?, ?, ?, ?)
-                                ");
-                                $tokenStmt->execute([$user['id'], $selector, $hashedToken, $expiresAt]);
-
-                                $cookieExpire = time() + (30 * 24 * 60 * 60);
-                                pd_set_remember_cookie('remember_selector', $selector, $cookieExpire);
-                                pd_set_remember_cookie('remember_token', $token, $cookieExpire);
-                            }
-                        } catch (Exception $e) {
-                            error_log("Remember me token creation failed: " . $e->getMessage());
-                        }
-                    }
-
-                    $pdRedirectTarget = pd_post_login_target($db, (int)$user['id'], $user['role']);
+                    $pdRedirectTarget = pd_complete_login($db, $user, $remember, 'login');
                     if (function_exists('pd_debug_log')) {
                         pd_debug_log('LOGIN SUCCESS — redirecting', [
                             'user_id'  => $_SESSION['user_id'] ?? '?',

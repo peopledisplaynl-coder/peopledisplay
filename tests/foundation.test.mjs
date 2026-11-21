@@ -8,11 +8,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ROOT, filesForProfile, isExcluded, PROTECTED, DEV_ONLY } from '../scripts/lib/files.mjs';
 import { expectedChangelog } from '../scripts/changelog.mjs';
+
+const hasPhp = spawnSync('php', ['-v']).status === 0;
 
 const read = (p) => readFileSync(join(ROOT, p), 'utf8').replace(/\r\n/g, '\n');
 
@@ -69,8 +72,8 @@ test('install.sql table count comment matches its CREATE TABLE statements', () =
 });
 
 test('every table and column that migrations.php adds also exists in install.sql', () => {
-  // includes/security.php maakt zijn eigen tabel/kolommen aan (de migraties draaien alleen voor beheerders)
-  const migrations = read('includes/migrations.php') + '\n' + read('includes/security.php');
+  // includes/security.php en includes/twofa.php maken hun eigen tabellen/kolommen aan (de migraties draaien alleen voor beheerders)
+  const migrations = read('includes/migrations.php') + '\n' + read('includes/security.php') + '\n' + read('includes/twofa.php');
   const tables = tablesIn(read('install.sql'));
 
   for (const m of migrations.matchAll(/CREATE TABLE IF NOT EXISTS `(\w+)`/g)) {
@@ -226,7 +229,9 @@ test('login checks the block list before the password and records every attempt'
   assert.match(login, /pd_login_wait_seconds\(/, 'login.php must check for a block before verifying the password');
   assert.match(login, /pd_login_record\(/, 'login.php must record login attempts');
   assert.ok(login.indexOf('pd_login_wait_seconds(') < login.indexOf('password_verify('), 'block check must come before password_verify');
-  assert.match(login, /pd_login_start_session\(/, 'login.php must start the session through pd_login_start_session (new session id)');
+  assert.match(login, /pd_complete_login\(/, 'login.php must finish the login through pd_complete_login');
+  assert.match(read('includes/security.php'), /function pd_complete_login[\s\S]*pd_login_start_session\(/, 'pd_complete_login must start the session through pd_login_start_session (new session id)');
+  assert.doesNotMatch(login, /pd_login_start_session\(/, 'login.php must not start the session itself: with 2FA the login is only complete after the code');
   assert.doesNotMatch(login, /Onverwachte fout: ' \. \$e->getMessage/, 'login.php must not show internal error messages');
 });
 
@@ -251,8 +256,83 @@ test('forced password change is enforced centrally from includes/db.php', () => 
   assert.match(read('kiosk_login.php'), /\$_SESSION\['kiosk_login'\] = true/, 'kiosk sessions must be marked so they are exempt');
 });
 
+// ── Two-factor authentication (2.3.0) ──────────────────────────────────
+test('2FA: login only becomes a session after the code, and the password step does not reset the failure counter', () => {
+  const login = read('login.php');
+  assert.match(login, /pd_2fa_challenge_needed\(/);
+  assert.match(login, /pd_2fa_set_pending\(/);
+  assert.ok(login.indexOf('pd_2fa_challenge_needed(') < login.indexOf('= pd_complete_login('), '2FA check must come before the login is completed');
+  assert.match(login, /'pw_ok_2fa'/, 'the password step of a 2FA login must not count as a successful login');
+  const sec = read('includes/security.php');
+  assert.match(sec, /NOT IN \('blocked', 'pw_ok_2fa'\)/, 'the block counter must ignore the password step of a 2FA login');
+  const page = read('login_2fa.php');
+  assert.match(page, /pd_login_wait_seconds\(/, 'login_2fa.php must check the block list');
+  assert.match(page, /pd_2fa_verify_user_code\(/);
+  assert.match(page, /'bad_2fa'/, 'wrong codes must be recorded');
+  assert.ok(page.indexOf('pd_login_wait_seconds(') < page.indexOf('pd_2fa_verify_user_code('), 'block check before verifying the code');
+  assert.doesNotMatch(page, /\$_SESSION\['user_id'\]\s*=/, 'login_2fa.php must not set the user in the session itself');
+});
+
+test('2FA: remember-me never bypasses 2FA, and 2FA setup is enforced centrally from includes/db.php', () => {
+  assert.match(read('includes/auth.php'), /pd_2fa_challenge_needed\(/, 'remember-me login must check 2FA');
+  assert.match(read('includes/db.php'), /pd_enforce_2fa_setup\(/);
+  assert.match(read('includes/twofa.php'), /function pd_enforce_2fa_setup/);
+  assert.match(read('includes/twofa.php'), /kiosk_login/, 'kiosk sessions must be exempt');
+  assert.match(read('includes/twofa.php'), /FROM kiosk_tokens/, 'kiosk/tablet accounts must never be required to use 2FA');
+  assert.match(read('twofa_setup.php'), /empty\(\$_SESSION\['user_id'\]\)/, 'twofa_setup.php needs a login');
+  assert.match(read('twofa_setup.php'), /pd_2fa_csrf_ok\(\)/, 'twofa_setup.php must check the CSRF token');
+  assert.match(read('force_password_change.php'), /pd_post_login_target\(/, 'after a forced password change the user must get the 2FA invitation (same destination as after login)');
+  assert.match(read('includes/twofa.php'), /pd_2fa_invited_at/, 'a reminder for 2FA must be limited to once per 24 hours per session');
+});
+
+test('2FA: secrets are encrypted, recovery codes are hashed, and the key file stays on the server', () => {
+  const t = read('includes/twofa.php');
+  assert.match(t, /aes-256-gcm/);
+  assert.match(t, /pd_2fa_encrypt\(\$secretB32\)/, 'the secret must be stored encrypted');
+  assert.match(t, /pd_2fa_recovery_hash\(\$raw\)/, 'recovery codes must be stored as a hash');
+  assert.ok(PROTECTED.includes('data/'), 'data/ (with twofa_key.php) must be protected from deploy');
+  assert.ok(PROTECTED.includes('twofa_uit.txt'));
+  assert.match(read('.gitignore'), /^\/data\/$/m, 'data/ must be in .gitignore');
+  assert.equal(isExcluded('data/twofa_key.php', [...DEV_ONLY, ...PROTECTED]), true, 'the key file must never ship in a ZIP');
+});
+
+test('2FA: user management can require it per user and per role, and reset it', () => {
+  const um = read('admin/users_manage.php');
+  for (const needle of ["'bulk_twofa'", "'reset_2fa'", 'twofa_required', 'pd_2fa_disable(']) {
+    assert.ok(um.includes(needle), `users_manage.php must contain ${needle}`);
+  }
+  assert.match(um, /NOT EXISTS \(SELECT 1 FROM kiosk_tokens/, 'bulk 2FA must skip kiosk accounts');
+});
+
+test('2FA: TOTP matches the RFC 6238 test vectors, codes work once, secrets round-trip', { skip: hasPhp ? false : 'PHP not installed on this computer' }, () => {
+  const keyDir = mkdtempSync(join(tmpdir(), 'pd2fa-'));
+  const script = `<?php
+    define('DB_PASS','x'); define('DB_NAME','y'); define('DB_USER','z');
+    define('PD_2FA_KEY_DIR', ${JSON.stringify(keyDir)});
+    require ${JSON.stringify(join(ROOT, 'includes', 'twofa.php'))};
+    $secret = pd_base32_encode('12345678901234567890');
+    $vec = [59=>'94287082', 1111111109=>'07081804', 1111111111=>'14050471', 1234567890=>'89005924', 2000000000=>'69279037', 20000000000=>'65353130'];
+    foreach ($vec as $t=>$exp) { if (pd_totp_code($secret, intdiv($t,30), 8) !== $exp) { echo "RFC fout bij $t"; exit(1); } }
+    $s = pd_2fa_generate_secret(); $now = 1700000000; $c = intdiv($now,30);
+    if (pd_totp_verify($s, pd_totp_code($s,$c), 0, $now) !== $c) { echo 'goede code geweigerd'; exit(1); }
+    if (pd_totp_verify($s, pd_totp_code($s,$c), $c, $now) !== null) { echo 'replay toegestaan'; exit(1); }
+    if (pd_totp_verify($s, pd_totp_code($s,$c-2), 0, $now) !== null) { echo 'te oude code toegestaan'; exit(1); }
+    if (pd_totp_verify($s, '12345', 0, $now) !== null) { echo 'korte code toegestaan'; exit(1); }
+    if (pd_base32_decode($s) === '' || strlen(pd_base32_decode($s)) !== 20) { echo 'base32'; exit(1); }
+    $enc = pd_2fa_encrypt($s);
+    if (strpos($enc, $s) !== false || pd_2fa_decrypt($enc) !== $s) { echo 'versleuteling'; exit(1); }
+    if (pd_2fa_decrypt('v2:AAAA') !== null) { echo 'ontsleutelen van rommel'; exit(1); }
+    echo 'OK';`;
+  // het sleutelbestand komt in een tijdelijke map, niet in de repository
+  const r = spawnSync('php', ['-r', script.replace(/^<\?php/, '')], { encoding: 'utf8', cwd: ROOT });
+  const keyCreated = existsSync(join(keyDir, 'twofa_key.php'));
+  rmSync(keyDir, { recursive: true, force: true });
+  assert.equal(r.stdout.trim(), 'OK', r.stdout + r.stderr);
+  assert.ok(keyCreated, 'the key file must be created automatically');
+  assert.equal(existsSync(join(ROOT, 'data', 'twofa_key.php')), false, 'the test must not leave a key file in the repository');
+});
+
 // ── PHP syntax ─────────────────────────────────────────────────────────
-const hasPhp = spawnSync('php', ['-v']).status === 0;
 test('all PHP files have valid syntax', { skip: hasPhp ? false : 'PHP not installed on this computer' }, () => {
   const r = spawnSync(process.execPath, [join(ROOT, 'scripts', 'lint.mjs')], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);

@@ -63,6 +63,13 @@ if (!function_exists('pd_try_remember_me_login')) {
             return false;
         }
 
+        // Tweestapsverificatie (2.3.0): "ingelogd blijven" is geen vrijbrief voor 2FA. Heeft de
+        // gebruiker 2FA aan, dan is een code nodig tenzij dit een vertrouwd apparaat is.
+        require_once __DIR__ . '/twofa.php';
+        if (pd_2fa_challenge_needed($db, (int)$tokenData['user_id'])) {
+            return false;
+        }
+
         // Valid token: restore session (met nieuw sessie-ID)
         pd_login_start_session($db, [
             'id' => $tokenData['user_id'],

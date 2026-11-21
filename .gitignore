@@ -7,6 +7,11 @@
 /includes/db_config.php
 /includes/config.php
 
+# 2FA: sleutelbestand en noodoverride horen bij de server (nooit in git of in updates)
+/data/
+/data/**/*
+/twofa_uit.txt
+
 # User Data
 /uploads/
 /uploads/**/*

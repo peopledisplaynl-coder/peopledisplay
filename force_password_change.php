@@ -20,6 +20,7 @@
 
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/security.php';
+require_once __DIR__ . '/includes/twofa.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
@@ -113,7 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } catch (Throwable $e) {
                     error_log('force_password_change session id update: ' . $e->getMessage());
                 }
-                header('Location: ' . pd_force_target($db, $userId, (string)($_SESSION['role'] ?? 'user')));
+                // Zelfde bestemming als na het inloggen: daarin zit ook de uitnodiging voor 2FA (sinds 2.3.0)
+                header('Location: ' . pd_post_login_target($db, $userId, (string)($_SESSION['role'] ?? 'user')));
                 exit;
             } catch (Throwable $e) {
                 error_log('force_password_change: ' . $e->getMessage());

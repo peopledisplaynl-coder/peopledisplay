@@ -12,6 +12,7 @@
  *  - Wachtwoordbeleid (minimale lengte)
  *  - Logboek van inlogpogingen (tabel login_attempts) en automatische blokkade
  *  - Verplichte wachtwoordwijziging (users.must_change_password)
+ *  - Afronden van een geslaagde inlog (pd_complete_login), gedeeld door login.php en login_2fa.php
  *
  * Alles is zo geschreven dat een fout in dit bestand nooit het inloggen onmogelijk
  * maakt: bij een databasefout wordt er niet geblokkeerd en wordt er niets gedwongen.
@@ -167,7 +168,7 @@ function pd_login_wait_seconds(PDO $db, string $username): int
         // 1) IP + gebruikersnaam: mislukte pogingen na de laatste geslaagde inlog (max. 24 uur terug)
         $stmt = $db->prepare("SELECT COUNT(*) AS fails, UNIX_TIMESTAMP(MAX(created_at)) AS last_fail
             FROM login_attempts
-            WHERE ip_address = ? AND username = ? AND success = 0 AND COALESCE(reason, '') <> 'blocked'
+            WHERE ip_address = ? AND username = ? AND success = 0 AND COALESCE(reason, '') NOT IN ('blocked', 'pw_ok_2fa')
               AND created_at > (NOW() - INTERVAL 24 HOUR)
               AND created_at > COALESCE(
                     (SELECT MAX(created_at) FROM login_attempts WHERE ip_address = ? AND username = ? AND success = 1),
@@ -185,7 +186,7 @@ function pd_login_wait_seconds(PDO $db, string $username): int
         // 2) Alleen IP: te veel mislukte pogingen in 15 minuten, met welke naam dan ook
         $stmt = $db->prepare("SELECT COUNT(*) AS fails, UNIX_TIMESTAMP(MAX(created_at)) AS last_fail
             FROM login_attempts
-            WHERE ip_address = ? AND success = 0 AND COALESCE(reason, '') <> 'blocked'
+            WHERE ip_address = ? AND success = 0 AND COALESCE(reason, '') NOT IN ('blocked', 'pw_ok_2fa')
               AND created_at > (NOW() - INTERVAL 15 MINUTE)");
         $stmt->execute([$ip]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -350,8 +351,102 @@ function pd_password_changed(PDO $db, int $userId, bool $clearRememberTokens = t
             // tabel bestaat niet op elke installatie
         }
     }
+    // Vertrouwde apparaten voor 2FA (sinds 2.3.0) horen bij het oude wachtwoord
+    if ($clearRememberTokens) {
+        try {
+            $db->prepare("DELETE FROM user_trusted_devices WHERE user_id = ?")->execute([$userId]);
+        } catch (Throwable $e) {
+            // tabel bestaat nog niet
+        }
+    }
     if (!empty($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $userId) {
         unset($_SESSION['must_change_password']);
         $_SESSION['pd_mcp_checked'] = time();
     }
+}
+
+/**
+ * Waar gaat de gebruiker heen na het inloggen?
+ * Koppeling gebruiker -> eigen medewerkerskaart: een gekoppeld account landt altijd direct op het
+ * aanmeldscherm met de eigen kaart, voor elke rol (ook admin/superadmin).
+ * Volgorde: verplichte wachtwoordwijziging, daarna 2FA instellen (tijdens het uitstel eenmalig
+ * een uitnodiging), daarna de gewone bestemming.
+ */
+function pd_post_login_target(PDO $db, int $userId, string $role): string
+{
+    if (!empty($_SESSION['must_change_password'])) {
+        return 'force_password_change.php';
+    }
+    if (function_exists('pd_2fa_required') && empty($_SESSION['kiosk_login']) && (time() - (int)($_SESSION['pd_2fa_invited_at'] ?? 0)) >= 86400) {
+        try {
+            if (!pd_2fa_override_active() && pd_2fa_required($db, $userId) && !pd_2fa_enabled($db, $userId)) {
+                $_SESSION['pd_2fa_invited_at'] = time();
+                return 'twofa_setup.php';
+            }
+        } catch (Throwable $e) {
+            // nooit inloggen blokkeren door een fout hier
+        }
+    }
+    try {
+        $stmt = $db->prepare("SELECT linked_employee_id FROM users WHERE id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        $linked = $stmt->fetchColumn();
+        if (!empty($linked)) {
+            return 'index.php';
+        }
+    } catch (PDOException $e) {
+        // Kolom bestaat nog niet op deze installatie: geen koppeling aannemen.
+    }
+    return in_array($role, ['admin', 'superadmin'], true) ? 'admin/dashboard.php' : 'frontpage.php';
+}
+
+/**
+ * Rondt een volledig geslaagde inlog af (wachtwoord en, indien nodig, 2FA-code): inlogpoging
+ * vastleggen, sessie starten, laatste inlog, sessie-tracking en eventueel "ingelogd blijven".
+ *
+ * @param array  $user     rij uit users (id, username, display_name, role, must_change_password)
+ * @param string $reason   reden voor het inlogregister ('login' of '2fa')
+ * @return string          pagina waarheen de gebruiker gaat
+ */
+function pd_complete_login(PDO $db, array $user, bool $remember, string $reason = 'login'): string
+{
+    pd_login_record($db, (string)$user['username'], true, $reason);
+    pd_login_start_session($db, $user);
+    unset($_SESSION['pd_2fa_pending'], $_SESSION['pd_2fa_state'], $_SESSION['pd_2fa_invited_at']);
+
+    try {
+        $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
+    } catch (Throwable $e) {
+        error_log('Last login update failed: ' . $e->getMessage());
+    }
+
+    // Sessie-tracking (online gebruikers, sessiecontrole)
+    try {
+        require_once __DIR__ . '/session_tracker.php';
+        $tracker = new SessionTracker($db);
+        $tracker->startSession($user['id']);
+    } catch (Throwable $e) {
+        error_log('Session tracking start failed: ' . $e->getMessage());
+    }
+
+    // "Ingelogd blijven": token in de database + cookies (Secure/HttpOnly/SameSite)
+    if ($remember) {
+        try {
+            $checkTable = $db->query("SHOW TABLES LIKE 'remember_tokens'");
+            if ($checkTable && $checkTable->rowCount() > 0) {
+                $selector = bin2hex(random_bytes(16));
+                $token = bin2hex(random_bytes(32));
+                $expiresAt = date('Y-m-d H:i:s', time() + (30 * 24 * 60 * 60));
+                $db->prepare("INSERT INTO remember_tokens (user_id, selector, token, expires_at) VALUES (?, ?, ?, ?)")
+                   ->execute([$user['id'], $selector, hash('sha256', $token), $expiresAt]);
+                $cookieExpire = time() + (30 * 24 * 60 * 60);
+                pd_set_remember_cookie('remember_selector', $selector, $cookieExpire);
+                pd_set_remember_cookie('remember_token', $token, $cookieExpire);
+            }
+        } catch (Throwable $e) {
+            error_log('Remember me token creation failed: ' . $e->getMessage());
+        }
+    }
+
+    return pd_post_login_target($db, (int)$user['id'], (string)$user['role']);
 }

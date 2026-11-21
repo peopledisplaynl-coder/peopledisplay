@@ -95,6 +95,13 @@ try {
         $pd_migrations_changes[] = 'security schema (login_attempts, must_change_password) ensured';
     }
 
+    // Tweestapsverificatie (2.3.0): tabellen user_2fa, user_2fa_recovery, user_trusted_devices en de
+    // kolommen users.twofa_required en users.twofa_grace_until (definitie in includes/twofa.php).
+    require_once __DIR__ . '/twofa.php';
+    if (pd_2fa_ensure_schema($db)) {
+        $pd_migrations_changes[] = '2FA schema (user_2fa, user_2fa_recovery, user_trusted_devices) ensured';
+    }
+
     // Ensure foreign key constraint exists.
     $fkStmt = $db->prepare("SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
         WHERE TABLE_SCHEMA = DATABASE()

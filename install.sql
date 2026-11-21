@@ -8,7 +8,7 @@
 -- Run this script ONCE during installation.
 -- All statements use IF NOT EXISTS — safe to re-run.
 --
--- Tables: 32
+-- Tables: 35
 --
 -- Single source: edit THIS file (repository root). install/sql/install.sql
 -- is an exact copy for the install wizard — run `npm run sync-sql` after editing.
@@ -105,6 +105,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `last_login`               datetime                          DEFAULT NULL,
   `must_change_password`     tinyint(1)                        NOT NULL DEFAULT 0 COMMENT 'Verplicht wachtwoord wijzigen bij eerstvolgende inlog',
   `password_changed_at`      datetime                          DEFAULT NULL,
+  `twofa_required`           tinyint(1)                        NOT NULL DEFAULT 0 COMMENT '2FA verplicht gesteld door een beheerder',
+  `twofa_grace_until`        datetime                          DEFAULT NULL COMMENT 'Einde van het uitstel voor het instellen van 2FA',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_username`   (`username`),
   KEY `idx_group_id`         (`group_id`),
@@ -307,6 +309,49 @@ CREATE TABLE IF NOT EXISTS `login_attempts` (
   KEY `idx_ip_time`   (`ip_address`, `created_at`),
   KEY `idx_user_time` (`username`, `created_at`),
   KEY `idx_created`   (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: user_2fa
+-- Tweestapsverificatie (authenticator-app): versleutelde geheime sleutel per gebruiker (2.3.0)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `user_2fa` (
+  `user_id`      int(11)    NOT NULL,
+  `secret_enc`   text       NOT NULL,
+  `enabled_at`   datetime   NOT NULL DEFAULT current_timestamp(),
+  `last_counter` bigint(20) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: user_2fa_recovery
+-- Herstelcodes voor 2FA (alleen een hash; elke code werkt eenmalig)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `user_2fa_recovery` (
+  `id`        int(11)  NOT NULL AUTO_INCREMENT,
+  `user_id`   int(11)  NOT NULL,
+  `code_hash` char(64) NOT NULL,
+  `used_at`   datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: user_trusted_devices
+-- Vertrouwde apparaten voor 2FA ("dit apparaat 30 dagen vertrouwen")
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `user_trusted_devices` (
+  `id`         int(11)      NOT NULL AUTO_INCREMENT,
+  `user_id`    int(11)      NOT NULL,
+  `selector`   char(32)     NOT NULL,
+  `token_hash` char(64)     NOT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `ip_address` varchar(45)  DEFAULT NULL,
+  `created_at` datetime     NOT NULL DEFAULT current_timestamp(),
+  `expires_at` datetime     NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_selector` (`selector`),
+  KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -704,6 +749,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
 -- END OF SCHEMA
--- Tables created: 32
+-- Tables created: 35
 -- Run install.php after this to create your admin account
 -- ============================================================

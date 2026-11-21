@@ -2,6 +2,16 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.3.0 — 2026-11-21
+
+- Nieuw: tweestapsverificatie (2FA) met een authenticator-app (Google Authenticator, Microsoft Authenticator, Authy, 1Password e.d.). Gebruikers stellen het zelf in via hun profiel of via de pagina Tweestapsverificatie: QR-code scannen, een code invullen en 10 herstelcodes bewaren. Bij het inloggen is na het wachtwoord een code uit de app nodig
+- Nieuw: in Gebruikers beheren staat bij elke gebruiker het vinkje 'Tweestapsverificatie (2FA) verplicht' en met de knop '2FA verplichten' zet je dit in één keer aan voor gekozen rollen. Verplichte gebruikers krijgen 7 dagen uitstel; daarna moeten ze 2FA instellen om verder te kunnen. Kiosk- en tabletaccounts doen nooit mee
+- Nieuw: 'Dit apparaat 30 dagen vertrouwen' bij het invullen van de code: op dat apparaat is dan 30 dagen geen code nodig. Dit staat los van 'Ingelogd blijven' en omzeilt 2FA niet: wie alleen 'ingelogd blijven' kiest, moet na uitloggen weer een code invullen. Vertrouwde apparaten kun je in het 2FA-scherm in één keer afmelden
+- Nieuw: beheerders kunnen 2FA van een gebruiker resetten (telefoon kwijt en geen herstelcodes meer). Als noodoplossing werkt het bestand twofa_uit.txt in de hoofdmap op de server (via FTP aan te maken): zolang dat bestand er staat, is voor niemand een code nodig en toont het inlogscherm een waarschuwing
+- Nieuw: wie 2FA nog moet instellen krijgt binnen het uitstel hooguit eens per 24 uur een herinnering, en direct na een verplichte wachtwoordwijziging; in Gebruikers beheren staat bij kiosk-accounts 'kiosk: geen 2FA'
+- Beveiliging: de geheime sleutel van elke gebruiker staat versleuteld in de database (sleutelbestand data/twofa_key.php, dat bij de server hoort en niet in updates zit), herstelcodes worden alleen als hash bewaard en werken één keer, en een afgekeken code werkt niet nog eens. Foute codes tellen mee voor de automatische blokkade; een wachtwoordwijziging meldt alle vertrouwde apparaten af
+- Fix: onder 'Wachtwoord wijzigen' op de profielpagina stond nog 'minimaal 8 karakters' terwijl het minimum 10 tekens is
+
 ## v2.2.0 — 2026-11-21
 
 - Nieuw: verplicht een nieuw wachtwoord. In Gebruikers beheren staat nu per gebruiker het vinkje 'Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen', en met de knop 'Wachtwoord wijzigen verplichten' zet je dit in één keer aan voor alle gebruikers van gekozen rollen (kiosk- en tabletaccounts worden overgeslagen). De gebruiker kiest zelf een nieuw wachtwoord voordat hij verder kan; wie al is ingelogd krijgt dit binnen 5 minuten

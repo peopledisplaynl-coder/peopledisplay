@@ -20,7 +20,7 @@ export const DEV_ONLY = [
 // Server-owned files: configuration and customer data. Never overwritten.
 export const PROTECTED = [
   'includes/db_config.php', 'admin/db_config.php', 'admin/config.json',
-  'uploads/', 'logs/', 'tmp/', 'backups/', 'data/', '.installed',
+  'uploads/', 'logs/', 'tmp/', 'backups/', 'data/', '.installed', 'twofa_uit.txt',
 ];
 
 // Extra exclusions for an installed site (test / live). Mirrors EXCLUDE_FROM_ZIP

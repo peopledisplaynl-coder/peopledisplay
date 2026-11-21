@@ -404,7 +404,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label>Nieuw Wachtwoord</label>
                     <input type="password" name="new_password" required minlength="<?= (int)PD_MIN_PASSWORD_LENGTH ?>">
-                    <small>Minimaal 8 karakters</small>
+                    <small>Minimaal <?= (int)PD_MIN_PASSWORD_LENGTH ?> tekens</small>
                 </div>
                 
                 <div class="form-group">
@@ -415,6 +415,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn-primary">✓ Wachtwoord Wijzigen</button>
             </form>
         </div>
+
+        <!-- TWEESTAPSVERIFICATIE -->
+        <?php
+        require_once __DIR__ . '/../includes/twofa.php';
+        $pdTwofaOn = false; $pdTwofaReq = false;
+        if (empty($_SESSION['kiosk_login']) && pd_2fa_available()) {
+            $pdTwofaOn  = pd_2fa_enabled($db, (int)$_SESSION['user_id']);
+            $pdTwofaReq = pd_2fa_required($db, (int)$_SESSION['user_id']);
+        }
+        if (empty($_SESSION['kiosk_login']) && pd_2fa_available()): ?>
+        <div class="card">
+            <h2>🔐 Tweestapsverificatie</h2>
+            <?php if ($pdTwofaOn): ?>
+                <p style="margin-bottom:12px;">✅ Staat aan. Bij het inloggen vul je ook een code uit je authenticator-app in.</p>
+            <?php else: ?>
+                <p style="margin-bottom:12px;">Staat uit<?= $pdTwofaReq ? ' (verplicht gesteld door een beheerder)' : '' ?>. Met een code uit een app op je telefoon is je account veel beter beveiligd.</p>
+            <?php endif; ?>
+            <a href="../twofa_setup.php" class="btn-primary" style="display:inline-block; text-decoration:none;"><?= $pdTwofaOn ? 'Beheren' : 'Instellen' ?></a>
+        </div>
+        <?php endif; ?>
     </div>
     
     <!-- FORCE LOGOUT DETECTOR -->

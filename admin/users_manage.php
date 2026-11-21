@@ -35,7 +35,9 @@ require_once __DIR__ . '/auth_helper.php';
 requireAdmin();
 requireAdminFeature('manage_users');
 require_once __DIR__ . '/../includes/security.php';
+require_once __DIR__ . '/../includes/twofa.php';
 pd_security_ensure_schema($db);
+pd_2fa_ensure_schema($db);
 
 $message    = '';
 $error      = '';
@@ -399,6 +401,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         // Verplichte wachtwoordwijziging bij eerstvolgende inlog (vinkje)
         $db->prepare("UPDATE users SET must_change_password = ? WHERE id = ?")->execute([$mustChangePassword, $userId]);
+
+        // 2FA verplicht (2.3.0): bij aanzetten begint het uitstel van 7 dagen
+        $twofaRequired = isset($_POST['twofa_required']) ? 1 : 0;
+        $prevStmt = $db->prepare("SELECT twofa_required FROM users WHERE id = ?");
+        $prevStmt->execute([$userId]);
+        $prevRequired = (int)$prevStmt->fetchColumn();
+        if ($twofaRequired === 1 && $prevRequired === 0) {
+            $db->prepare("UPDATE users SET twofa_required = 1, twofa_grace_until = NOW() + INTERVAL " . (int)PD_2FA_GRACE_DAYS . " DAY WHERE id = ?")->execute([$userId]);
+        } elseif ($twofaRequired === 0 && $prevRequired === 1) {
+            $db->prepare("UPDATE users SET twofa_required = 0, twofa_grace_until = NULL WHERE id = ?")->execute([$userId]);
+        }
         
         // Update user_afdelingen
         $afdelingen = $_POST['afdelingen'] ?? [];
@@ -479,6 +492,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit;
 }
 
+// 2FA van een gebruiker resetten (telefoon kwijt, geen herstelcodes meer)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reset_2fa') {
+    header('Content-Type: application/json');
+    $userId = intval($_POST['user_id'] ?? 0);
+    $targetStmt = $db->prepare("SELECT username, role, twofa_required FROM users WHERE id = ?");
+    $targetStmt->execute([$userId]);
+    $targetUser = $targetStmt->fetch(PDO::FETCH_ASSOC);
+    if (!$targetUser) {
+        echo json_encode(['success' => false, 'error' => 'Gebruiker niet gevonden']);
+        exit;
+    }
+    if (!$isSuperAdmin && $targetUser['role'] === 'superadmin') {
+        echo json_encode(['success' => false, 'error' => 'Alleen SuperAdmin kan 2FA van een SuperAdmin resetten']);
+        exit;
+    }
+    try {
+        pd_2fa_disable($db, $userId);
+        // Is 2FA voor deze gebruiker verplicht, dan krijgt hij weer 7 dagen om het opnieuw in te stellen
+        if ((int)$targetUser['twofa_required'] === 1) {
+            $db->prepare("UPDATE users SET twofa_grace_until = NOW() + INTERVAL " . (int)PD_2FA_GRACE_DAYS . " DAY WHERE id = ?")->execute([$userId]);
+        }
+        error_log('2FA reset voor gebruiker ' . $targetUser['username'] . ' door ' . ($_SESSION['username'] ?? '?'));
+        $resetMessage = ((int)$targetUser['twofa_required'] === 1)
+            ? '2FA is gereset voor ' . $targetUser['username'] . '. Omdat 2FA voor deze gebruiker verplicht is, wordt bij de volgende inlog gevraagd het opnieuw in te stellen (' . (int)PD_2FA_GRACE_DAYS . ' dagen uitstel).'
+            : '2FA is gereset voor ' . $targetUser['username'] . '. Bij de volgende inlog is alleen het wachtwoord nodig.';
+        echo json_encode(['success' => true, 'message' => $resetMessage]);
+    } catch (Throwable $e) {
+        error_log('reset_2fa: ' . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'Resetten mislukt']);
+    }
+    exit;
+}
+
+// Bulk: 2FA verplicht stellen (met 7 dagen uitstel) of opheffen voor meerdere rollen tegelijk
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'bulk_twofa') {
+    header('Content-Type: application/json');
+
+    $allowedRoles = ['user', 'employee_manager', 'user_manager', 'admin'];
+    if ($isSuperAdmin) {
+        $allowedRoles[] = 'superadmin';
+    }
+    $roles = array_values(array_intersect($allowedRoles, (array)($_POST['roles'] ?? [])));
+    if (!$roles) {
+        echo json_encode(['success' => false, 'error' => 'Kies minimaal één rol']);
+        exit;
+    }
+    $value = (($_POST['value'] ?? '1') === '1') ? 1 : 0;
+    $placeholders = implode(',', array_fill(0, count($roles), '?'));
+
+    try {
+        // Alleen actieve accounts; kiosk-/tabletaccounts (met een kiosk-token) blijven buiten schot.
+        if ($value === 1) {
+            // let op: in MySQL worden de toewijzingen van links naar rechts uitgevoerd; de uitstelregel staat daarom eerst
+            $sql = "UPDATE users u SET
+                        u.twofa_grace_until = IF(u.twofa_required = 1 AND u.twofa_grace_until IS NOT NULL, u.twofa_grace_until, NOW() + INTERVAL " . (int)PD_2FA_GRACE_DAYS . " DAY),
+                        u.twofa_required = 1
+                    WHERE u.role IN ($placeholders) AND u.active = 1
+                      AND NOT EXISTS (SELECT 1 FROM kiosk_tokens kt WHERE kt.user_id = u.id)";
+        } else {
+            $sql = "UPDATE users u SET u.twofa_required = 0, u.twofa_grace_until = NULL
+                    WHERE u.role IN ($placeholders) AND u.active = 1
+                      AND NOT EXISTS (SELECT 1 FROM kiosk_tokens kt WHERE kt.user_id = u.id)";
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute($roles);
+        echo json_encode([
+            'success' => true,
+            'count'   => $stmt->rowCount(),
+            'message' => $value
+                ? '2FA verplicht gesteld voor ' . $stmt->rowCount() . ' gebruiker(s), met ' . (int)PD_2FA_GRACE_DAYS . ' dagen uitstel.'
+                : '2FA-verplichting opgeheven voor ' . $stmt->rowCount() . ' gebruiker(s).',
+        ]);
+    } catch (PDOException $e) {
+        error_log('bulk_twofa: ' . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'Database fout bij het instellen']);
+    }
+    exit;
+}
+
 // Bulk: verplichte wachtwoordwijziging voor meerdere rollen tegelijk aan- of uitzetten
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'bulk_must_change') {
     header('Content-Type: application/json');
@@ -551,6 +643,10 @@ $usersStmt = $db->query("
            u.can_use_scanner,
            u.features,
            u.must_change_password,
+           u.twofa_required,
+           u.twofa_grace_until,
+           (SELECT COUNT(*) FROM user_2fa t2 WHERE t2.user_id = u.id) AS twofa_enabled,
+           (SELECT COUNT(*) FROM kiosk_tokens kt2 WHERE kt2.user_id = u.id) AS has_kiosk_token,
            u.last_login,
            u.created_at,
            u.updated_at
@@ -1292,6 +1388,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                 <button onclick="openGroupModal()" class="btn btn-secondary">⚙️ Groepen beheren</button>
                 <?php endif; ?>
                 <button onclick="openMustChangeModal()" class="btn btn-secondary" title="Laat gebruikers bij hun volgende inlog een nieuw wachtwoord kiezen">🔑 Wachtwoord wijzigen verplichten</button>
+                <button onclick="openTwofaModal()" class="btn btn-secondary" title="Maak tweestapsverificatie verplicht voor gekozen rollen">🔐 2FA verplichten</button>
                 <button onclick="openCreateModal()" class="btn btn-primary">+ Nieuwe Gebruiker</button>
             </div>
         </div>
@@ -1392,6 +1489,13 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php endif; ?>
                             <?php if (!empty($user['must_change_password'])): ?>
                                 <span class="status-badge" style="background:#fefcbf; color:#744210; margin-left:4px;" title="Moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen">🔑 nieuw ww</span>
+                            <?php endif; ?>
+                            <?php if (!empty($user['twofa_enabled'])): ?>
+                                <span class="status-badge" style="background:#c6f6d5; color:#22543d; margin-left:4px;" title="Tweestapsverificatie staat aan">🔐 2FA aan</span>
+                            <?php elseif (!empty($user['twofa_required']) && !empty($user['has_kiosk_token'])): ?>
+                                <span class="status-badge" style="background:#e2e8f0; color:#4a5568; margin-left:4px;" title="Kiosk-/tabletaccount (heeft een kiosk-token): 2FA wordt nooit gevraagd">📺 kiosk: geen 2FA</span>
+                            <?php elseif (!empty($user['twofa_required'])): ?>
+                                <span class="status-badge" style="background:#feebc8; color:#7b341e; margin-left:4px;" title="2FA is verplicht gesteld, maar nog niet ingesteld<?= !empty($user['twofa_grace_until']) ? ' (uitstel tot ' . htmlspecialchars(date('d-m-Y', strtotime($user['twofa_grace_until']))) . ')' : '' ?>">🔐 2FA verplicht</span>
                             <?php endif; ?>
                             <div style="font-size:11px; color:#718096; margin-top:3px;">
                                 <?= !empty($user['last_login']) ? 'Laatste inlog: ' . htmlspecialchars(date('d-m-Y H:i', strtotime($user['last_login']))) : 'Nog niet ingelogd' ?>
@@ -1515,6 +1619,34 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
+    <!-- Modal: 2FA verplichten -->
+    <div id="twofa-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔐 Tweestapsverificatie verplichten</h3>
+            </div>
+            <p style="font-size:14px; color:#4a5568; margin-bottom:12px;">
+                Gebruikers met de gekozen rol moeten tweestapsverificatie (authenticator-app) instellen. Ze krijgen <?= (int)PD_2FA_GRACE_DAYS ?> dagen uitstel: bij het inloggen wordt het ze voorgesteld en na die periode is instellen verplicht om verder te kunnen.
+                Alleen actieve accounts. Kiosk- en tabletaccounts (met een kiosk-token) worden overgeslagen.
+                <strong>Let op:</strong> jijzelf valt er ook onder als je rol is aangevinkt.
+            </p>
+            <div class="form-group">
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="twofa-role" value="user" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 👤 User</label>
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="twofa-role" value="employee_manager" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 👷 Medewerker Beheerder</label>
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="twofa-role" value="user_manager" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 👥 Gebruiker Beheerder</label>
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="twofa-role" value="admin" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 🔧 Admin</label>
+                <?php if ($isSuperAdmin): ?>
+                <label style="display:flex; align-items:center; gap:8px; font-weight:normal; margin-bottom:6px;"><input type="checkbox" class="twofa-role" value="superadmin" checked style="width:auto; padding:0; border:none; margin:0; flex:none;"> 👑 SuperAdmin</label>
+                <?php endif; ?>
+            </div>
+            <div class="modal-footer" style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn btn-secondary" onclick="closeTwofaModal()">Annuleren</button>
+                <button class="btn btn-secondary" onclick="bulkTwofa(0)">Verplichting opheffen</button>
+                <button class="btn btn-success" onclick="bulkTwofa(1)">✓ Verplichten</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="group-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1562,6 +1694,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
         });
         
         const allUsers = <?= json_encode($users) ?>;
+        const PD_GRACE_DAYS = <?= (int)PD_2FA_GRACE_DAYS ?>;
         const allGroups = <?= json_encode($groups) ?>;
         const allEmployeesForLink = <?= json_encode($employeesForLink) ?>; // 🆕 Voor "Gekoppelde medewerker" dropdown
         const isSuperAdmin = <?= json_encode($isSuperAdmin) ?>;
@@ -1856,6 +1989,12 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                     <span>Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen
                                         ${user.last_login ? `<small style="color:#666; display:block;">Laatste inlog: ${user.last_login}</small>` : `<small style="color:#666; display:block;">Nog niet ingelogd (of laatste inlog onbekend)</small>`}</span>
                                 </label>
+                                <label style="display:flex; gap:8px; align-items:flex-start; font-weight:normal; margin-top:8px;">
+                                    <input type="checkbox" name="twofa_required" value="1" ${Number(user.twofa_required) === 1 ? 'checked' : ''} style="width:auto; padding:0; border:none; margin:3px 0 0 0; flex:none;">
+                                    <span>Tweestapsverificatie (2FA) verplicht voor deze gebruiker
+                                        <small style="color:#666; display:block;">${Number(user.has_kiosk_token) > 0 ? '📺 Dit is een kiosk-/tabletaccount (heeft een kiosk-token): 2FA wordt hier nooit gevraagd, ook niet als dit vinkje aan staat.' : Number(user.twofa_enabled) > 0 ? '✅ 2FA is ingesteld door de gebruiker.' : `Nog niet ingesteld. Bij aanzetten krijgt de gebruiker ${PD_GRACE_DAYS} dagen uitstel.`}</small></span>
+                                </label>
+                                ${Number(user.twofa_enabled) > 0 ? `<button type="button" class="btn btn-secondary" style="margin-top:8px;" onclick="resetTwofa(${userId}, '${String(user.username).replace(/'/g, "\\'")}')">🔄 2FA resetten (telefoon kwijt)</button>` : ''}
                             </div>
                         </div>
                         
@@ -2230,6 +2369,66 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                     setTimeout(() => { window.location.href = window.location.pathname + '?t=' + Date.now(); }, 1200);
                 } else {
                     showToast(data.error || 'Instellen mislukt', 'error');
+                }
+            } catch (error) {
+                showToast('Fout: ' + error.message, 'error');
+            }
+        }
+
+        // ═══ 2FA (verplichten per rol, resetten per gebruiker) ═══
+
+        function openTwofaModal() {
+            document.getElementById('twofa-modal').classList.add('active');
+        }
+
+        function closeTwofaModal() {
+            document.getElementById('twofa-modal').classList.remove('active');
+        }
+
+        async function bulkTwofa(value) {
+            const roles = Array.from(document.querySelectorAll('.twofa-role:checked')).map(el => el.value);
+            if (roles.length === 0) {
+                showToast('Kies minimaal één rol', 'error');
+                return;
+            }
+            const text = value
+                ? 'Alle actieve gebruikers met de gekozen rollen moeten tweestapsverificatie instellen (met uitstel). Doorgaan?'
+                : 'De 2FA-verplichting wordt voor alle gekozen rollen opgeheven. Wie 2FA al heeft ingesteld, houdt het. Doorgaan?';
+            if (!confirm(text)) return;
+
+            const formData = new FormData();
+            formData.append('action', 'bulk_twofa');
+            formData.append('value', value ? '1' : '0');
+            roles.forEach(r => formData.append('roles[]', r));
+
+            try {
+                const response = await fetch('', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeTwofaModal();
+                    setTimeout(() => { window.location.href = window.location.pathname + '?t=' + Date.now(); }, 1200);
+                } else {
+                    showToast(data.error || 'Instellen mislukt', 'error');
+                }
+            } catch (error) {
+                showToast('Fout: ' + error.message, 'error');
+            }
+        }
+
+        async function resetTwofa(userId, username) {
+            if (!confirm('2FA van ' + username + ' resetten? De gebruiker kan daarna met alleen het wachtwoord inloggen en moet 2FA opnieuw instellen (als het verplicht is).')) return;
+            const formData = new FormData();
+            formData.append('action', 'reset_2fa');
+            formData.append('user_id', userId);
+            try {
+                const response = await fetch('', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => { window.location.href = window.location.pathname + '?t=' + Date.now(); }, 1200);
+                } else {
+                    showToast(data.error || 'Resetten mislukt', 'error');
                 }
             } catch (error) {
                 showToast('Fout: ' + error.message, 'error');
