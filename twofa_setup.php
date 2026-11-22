@@ -10,7 +10,7 @@
  * ============================================================================
  * BESTANDSNAAM:  twofa_setup.php
  * UPLOAD NAAR:   ROOT (/twofa_setup.php)
- * VERSIE:        2.3.0
+ * VERSIE:        2.3.1
  *
  * Tweestapsverificatie instellen en beheren voor de ingelogde gebruiker:
  * authenticator-app koppelen (QR-code), herstelcodes, vertrouwde apparaten, uitzetten.
@@ -191,13 +191,15 @@ if ($available && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // Nieuwe sleutel voor de koppeling (pas opgeslagen als de eerste code klopt)
 $secret = '';
 $qr = '';
+$otpauth = '';
 $setupToken = '';
 if ($available && !$enabled) {
     if (empty($_SESSION['pd_2fa_setup_secret'])) {
         $_SESSION['pd_2fa_setup_secret'] = pd_2fa_generate_secret();
     }
     $secret = $_SESSION['pd_2fa_setup_secret'];
-    $qr = pd_2fa_qr_svg(pd_2fa_otpauth_uri($username, $secret, $setupIssuer));
+    $otpauth = pd_2fa_otpauth_uri($username, $secret, $setupIssuer);
+    $qr = pd_2fa_qr_svg($otpauth);
     $setupToken = pd_2fa_setup_token_make($secret, $userId);
     // Deze pagina bevat een geheime sleutel: nooit in de cache of bij "terug" tonen
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -235,7 +237,16 @@ $h = static function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tweestapsverificatie - PeopleDisplay</title>
-    <style><?= pd_2fa_page_css() ?></style>
+    <style><?= pd_2fa_page_css() ?>
+.pd-phone { display: none; }
+.pd-copy { display: inline-block; width: auto; padding: 8px 14px; margin-top: 10px; font-size: 14px; }
+@media (max-width: 640px), (pointer: coarse) {
+    .pd-phone { display: block; }
+    .pd-qr { display: none; }
+    .pd-setup.show-qr .pd-qr { display: block; }
+    .pd-setup.show-qr .pd-phone .pd-qrlink { display: none; }
+}
+</style>
 </head>
 <body>
 <div class="box">
@@ -332,11 +343,37 @@ $h = static function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF
     <p class="text">Bijvoorbeeld Google Authenticator, Microsoft Authenticator, Authy of 1Password. Heb je al zo'n app, dan kun je die gebruiken.</p>
 
     <h2>Stap 2: koppel de app</h2>
-    <p class="text">Kies in de app "Account toevoegen" en scan deze QR-code.</p>
-    <div class="center"><?= $qr ?></div>
-    <p class="text center" style="margin-top:12px;">Lukt scannen niet? Kies in de app voor handmatig invoeren en gebruik deze sleutel:</p>
-    <p class="center"><span class="secret"><?= $h(trim(chunk_split($secret, 4, ' '))) ?></span></p>
-    <p class="text center" style="font-size:13px;">In je app verschijnt het account <strong><?= $h($setupAccountLabel) ?></strong>. Staat er al een oud account met dezelfde naam in je app (van een eerdere poging), verwijder dat dan eerst, zodat je niet de verkeerde code overtypt.</p>
+    <div class="pd-setup" id="pd-setup">
+        <div class="pd-phone">
+            <p class="text">Je gebruikt PeopleDisplay op een telefoon of tablet? Dan kun je de QR-code niet op hetzelfde apparaat scannen. Gebruik een van deze twee mogelijkheden:</p>
+            <a class="btn" href="<?= $h($otpauth) ?>">📲 Open in je authenticator-app</a>
+            <button type="button" class="secondary" onclick="pdCopyKey(this)">📋 Sleutel kopiëren</button>
+            <p class="text" style="font-size:13px; margin-top:12px;">Opent de eerste knop niets, of vraagt je app niets? Kopieer dan de sleutel, open je app, kies <em>Setup-sleutel invoeren</em> (of <em>Handmatig invoeren</em>) en plak de sleutel. Kies als type <em>tijdgebaseerd</em> als daar naar gevraagd wordt. Kom daarna terug naar deze pagina en vul hieronder de code in.</p>
+            <p class="text pd-qrlink" style="font-size:13px;"><a href="#" onclick="document.getElementById('pd-setup').classList.add('show-qr'); return false;">Toch de QR-code tonen</a> (om met een ander apparaat te scannen)</p>
+        </div>
+        <div class="pd-qr">
+            <p class="text">Kies in de app "Account toevoegen" en scan deze QR-code.</p>
+            <div class="center"><?= $qr ?></div>
+        </div>
+        <p class="text center" style="margin-top:12px;">Lukt scannen niet? Kies in de app voor handmatig invoeren en gebruik deze sleutel:</p>
+        <p class="center"><span class="secret"><?= $h(trim(chunk_split($secret, 4, ' '))) ?></span></p>
+        <p class="center" style="margin-bottom:14px;"><button type="button" class="secondary pd-copy" onclick="pdCopyKey(this)">📋 Sleutel kopiëren</button></p>
+        <p class="text center" style="font-size:13px;">In je app verschijnt het account <strong><?= $h($setupAccountLabel) ?></strong>. Staat er al een oud account met dezelfde naam in je app (van een eerdere poging), verwijder dat dan eerst, zodat je niet de verkeerde code overtypt.</p>
+    </div>
+    <script>
+    function pdCopyKey(btn) {
+        var key = <?= json_encode($secret) ?>;
+        var done = function () { var t = btn.textContent; btn.textContent = '✅ Gekopieerd'; setTimeout(function () { btn.textContent = t; }, 2500); };
+        if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(key).then(done, fallback); }
+        else { fallback(); }
+        function fallback() {
+            var a = document.createElement('textarea'); a.value = key; a.setAttribute('readonly', '');
+            a.style.position = 'fixed'; a.style.opacity = '0'; document.body.appendChild(a); a.select();
+            try { document.execCommand('copy'); done(); } catch (e) { window.prompt('Kopieer deze sleutel:', key); }
+            document.body.removeChild(a);
+        }
+    }
+    </script>
 
     <h2>Stap 3: vul de code uit de app in</h2>
     <form method="POST" action="">

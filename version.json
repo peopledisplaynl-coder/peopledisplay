@@ -1,12 +1,20 @@
 {
-    "version": "2.3.0",
+    "version": "2.3.1",
     "critical": false,
-    "message": "Tweestapsverificatie (2FA) met een authenticator-app: per gebruiker of per rol verplicht te stellen. Update aanbevolen.",
+    "message": "Tweestapsverificatie instellen kan nu ook op een telefoon of tablet, zonder QR-code te scannen. Update aanbevolen.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
-    "release_date": "2026-11-21",
+    "release_date": "2026-11-22",
     "changelog": [
+        {
+            "version": "2.3.1",
+            "date": "2026-11-22",
+            "changes": [
+                "Nieuw: tweestapsverificatie instellen werkt nu ook op een telefoon of tablet, waar je de QR-code niet op hetzelfde apparaat kunt scannen. Op een telefoon staat nu de knop 'Open in je authenticator-app' (voegt het account direct toe in Google Authenticator, Microsoft Authenticator, Authy of 1Password) en de knop 'Sleutel kopiëren' om de sleutel in de app te plakken. De QR-code blijft op een computer gewoon bovenaan staan en is op een telefoon met één tik alsnog te tonen",
+                "Verbeterd: op de instelpagina van 2FA staat naast de QR-code een knop 'Sleutel kopiëren' in plaats van alleen de sleutel om over te typen"
+            ]
+        },
         {
             "version": "2.3.0",
             "date": "2026-11-21",

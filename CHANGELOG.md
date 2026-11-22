@@ -2,6 +2,11 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.3.1 — 2026-11-22
+
+- Nieuw: tweestapsverificatie instellen werkt nu ook op een telefoon of tablet, waar je de QR-code niet op hetzelfde apparaat kunt scannen. Op een telefoon staat nu de knop 'Open in je authenticator-app' (voegt het account direct toe in Google Authenticator, Microsoft Authenticator, Authy of 1Password) en de knop 'Sleutel kopiëren' om de sleutel in de app te plakken. De QR-code blijft op een computer gewoon bovenaan staan en is op een telefoon met één tik alsnog te tonen
+- Verbeterd: op de instelpagina van 2FA staat naast de QR-code een knop 'Sleutel kopiëren' in plaats van alleen de sleutel om over te typen
+
 ## v2.3.0 — 2026-11-21
 
 - Nieuw: tweestapsverificatie (2FA) met een authenticator-app (Google Authenticator, Microsoft Authenticator, Authy, 1Password e.d.). Gebruikers stellen het zelf in via hun profiel of via de pagina Tweestapsverificatie: QR-code scannen, een code invullen en 10 herstelcodes bewaren. Bij het inloggen is na het wachtwoord een code uit de app nodig

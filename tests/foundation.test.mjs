@@ -296,6 +296,15 @@ test('2FA: secrets are encrypted, recovery codes are hashed, and the key file st
   assert.equal(isExcluded('data/twofa_key.php', [...DEV_ONLY, ...PROTECTED]), true, 'the key file must never ship in a ZIP');
 });
 
+test('2FA: the setup page works on a phone (open-in-app link, copy key) and verifies the key that was shown', () => {
+  const t = read('twofa_setup.php');
+  assert.match(t, /href="<\?= \$h\(\$otpauth\) \?>"/, 'phone users need an otpauth:// link to open their authenticator app');
+  assert.match(t, /pdCopyKey/, 'phone users need a button to copy the key');
+  assert.match(t, /\(pointer: coarse\)/, 'the phone layout must also apply to touch devices');
+  assert.match(t, /pd_2fa_setup_token_read\(/, 'the key that was shown (hidden field) must be what the code is checked against');
+  assert.match(t, /no-store/, 'the setup page contains a secret and must not be cached');
+});
+
 test('2FA: user management can require it per user and per role, and reset it', () => {
   const um = read('admin/users_manage.php');
   for (const needle of ["'bulk_twofa'", "'reset_2fa'", 'twofa_required', 'pd_2fa_disable(']) {

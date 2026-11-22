@@ -218,6 +218,15 @@ Je hebt hiervoor je telefoon nodig en ongeveer twee minuten.
 
 > **Let op:** zorg dat de tijd op je telefoon automatisch wordt ingesteld. Loopt de klok af, dan werken de codes niet.
 
+### Instellen op dezelfde telefoon (geen computer bij de hand)
+
+Gebruik je PeopleDisplay alleen op je telefoon of tablet, dan kun je de QR-code niet scannen: je kunt hem niet op hetzelfde scherm zien en scannen. Dat hoeft ook niet. Op een telefoon laat PeopleDisplay in stap 3 in plaats van de QR-code twee knoppen zien:
+
+- **Open in je authenticator-app.** Tik erop: je authenticator-app gaat open en voegt het account zelf toe. Controleer of het account in de app staat en ga terug naar PeopleDisplay.
+- **Sleutel kopiëren.** Werkt de eerste knop niet (dat verschilt per telefoon en app, vooral op een iPhone), tik dan hierop, open de app, kies *Setup-sleutel invoeren* (of *handmatig invoeren*), plak de sleutel en kies **tijdgebaseerd**. Geef het account een herkenbare naam, bijvoorbeeld PeopleDisplay.
+
+Wil je toch de QR-code zien, tik dan op **Toch de QR-code tonen**. Ga daarna verder met stap 4: de code van 6 cijfers uit de app invullen. Het kan ook op een computer: open PeopleDisplay daar, laat de QR-code zien en scan hem met je telefoon.
+
 ## Inloggen met 2FA
 
 1. Vul je gebruikersnaam en wachtwoord in, zoals altijd.
