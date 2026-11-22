@@ -1,6 +1,6 @@
 ---
 title: "PeopleDisplay — Gebruikershandleiding"
-subtitle: "Versie 2.1.11"
+subtitle: "Versie 2.3.0"
 lang: nl-NL
 ---
 
@@ -21,12 +21,13 @@ Open het adres van jouw PeopleDisplay-omgeving in de browser, bijvoorbeeld `http
 1. Vul je **gebruikersnaam** en **wachtwoord** in.
 2. Vink **Blijf ingelogd** aan als je op dit apparaat ingelogd wilt blijven (30 dagen). Doe dit alleen op een apparaat dat niet door anderen wordt gebruikt.
 3. Klik op **Inloggen**.
+4. Heb je tweestapsverificatie aan, dan vraagt PeopleDisplay nu om de code uit je authenticator-app (zie het hoofdstuk *Tweestapsverificatie*).
 
 Na het inloggen kom je op het welkomstscherm. Beheerders komen direct in het admin-dashboard.
 
 > **Wachtwoord vergeten?** Vraag je beheerder om een nieuw wachtwoord in te stellen. Je kiest dan bij de eerstvolgende inlog zelf een nieuw wachtwoord.
 >
-> **Te veel foute pogingen?** Na 5 keer een verkeerd wachtwoord kun je een tijdje niet inloggen (eerst 15 minuten). Wacht even en probeer het opnieuw.
+> **Te veel foute pogingen?** Na 5 keer een verkeerd wachtwoord kun je een tijdje niet inloggen (eerst 15 minuten). Wacht even en probeer het opnieuw. Ook een paar keer een foute code uit de app telt mee.
 
 # Het welkomstscherm
 
@@ -196,9 +197,48 @@ Via **Mijn Profiel** (welkomstscherm of het menu onder je initiaal) pas je je ei
 
 - **Profielgegevens** — weergavenaam en e-mailadres. Je rol en gebruikersnaam zie je ter informatie.
 - **Profielfoto** — upload een JPG-, PNG- of GIF-bestand (maximaal 5 MB) of plak de link naar een foto.
-- **Wachtwoord wijzigen** — vul je huidige wachtwoord in en twee keer het nieuwe (minimaal 10 tekens).
+- **Wachtwoord wijzigen** — vul je huidige wachtwoord in en twee keer het nieuwe (minimaal 10 tekens). Kies bij voorkeur een zin van drie of vier woorden.
+- **Tweestapsverificatie** — zet de extra beveiliging met een app op je telefoon aan of beheer die (zie het volgende hoofdstuk).
 
 Als de beheerder dat toestaat, kun je hier ook je eigen namen voor de extra knoppen instellen.
+
+# Tweestapsverificatie (extra beveiliging)
+
+Een wachtwoord alleen is kwetsbaar: iemand kan het afkijken, raden of via een phishingmail bemachtigen. Met **tweestapsverificatie** (2FA) heb je daarom bij het inloggen naast je wachtwoord ook een code van 6 cijfers nodig uit een app op je telefoon. Zonder jouw telefoon kan niemand met alleen je wachtwoord inloggen. Heeft je beheerder 2FA verplicht gesteld, dan krijg je bij het inloggen een melding om het in te stellen. Je hebt dan 7 dagen de tijd (via **Later instellen** stel je het uit). Ook als het niet verplicht is, raden we het aan.
+
+## 2FA instellen
+
+Je hebt hiervoor je telefoon nodig en ongeveer twee minuten.
+
+1. Installeer een authenticator-app op je telefoon, bijvoorbeeld **Google Authenticator**, **Microsoft Authenticator**, **Authy** of **1Password**. Heb je al zo'n app, dan kun je die gebruiken.
+2. Ga in PeopleDisplay naar **Mijn Profiel** en klik bij **Tweestapsverificatie** op **Instellen**.
+3. Kies in de app **Account toevoegen** en scan de QR-code op het scherm. Lukt scannen niet, kies dan *handmatig invoeren* en typ de sleutel over die onder de QR-code staat. In de app verschijnt een account met de naam die op het scherm staat.
+4. Vul de code van 6 cijfers uit de app in en klik op **Bevestigen en aanzetten**.
+5. Je krijgt nu **10 herstelcodes** te zien. Bewaar die op een veilige plek, bijvoorbeeld in je wachtwoordmanager of uitgeprint (knoppen **Printen**, **Kopiëren** en **Downloaden**). Ze worden daarna niet meer getoond. Vink aan dat je ze hebt bewaard en klik op **Verder naar PeopleDisplay**.
+
+> **Let op:** zorg dat de tijd op je telefoon automatisch wordt ingesteld. Loopt de klok af, dan werken de codes niet.
+
+## Inloggen met 2FA
+
+1. Vul je gebruikersnaam en wachtwoord in, zoals altijd.
+2. Er verschijnt een scherm **Tweede stap**. Open de app, kijk naar de code van PeopleDisplay en vul die in. De code verandert elke 30 seconden.
+3. Klik op **Inloggen**.
+
+Vink je **Dit apparaat 30 dagen vertrouwen** aan, dan hoef je op dat apparaat 30 dagen geen code meer in te vullen. Doe dit alleen op je eigen computer of telefoon. **Blijf ingelogd** is iets anders en omzeilt de code niet: na uitloggen vraagt PeopleDisplay opnieuw om een code, tenzij het apparaat vertrouwd is.
+
+## Telefoon kwijt of geen toegang?
+
+Vul in plaats van de code uit de app een van je **herstelcodes** in (bijvoorbeeld `ABCDE-FGHIJ`). Elke herstelcode werkt één keer. Zijn er nog maar drie of minder over, dan stelt PeopleDisplay voor nieuwe te maken. Heb je je telefoon én je herstelcodes niet meer, vraag dan je beheerder om je 2FA te resetten. Daarna kun je weer met je wachtwoord inloggen en stel je 2FA opnieuw in.
+
+## 2FA beheren
+
+Via **Mijn Profiel** → **Tweestapsverificatie** → **Beheren** kun je:
+
+- **nieuwe herstelcodes maken** (je wachtwoord is nodig; de oude codes werken daarna niet meer);
+- **alle vertrouwde apparaten afmelden**, bijvoorbeeld als je een apparaat kwijt bent;
+- **2FA uitzetten** (je wachtwoord is nodig). Dat kan niet als je beheerder 2FA voor jouw account verplicht heeft gesteld.
+
+Heb je een nieuwe telefoon? Zet dan 2FA eerst uit en weer aan, of vraag je beheerder om een reset, en scan de nieuwe QR-code met je nieuwe telefoon. Een nieuw wachtwoord melden alle vertrouwde apparaten af.
 
 # PeopleDisplay op telefoon of tablet
 
@@ -233,6 +273,12 @@ Het scherm ververst elke 30 seconden. Vernieuw de pagina (F5, of op een tablet n
 
 **Ik ben automatisch uitgelogd.**
 Een beheerder kan sessies op afstand beëindigen, bijvoorbeeld als een apparaat kwijt is. Log gewoon opnieuw in.
+
+**De code uit de app werkt niet.**
+Controleer of de tijd op je telefoon automatisch wordt ingesteld. In Google Authenticator kan dat via *Instellingen → Tijdcorrectie voor codes → Nu synchroniseren*. Staan er twee accounts met bijna dezelfde naam in je app (van een eerdere poging om in te stellen), gebruik dan het juiste account en verwijder het oude.
+
+**Ik ben mijn telefoon kwijt.**
+Log in met een herstelcode. Heb je die niet meer, vraag dan je beheerder om je 2FA te resetten.
 
 **Mijn extra status staat er nog, terwijl ik terug ben.**
 Tik op **IN**; daarmee vervalt de extra status direct.

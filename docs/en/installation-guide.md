@@ -170,6 +170,8 @@ An update never overwrites your settings (`admin/db_config.php`), photos, upload
 5. Log in and check that everything is there.
 6. With an Unlimited or Corporate licence, redeem your **continuity key** at `https://newdomain.com/activate_license.php`. Other licences are activated again in licence management.
 
+The full backup also contains the folder `data/` with the key for two-step verification (`data/twofa_key.php`), so 2FA keeps working after the move. If you move without `restore.php`, copy that folder yourself.
+
 `restore.php` only works while there is no installation on the new environment yet, and locks itself afterwards.
 
 # Troubleshooting

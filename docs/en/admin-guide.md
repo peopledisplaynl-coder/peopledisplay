@@ -1,6 +1,6 @@
 ---
 title: "PeopleDisplay — Administrator Guide"
-subtitle: "Version 2.1.11"
+subtitle: "Version 2.3.0"
 lang: en-GB
 ---
 
@@ -104,7 +104,7 @@ Click the pencil (✏️) behind a user. The edit panel has four tabs.
 
 ![A user's account details](../images/gebruiker-bewerken.png)
 
-- **Account** — display name, email, role, group, **gekoppelde medewerker** (linked staff member — optional: links this account to one staff card, so the user sees that own card right after logging in instead of the location view or the admin dashboard — works for every role), a new password (leave empty to keep the current one; at least 10 characters), the checkbox **Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen** (user must choose a new password at next login) and whether the account is active.
+- **Account** — display name, email, role, group, **gekoppelde medewerker** (linked staff member — optional: links this account to one staff card, so the user sees that own card right after logging in instead of the location view or the admin dashboard — works for every role), a new password (leave empty to keep the current one; at least 10 characters), the checkbox **Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen** (user must choose a new password at next login) and whether the account is active. This is also where the checkbox **Tweestapsverificatie (2FA) verplicht voor deze gebruiker** is, and (if the user has 2FA) the button **🔄 2FA resetten (telefoon kwijt)**; see *Two-step verification (2FA)* below.
 - **Features** — what this user sees and may do on the check-in screen (see below).
 - **Presentatie** (presentation) — a Google Slides presentation that starts automatically after the screen has not been touched for a while, with the number of seconds to wait. Handy for an information screen in the hall.
 - **Scanner** — whether the user may scan badges to check staff in and out.
@@ -116,7 +116,25 @@ Click **Opslaan** (save) to keep the changes.
 - **Forced new password.** With the checkbox *Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen* ticked, that person can only continue after choosing a new password themselves. The box is ticked by default when you set a password or create a user, so only the user knows the password. The overview shows who still has to change (🔑 *nieuw ww*) and when someone last logged in.
 - **Everyone at once.** The button **Wachtwoord wijzigen verplichten** at the top lets you pick roles and switch the requirement on (or off) for all active accounts with those roles. Kiosk and tablet accounts (accounts with a kiosk token) are skipped. People who are already logged in are sent to the change page within 5 minutes.
 - **Password policy.** A new password has at least 10 characters. A phrase of three or four words is strong and easy to remember.
-- **Too many failed attempts.** After 5 failed attempts with the same username from the same address, logging in is blocked for 15 minutes; repeat offences wait longer (up to 24 hours). Even the correct password does not work until the wait is over. Other users on the same address can still log in. All attempts are kept for 90 days (table `login_attempts`).
+- **Too many failed attempts.** After 5 failed attempts with the same username from the same address, logging in is blocked for 15 minutes; repeat offences wait longer (up to 24 hours). Even the correct password does not work until the wait is over. Other users on the same address can still log in. All attempts are kept for 90 days (table `login_attempts`). Wrong two-step verification codes count here too.
+
+## Two-step verification (2FA)
+
+With two-step verification a user enters, besides the password, a 6-digit code from an authenticator app on their phone (Google Authenticator, Microsoft Authenticator, Authy, 1Password and the like) when logging in. A stolen or spied-on password is then not enough to get in. Users set it up themselves under **Mijn Profiel** → **Tweestapsverificatie** → **Instellen** (see the User Guide). It takes about two minutes and needs no extra subscription or service: the QR code is made on your own server.
+
+- **Recommended or required.** Every user can switch 2FA on themselves. To enforce it, make it required, per user or for whole roles (see below). We recommend making 2FA required for at least all administrator roles.
+- **Required per user.** Open the user with ✏️ and tick **Tweestapsverificatie (2FA) verplicht voor deze gebruiker** (two-step verification required for this user) on the *Account* tab.
+- **Required for roles at once.** The button **🔐 2FA verplichten** at the top lets you pick roles and click **✓ Verplichten** (or **Verplichting opheffen** to lift it). Note: all roles are ticked by default. To require it for administrators only, untick **User**. You are included yourself if your role is ticked. Only active accounts are affected.
+- **7 days of grace.** Someone who is required to use 2FA but has not set it up yet may postpone it for 7 days. At login that person sees the setup screen with a **Later instellen** (set up later) button and the number of days left (at most once per 24 hours per session). After those 7 days the user can only continue once 2FA is set up. The grace period starts the moment you make it required and is not extended if you switch it on again later. Users who ticked *Blijf ingelogd* also have to set up 2FA after the 7 days.
+- **Kiosk and tablet accounts never take part.** An account with a kiosk token is never asked for 2FA, even if the box is ticked; such a screen has no phone. The list shows **📺 kiosk: geen 2FA** for these accounts.
+- **Status in the list.** A badge **🔐 2FA aan** (on) shows who has set it up; **🔐 2FA verplicht** (required) means required but not set up yet (hover for the end date of the grace period).
+- **Lost phone or new phone.** A user who lost their phone logs in with one of the 10 **recovery codes** received at setup. Each recovery code works once. If the recovery codes are gone too, you reset 2FA: open the user with ✏️ and click **🔄 2FA resetten (telefoon kwijt)** (reset 2FA, phone lost). The user can then log in with just the password and sets up 2FA again (with a new 7 days of grace if it is required). An ordinary administrator cannot do this for a SuperAdmin; only a SuperAdmin can.
+- **Locked out yourself.** If you cannot get in and no other administrator can reset your 2FA, create a file `twofa_uit.txt` (empty is fine) in the root folder of the site via FTP. As long as that file exists nobody needs a code, and the login screen shows an orange warning. Log in with your password, reset 2FA where needed and **delete the file again**.
+- **Trusting a device.** When entering the code a user can tick *Dit apparaat 30 dagen vertrouwen* (trust this device for 30 days); on that device no code is needed for 30 days. *Blijf ingelogd* is something else and does not bypass 2FA: someone with 2FA must enter a code again after logging out (or when the session expires), unless the device is trusted. Users can sign out all trusted devices themselves; a password change also signs them all out.
+- **Wrong codes.** A wrong code counts towards the automatic block (5 attempts, then 15 minutes and longer). In addition there is a limit of 10 wrong codes per 15 minutes per user, from any address.
+- **The phone's clock must be right.** A code only works if the phone's time is correct (automatic time on). If the clock is off, the user gets a message while setting up.
+
+> **Important for the administrator (backup and moving)** — The secret keys of the authenticator apps are stored encrypted in the database. The key used for that is in the file `data/twofa_key.php` on the server. It is created automatically, is never part of updates and cannot be reached through the browser. A **Volledige backup** (full backup) includes the folder `data/` automatically (so keep that ZIP file safe: the key is in it) and `restore.php` puts it back when you move. If you back up or move by hand via FTP, copy the folder `data/` yourself, together with the database. If the file is lost, 2FA stops working for everybody until you reset 2FA per user (or temporarily create `twofa_uit.txt`).
 
 ## Features per user
 
@@ -302,6 +320,15 @@ That is done by cron jobs. Check that they are set up (see the Installation Guid
 
 **How do I reset a user's password?**
 Open the user with ✏️, enter a new password on the *Account* tab and click **Opslaan**.
+
+**A user lost their phone and has no recovery codes left.**
+Open the user with ✏️ and click **🔄 2FA resetten (telefoon kwijt)**. After that the person can log in with just the password and sets up 2FA again. See *Two-step verification (2FA)*.
+
+**I cannot get in myself because of 2FA.**
+Create an empty file `twofa_uit.txt` in the root folder of the site via FTP. Log in with your password, reset 2FA and delete the file again.
+
+**The code from the app does not work.**
+Usually the phone's clock is off: switch on automatic time. In Google Authenticator that is *Settings → Time correction for codes → Sync now*. If the app holds two accounts with almost the same name (from an earlier attempt), use the one that belongs to the current QR code and delete the old one.
 
 **How do I move PeopleDisplay to another hosting provider?**
 Make a full backup and restore it on the new hosting with `restore.php` (see the Installation Guide). With an Unlimited or Corporate licence, redeem your continuity key afterwards.

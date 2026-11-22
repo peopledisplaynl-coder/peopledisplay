@@ -1,6 +1,6 @@
 ---
 title: "PeopleDisplay — User Guide"
-subtitle: "Version 2.1.11"
+subtitle: "Version 2.3.0"
 lang: en-GB
 ---
 
@@ -23,12 +23,13 @@ Open the address of your PeopleDisplay environment in your browser, for example 
 1. Enter your **gebruikersnaam** (username) and **wachtwoord** (password).
 2. Tick **Blijf ingelogd** (stay logged in) to stay logged in on this device for 30 days. Only do this on a device nobody else uses.
 3. Click **Inloggen** (log in).
+4. If you have two-step verification on, PeopleDisplay now asks for the code from your authenticator app (see the chapter *Two-step verification*).
 
 After logging in you arrive at the welcome screen. Administrators go straight to the admin dashboard.
 
 > **Forgot your password?** Ask your administrator to set a new one. You will then choose a new password yourself at your next login.
 >
-> **Too many failed attempts?** After 5 wrong passwords you cannot log in for a while (15 minutes at first). Wait a moment and try again.
+> **Too many failed attempts?** After 5 wrong passwords you cannot log in for a while (15 minutes at first). Wait a moment and try again. A few wrong codes from the app count too.
 
 # The welcome screen
 
@@ -198,9 +199,48 @@ Use **Mijn Profiel** (welcome screen, or the menu under your initial) to change 
 
 - **Profielgegevens** (profile details) — display name and email address. Your role and username are shown for information.
 - **Profielfoto** (profile photo) — upload a JPG, PNG or GIF file (max. 5 MB) or paste a link to a photo.
-- **Wachtwoord wijzigen** (change password) — enter your current password and the new one twice (at least 10 characters).
+- **Wachtwoord wijzigen** (change password) — enter your current password and the new one twice (at least 10 characters). Preferably choose a phrase of three or four words.
+- **Tweestapsverificatie** (two-step verification) — switch on or manage the extra protection with an app on your phone (see the next chapter).
 
 If your administrator allows it, you can also choose your own names for the extra buttons here.
+
+# Two-step verification (extra security)
+
+A password alone is vulnerable: someone can spy on it, guess it or get it through a phishing email. With **two-step verification** (2FA) you therefore need, besides your password, a 6-digit code from an app on your phone to log in. Without your phone nobody can log in with just your password. If your administrator has made 2FA required, you will be asked to set it up when you log in. You then have 7 days (use **Later instellen**, set up later, to postpone). We recommend it even if it is not required.
+
+## Setting up 2FA
+
+You need your phone and about two minutes.
+
+1. Install an authenticator app on your phone, for example **Google Authenticator**, **Microsoft Authenticator**, **Authy** or **1Password**. If you already have one, you can use it.
+2. In PeopleDisplay go to **Mijn Profiel** and click **Instellen** (set up) under **Tweestapsverificatie**.
+3. In the app choose **Add account** and scan the QR code on the screen. If scanning does not work, choose *enter manually* and type the key shown below the QR code. An account with the name shown on the screen appears in the app.
+4. Enter the 6-digit code from the app and click **Bevestigen en aanzetten** (confirm and switch on).
+5. You now see **10 recovery codes**. Keep them somewhere safe, for example in your password manager or printed (buttons **Printen**, **Kopiëren** and **Downloaden**). They are not shown again. Tick that you have saved them and click **Verder naar PeopleDisplay**.
+
+> **Note:** make sure your phone's time is set automatically. If the clock is off, the codes will not work.
+
+## Logging in with 2FA
+
+1. Enter your username and password as usual.
+2. A screen **Tweede stap** (second step) appears. Open the app, look at the PeopleDisplay code and enter it. The code changes every 30 seconds.
+3. Click **Inloggen**.
+
+If you tick **Dit apparaat 30 dagen vertrouwen** (trust this device for 30 days), you do not have to enter a code on that device for 30 days. Only do this on your own computer or phone. **Blijf ingelogd** is something else and does not skip the code: after logging out PeopleDisplay asks for a code again, unless the device is trusted.
+
+## Lost phone or no access?
+
+Enter one of your **recovery codes** (for example `ABCDE-FGHIJ`) instead of the code from the app. Each recovery code works once. When only three or fewer are left, PeopleDisplay suggests making new ones. If you no longer have your phone or your recovery codes, ask your administrator to reset your 2FA. After that you can log in with your password again and set up 2FA anew.
+
+## Managing 2FA
+
+Under **Mijn Profiel** → **Tweestapsverificatie** → **Beheren** (manage) you can:
+
+- **make new recovery codes** (your password is required; the old codes stop working);
+- **sign out all trusted devices**, for example if you lost a device;
+- **switch 2FA off** (your password is required). This is not possible if your administrator has made 2FA required for your account.
+
+Got a new phone? Switch 2FA off and on again first, or ask your administrator for a reset, and scan the new QR code with your new phone. A new password signs out all trusted devices.
 
 # PeopleDisplay on a phone or tablet
 
@@ -235,6 +275,12 @@ The screen refreshes every 30 seconds. Reload the page (F5, or swipe down on a t
 
 **I was logged out automatically.**
 An administrator can end sessions remotely, for example when a device is lost. Just log in again.
+
+**The code from the app does not work.**
+Check that your phone's time is set automatically. In Google Authenticator that is *Settings → Time correction for codes → Sync now*. If your app holds two accounts with almost the same name (from an earlier attempt to set up), use the right one and delete the old one.
+
+**I lost my phone.**
+Log in with a recovery code. If you no longer have those, ask your administrator to reset your 2FA.
 
 **My extra status is still shown although I'm back.**
 Tap **IN**; the extra status ends immediately.

@@ -168,6 +168,8 @@ Met `restore.php` zet je een volledige back-up terug op een nieuwe hosting of ee
 5. Log in en controleer of alles er is.
 6. Heb je een Unlimited- of Corporate-licentie, wissel dan op `https://nieuwdomein.nl/activate_license.php` je **continuity-sleutel** in. Andere licenties activeer je opnieuw via Licentiebeheer.
 
+De volledige back-up bevat ook de map `data/` met de sleutel voor tweestapsverificatie (`data/twofa_key.php`). Daardoor blijft 2FA na het verhuizen werken. Verhuis je zonder `restore.php`, kopieer die map dan zelf mee.
+
 `restore.php` werkt alleen zolang er nog geen installatie op de nieuwe omgeving staat, en vergrendelt zichzelf daarna.
 
 # Problemen oplossen

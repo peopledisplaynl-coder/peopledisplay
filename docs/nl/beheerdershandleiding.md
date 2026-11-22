@@ -1,6 +1,6 @@
 ---
 title: "PeopleDisplay — Beheerdershandleiding"
-subtitle: "Versie 2.1.11"
+subtitle: "Versie 2.3.0"
 lang: nl-NL
 ---
 
@@ -102,7 +102,7 @@ Klik op het potlood (✏️) achter een gebruiker. Het bewerkvenster heeft vier 
 
 ![Account-gegevens van een gebruiker](../images/gebruiker-bewerken.png)
 
-- **Account** — weergavenaam, e-mail, rol, groep, **gekoppelde medewerker** (optioneel: koppelt dit account aan één medewerkerskaart, zodat de gebruiker bij het inloggen meteen die eigen kaart ziet in plaats van de locatieweergave of het admin-dashboard — werkt voor elke rol), een nieuw wachtwoord (leeg laten om niets te wijzigen; minimaal 10 tekens), het vinkje **Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen** en of het account actief is.
+- **Account** — weergavenaam, e-mail, rol, groep, **gekoppelde medewerker** (optioneel: koppelt dit account aan één medewerkerskaart, zodat de gebruiker bij het inloggen meteen die eigen kaart ziet in plaats van de locatieweergave of het admin-dashboard — werkt voor elke rol), een nieuw wachtwoord (leeg laten om niets te wijzigen; minimaal 10 tekens), het vinkje **Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen** en of het account actief is. Hier staat ook het vinkje **Tweestapsverificatie (2FA) verplicht voor deze gebruiker**, en (als de gebruiker 2FA heeft) de knop **🔄 2FA resetten (telefoon kwijt)**; zie *Tweestapsverificatie (2FA)* hieronder.
 - **Features** — wat deze gebruiker op het aanmeldscherm ziet en mag (zie hieronder).
 - **Presentatie** — een Google Slides-presentatie die automatisch start als het scherm een tijd niet wordt aangeraakt, met het aantal seconden wachttijd. Handig voor een infoscherm in de hal.
 - **Scanner** — of de gebruiker badges mag scannen om medewerkers in en uit te checken.
@@ -114,7 +114,25 @@ Klik op **Opslaan** om de wijzigingen te bewaren.
 - **Verplicht nieuw wachtwoord.** Zet je bij een gebruiker het vinkje *Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen* aan, dan kan die persoon pas verder nadat hij of zij zelf een nieuw wachtwoord heeft gekozen. Het vinkje staat standaard aan als je een wachtwoord instelt of een gebruiker aanmaakt, zodat alleen de gebruiker zelf het wachtwoord kent. In het overzicht zie je welke gebruikers nog moeten wijzigen (🔑 *nieuw ww*) en wanneer iemand voor het laatst is ingelogd.
 - **Iedereen tegelijk.** Met de knop **Wachtwoord wijzigen verplichten** bovenin kies je rollen en zet je de verplichting voor alle actieve accounts met die rol aan (of op). Kiosk- en tabletaccounts, dus accounts met een kiosk-token, worden overgeslagen. Wie al is ingelogd, wordt binnen 5 minuten naar de wijzigpagina gestuurd.
 - **Wachtwoordbeleid.** Een nieuw wachtwoord bestaat uit minimaal 10 tekens. Een zin van drie of vier woorden is sterk en makkelijk te onthouden.
-- **Te veel foute pogingen.** Na 5 foute pogingen met dezelfde gebruikersnaam vanaf hetzelfde adres kan er 15 minuten niet worden ingelogd; bij herhaling duurt het langer (maximaal 24 uur). Ook een goed wachtwoord werkt dan niet tot de wachttijd voorbij is. Andere gebruikers op hetzelfde adres kunnen gewoon inloggen. Alle pogingen worden 90 dagen bewaard (tabel `login_attempts`).
+- **Te veel foute pogingen.** Na 5 foute pogingen met dezelfde gebruikersnaam vanaf hetzelfde adres kan er 15 minuten niet worden ingelogd; bij herhaling duurt het langer (maximaal 24 uur). Ook een goed wachtwoord werkt dan niet tot de wachttijd voorbij is. Andere gebruikers op hetzelfde adres kunnen gewoon inloggen. Alle pogingen worden 90 dagen bewaard (tabel `login_attempts`). Foute codes van tweestapsverificatie tellen daar ook in mee.
+
+## Tweestapsverificatie (2FA)
+
+Met tweestapsverificatie vult een gebruiker bij het inloggen, naast het wachtwoord, een code van 6 cijfers in uit een authenticator-app op de telefoon (Google Authenticator, Microsoft Authenticator, Authy, 1Password en dergelijke). Een gestolen of afgekeken wachtwoord is dan niet genoeg om in te loggen. Gebruikers stellen het zelf in via **Mijn Profiel** → **Tweestapsverificatie** → **Instellen** (zie de Gebruikershandleiding). Dat kost ongeveer twee minuten en er is geen extra abonnement of dienst voor nodig: de QR-code wordt op je eigen server gemaakt.
+
+- **Aanbevolen of verplicht.** Iedere gebruiker kan 2FA zelf aanzetten. Wil je het afdwingen, dan zet je het verplicht, per gebruiker of voor hele rollen (zie hieronder). Wij raden aan 2FA minimaal verplicht te stellen voor alle beheerdersrollen.
+- **Per gebruiker verplichten.** Open de gebruiker via ✏️ en vink op het tabblad *Account* **Tweestapsverificatie (2FA) verplicht voor deze gebruiker** aan.
+- **Rollen tegelijk verplichten.** Met de knop **🔐 2FA verplichten** bovenin kies je rollen en klik je op **✓ Verplichten** (of **Verplichting opheffen**). Let op: alle rollen staan standaard aangevinkt. Wil je alleen beheerders verplichten, haal dan het vinkje bij **User** weg. Jijzelf valt er ook onder als jouw rol is aangevinkt. Alleen actieve accounts worden meegenomen.
+- **7 dagen uitstel.** Wie 2FA verplicht krijgt maar het nog niet heeft, mag het 7 dagen uitstellen. Bij het inloggen krijgt die persoon dan het instelscherm te zien, met de knop **Later instellen** en het aantal resterende dagen (hooguit eens per 24 uur per sessie). Na die 7 dagen komt de gebruiker pas verder als 2FA is ingesteld. Het uitstel begint op het moment dat je het verplicht maakt en wordt niet verlengd als je het later nog eens aanzet. Ook wie *Blijf ingelogd* heeft gekozen, moet na die 7 dagen 2FA instellen.
+- **Kiosk- en tabletaccounts doen nooit mee.** Een account met een kiosk-token wordt nooit om 2FA gevraagd, ook niet als het vinkje aan staat; dat scherm heeft immers geen telefoon. In de lijst staat bij zo'n account **📺 kiosk: geen 2FA**.
+- **Status in de lijst.** Een badge **🔐 2FA aan** laat zien wie het heeft ingesteld; **🔐 2FA verplicht** betekent verplicht maar nog niet ingesteld (met de einddatum van het uitstel als je er met de muis op staat).
+- **Telefoon kwijt of nieuwe telefoon.** Een gebruiker die zijn telefoon kwijt is, logt in met een van de 10 **herstelcodes** die hij bij het instellen heeft gekregen. Elke herstelcode werkt één keer. Zijn de herstelcodes ook weg, dan reset jij 2FA: open de gebruiker via ✏️ en klik op **🔄 2FA resetten (telefoon kwijt)**. De gebruiker kan daarna weer met alleen het wachtwoord inloggen en stelt 2FA opnieuw in (als het verplicht is, met weer 7 dagen uitstel). Een gewone beheerder kan dat niet voor een SuperAdmin doen; dat kan alleen een SuperAdmin.
+- **Je zelf buitensluiten.** Kom je zelf niet meer binnen en kan geen andere beheerder je 2FA resetten, maak dan via FTP in de hoofdmap van de site een bestand `twofa_uit.txt` (leeg is goed). Zolang dat bestand er staat is voor niemand een code nodig en toont het inlogscherm een oranje waarschuwing. Log in met je wachtwoord, reset waar nodig 2FA en **verwijder het bestand weer**.
+- **Dit apparaat vertrouwen.** Bij het invullen van de code kan een gebruiker *Dit apparaat 30 dagen vertrouwen* aanvinken; op dat apparaat is dan 30 dagen geen code nodig. *Blijf ingelogd* is iets anders en omzeilt 2FA niet: wie 2FA heeft, moet na uitloggen (of als de sessie verloopt) opnieuw een code invullen, tenzij het apparaat vertrouwd is. Een gebruiker kan alle vertrouwde apparaten zelf afmelden; ook een wachtwoordwijziging meldt ze allemaal af.
+- **Foute codes.** Een foute code telt mee voor de automatische blokkade (5 pogingen, daarna 15 minuten en langer). Daarnaast geldt een grens van 10 foute codes per 15 minuten per gebruiker, vanaf welk adres dan ook.
+- **De klok van de telefoon moet kloppen.** Een code werkt alleen als de tijd op de telefoon klopt (automatische tijd aan). Loopt de klok af, dan krijgt de gebruiker bij het instellen een melding.
+
+> **Belangrijk voor de beheerder (back-up en verhuizen)** — De geheime sleutels van de authenticator-apps staan versleuteld in de database. De sleutel waarmee dat gebeurt staat in het bestand `data/twofa_key.php` op de server. Dit bestand wordt automatisch aangemaakt, zit nooit in updates en is niet bereikbaar via de browser. Een **Volledige backup** neemt de map `data/` vanzelf mee (bewaar dat ZIP-bestand dus veilig: de sleutel zit erin) en `restore.php` zet hem bij het verhuizen weer terug. Back-up of verhuis je handmatig via FTP, kopieer dan de map `data/` zelf mee, samen met de database. Raakt het bestand kwijt, dan werkt 2FA voor niemand meer tot je 2FA per gebruiker reset (of tijdelijk `twofa_uit.txt` zet).
 
 ## Features per gebruiker
 
@@ -300,6 +318,15 @@ Dat gebeurt via cronjobs. Controleer of die zijn ingesteld (zie de Installatieha
 
 **Hoe zet ik het wachtwoord van een gebruiker opnieuw?**
 Open de gebruiker via ✏️, vul op het tabblad *Account* een nieuw wachtwoord in en klik op **Opslaan**.
+
+**Een gebruiker is zijn telefoon kwijt en heeft geen herstelcodes meer.**
+Open de gebruiker via ✏️ en klik op **🔄 2FA resetten (telefoon kwijt)**. Daarna kan die persoon weer met alleen het wachtwoord inloggen en stelt 2FA opnieuw in. Zie *Tweestapsverificatie (2FA)*.
+
+**Ik kom zelf niet meer binnen door 2FA.**
+Maak via FTP in de hoofdmap van de site een leeg bestand `twofa_uit.txt`. Log in met je wachtwoord, reset 2FA en verwijder het bestand weer.
+
+**De code uit de app werkt niet.**
+Meestal loopt de klok van de telefoon af: zet de automatische tijd aan. In Google Authenticator kan dat via *Instellingen → Tijdcorrectie voor codes → Nu synchroniseren*. Staan er twee accounts met bijna dezelfde naam in de app (van een eerdere poging), gebruik dan het account dat bij de huidige QR-code hoort en verwijder het oude.
 
 **Hoe verhuis ik PeopleDisplay naar een andere hosting?**
 Maak een volledige back-up en zet die op de nieuwe hosting terug met `restore.php` (zie de Installatiehandleiding). Heb je een Unlimited- of Corporate-licentie, wissel dan daarna je continuity-sleutel in.
