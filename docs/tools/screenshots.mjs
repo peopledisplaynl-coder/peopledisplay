@@ -306,6 +306,20 @@ shot('install-stappen', async () => {
   await ctx.close();
 });
 
+// ── Infoscherm ─────────────────────────────────────────────────────────
+const SCREEN = { width: 1366, height: 768 };
+shot('infoscherm-scherm', async () => {
+  const p = await pageFor('admin', SCREEN);
+  await open(p, 'infoscherm.php?mode=infoscreen', 3500); // first slide: the message with an image
+  await p.evaluate(() => document.getAnimations().forEach((a) => { if (a.effect && a.effect.target && a.effect.target.id === 'ticker-track') a.pause(); }));
+  await save('infoscherm-scherm', p);
+});
+shot('infoscherm-berichten', async () => {
+  const p = await pageFor('admin');
+  await open(p, 'admin/infoscreen_manage.php?tab=berichten', 800);
+  await save('infoscherm-berichten', p, { full: true });
+});
+
 // ── Run ────────────────────────────────────────────────────────────────
 for (const s of shots) {
   if (only.size && !only.has(s.name)) continue;

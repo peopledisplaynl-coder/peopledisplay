@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Atom voorbeeld</title>
+  <entry>
+    <title>Atom-bericht met plaatje</title>
+    <id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a</id>
+    <link rel="alternate" href="https://atom.test/1"/>
+    <link rel="enclosure" type="image/webp" href="https://atom.test/1.webp"/>
+    <updated>2026-11-23T10:00:00Z</updated>
+    <summary>Samenvatting van het Atom-bericht.</summary>
+  </entry>
+  <entry>
+    <title type="html">Tweede &lt;em&gt;bericht&lt;/em&gt;</title>
+    <id>tag:atom.test,2026:2</id>
+    <link href="https://atom.test/2"/>
+    <updated>2026-11-22T10:00:00Z</updated>
+    <content type="html">&lt;p&gt;Inhoud &lt;img src="//cdn.atom.test/2.jpg"&gt;&lt;/p&gt;</content>
+  </entry>
+</feed>

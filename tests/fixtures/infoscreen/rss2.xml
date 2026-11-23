@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+  <title>Voorbeeldnieuws</title>
+  <item>
+    <title>Nieuwe speeltuin geopend &amp; feestelijk ingewijd</title>
+    <link>https://voorbeeld.test/nieuws/speeltuin</link>
+    <guid>https://voorbeeld.test/?p=101</guid>
+    <pubDate>Mon, 23 Nov 2026 09:15:00 +0100</pubDate>
+    <description><![CDATA[<p>De kinderen <b>openden</b> vanochtend de nieuwe speeltuin.</p><script>alert(1)</script>]]></description>
+    <enclosure url="https://voorbeeld.test/img/speeltuin.jpg" type="image/jpeg" length="12345"/>
+  </item>
+  <item>
+    <title>Media RSS met meerdere formaten</title>
+    <link>https://voorbeeld.test/nieuws/media</link>
+    <pubDate>Mon, 23 Nov 2026 08:00:00 +0100</pubDate>
+    <description>Tekst zonder HTML.</description>
+    <media:content url="https://voorbeeld.test/img/klein.jpg" medium="image" width="320"/>
+    <media:content url="https://voorbeeld.test/img/groot.jpg" medium="image" width="1280"/>
+  </item>
+  <item>
+    <title>Afbeelding alleen in content:encoded</title>
+    <link>https://voorbeeld.test/nieuws/wp</link>
+    <dc:date>2026-11-22T14:00:00+01:00</dc:date>
+    <description>Korte samenvatting.</description>
+    <content:encoded><![CDATA[<p><img src="https://voorbeeld.test/wp-content/uploads/foto.png" alt=""></p><p>Lange tekst.</p>]]></content:encoded>
+  </item>
+  <item>
+    <title>Geen afbeelding, wel een javascript-link</title>
+    <link>javascript:alert(1)</link>
+    <description>Alleen tekst.</description>
+    <enclosure url="https://voorbeeld.test/audio.mp3" type="audio/mpeg"/>
+  </item>
+  <item><title></title><description>Lege titel wordt overgeslagen</description></item>
+</channel>
+</rss>

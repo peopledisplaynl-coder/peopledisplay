@@ -43,7 +43,7 @@ Het dashboard is verdeeld in vier groepen:
 - **Navigatie** — naar het welkomstscherm, het aanmeldscherm en het overzicht.
 - **Personeelsbeheer** — medewerkers, gebruikers, de badge generator en bulk acties.
 - **Bezoekers & Locaties** — bezoekers, bezoekers-e-mails, het registratieformulier, locaties en afdelingen (en hun volgorde).
-- **Systeem Configuratie** — online gebruikers, systeemconfiguratie, kiosk tokens, audit log, sub-status datums, licentiebeheer en back-up.
+- **Systeem Configuratie** — online gebruikers, systeemconfiguratie, kiosk tokens, infoscherm, audit log, sub-status datums, licentiebeheer en back-up.
 
 Rechtsboven zie je je rol en de melding **Migraties toegepast** of **Database schema gecontroleerd**: bij elk bezoek aan het dashboard controleert PeopleDisplay of de database bij de geïnstalleerde versie past, en past die zo nodig zelf aan. Onderaan staat de versie.
 
@@ -104,7 +104,7 @@ Klik op het potlood (✏️) achter een gebruiker. Het bewerkvenster heeft vier 
 
 - **Account** — weergavenaam, e-mail, rol, groep, **gekoppelde medewerker** (optioneel: koppelt dit account aan één medewerkerskaart, zodat de gebruiker bij het inloggen meteen die eigen kaart ziet in plaats van de locatieweergave of het admin-dashboard — werkt voor elke rol), een nieuw wachtwoord (leeg laten om niets te wijzigen; minimaal 10 tekens), het vinkje **Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen** en of het account actief is. Hier staat ook het vinkje **Tweestapsverificatie (2FA) verplicht voor deze gebruiker**, en (als de gebruiker 2FA heeft) de knop **🔄 2FA resetten (telefoon kwijt)**; zie *Tweestapsverificatie (2FA)* hieronder.
 - **Features** — wat deze gebruiker op het aanmeldscherm ziet en mag (zie hieronder).
-- **Presentatie** — een Google Slides-presentatie die automatisch start als het scherm een tijd niet wordt aangeraakt, met het aantal seconden wachttijd. Handig voor een infoscherm in de hal.
+- **Presentatie** — wat het scherm toont als het een tijd niet wordt aangeraakt: een Google Slides-presentatie, het [Infoscherm](#infoscherm) of beide, met het aantal seconden wachttijd. Handig voor een scherm in de hal.
 - **Scanner** — of de gebruiker badges mag scannen om medewerkers in en uit te checken.
 
 Klik op **Opslaan** om de wijzigingen te bewaren.
@@ -146,7 +146,7 @@ Met tweestapsverificatie vult een gebruiker bij het inloggen, naast het wachtwoo
 - **IN/UIT Bord weergave** — de gebruiker ziet het IN/UIT-bord in plaats van de kaarten. Geschikt voor een groot scherm.
 - **Zichtbare locaties** en **Zichtbare afdelingen** — welke kaarten deze gebruiker ziet. Geen afdelingen aangevinkt betekent: alle afdelingen.
 
-Is de rol **Admin**, dan staat hier ook een lijst met beheerfuncties (locaties, afdelingen, kiosk tokens, bezoekers, badges, bulk acties, audit log, systeemconfiguratie, sub-status datums, gebruikers, back-up). Alleen de aangevinkte functies zijn voor die admin beschikbaar.
+Is de rol **Admin**, dan staat hier ook een lijst met beheerfuncties (locaties, afdelingen, kiosk tokens, bezoekers, badges, bulk acties, audit log, systeemconfiguratie, sub-status datums, gebruikers, back-up, infoscherm). Alleen de aangevinkte functies zijn voor die admin beschikbaar.
 
 # Locaties
 
@@ -251,6 +251,61 @@ Een kiosk token is een vaste inloglink voor een scherm zonder toetsenbord, zoals
 Met **Deactiveren** of **Verwijderen** werkt de link direct niet meer, bijvoorbeeld als een tablet kwijt is.
 
 > **Tip voor een vaste kioskpc** — Start Chrome met `--kiosk` gevolgd door de token-URL. Chrome opent dan op volledig scherm, zonder adresbalk. Het BHV-overzicht heeft een eigen knop **Venster sluiten**, zodat je ook in kiosk-modus terugkomt.
+
+# Infoscherm
+
+Het infoscherm toont **eigen berichten, nieuws en het weer** op een scherm, met datum en tijd. Je gebruikt het in plaats van de Google Slides-presentatie, of samen ermee. Het is beschikbaar in alle pakketten, ook in Starter. Je beheert het via **Infoscherm** op het dashboard (groep *Systeem Configuratie*).
+
+![Het infoscherm met een eigen bericht, het weer in de zijbalk en de nieuwsbalk](../images/infoscherm-scherm.png)
+
+Het scherm bestaat uit:
+
+- **Dia's in het midden** — je eigen berichten, nieuws met een afbeelding als grote dia, en één keer per ronde een weerdia met de verwachting voor vijf dagen. Heb je meer nieuwsbronnen, dan komen ze om de beurt aan bod, en elke ronde toont de volgende berichten.
+- **De zijbalk** — het weer van nu en van de komende dagen. Zonder weerplaats staat hier een grote klok.
+- **De nieuwsbalk onderaan** — alle nieuwskoppen lopen voorbij, met de naam van de bron. Belangrijke berichten staan er ook in.
+
+## Berichten
+
+![Berichten op het infoscherm beheren](../images/infoscherm-berichten.png)
+
+Klik op **Nieuw bericht** en vul in:
+
+- **Titel** en (korte) **tekst**. Een bericht met alleen een afbeelding en geen tekst toont de afbeelding groot, bijvoorbeeld een poster.
+- **Afbeelding** (JPG, PNG, GIF of WEBP, maximaal 5 MB; liggend werkt het best).
+- **Achtergrondkleur**, **Tonen vanaf** en **Tonen tot en met** (leeg = direct en blijvend), **Locatie** (een scherm toont de berichten van de locaties die bij zijn gebruikersaccount zijn ingesteld) en de **Tijd in beeld**.
+- **Belangrijk** — het bericht krijgt een rode markering, komt vaker in beeld en staat ook in de nieuwsbalk.
+
+In de lijst zie je per bericht of het **Op het scherm** staat, **Gepland** of **Verlopen** is, of **Uit** staat. Met **Uitzetten** haal je een bericht weg zonder het te verwijderen.
+
+## Nieuws
+
+Op het tabblad **Nieuws** voeg je RSS- of Atom-feeds toe: een naam, het webadres van de feed, de locatie, het aantal berichten en of afbeeldingen getoond worden. Na het opslaan wordt de feed meteen opgehaald, zodat je direct ziet of hij werkt. Handig zijn feeds van je eigen organisatie: een WordPress-website heeft er standaard een op `https://jouwwebsite.nl/feed/`.
+
+> **Let op de voorwaarden van een nieuwsbron** — Veel nieuwssites staan hun feed alleen toe voor persoonlijk, niet-commercieel gebruik, soms alleen de koppen en altijd met bronvermelding. Het infoscherm toont bij elk bericht de bron. Controleer de voorwaarden voordat je een bron toevoegt en zet zo nodig **Afbeeldingen tonen** uit. Afbeeldingen worden nooit naar je eigen server gekopieerd.
+
+## Weer
+
+Op het tabblad **Weer** voeg je een plaats toe. Typ de naam en klik op **Zoek plaats**; de coördinaten worden dan ingevuld. Kies daarna de weerbron:
+
+- **Buienradar** — actuele metingen van het dichtstbijzijnde KNMI-meetstation, de verwachting voor vijf dagen en het weerbericht. Alleen voor Nederland.
+- **Open-Meteo** — werkt voor elke plaats, zonder weerbericht.
+
+Beide zijn gratis voor niet-commercieel gebruik, met bronvermelding (die staat altijd op het scherm). Je kunt één plaats voor alle schermen instellen, of per locatie een eigen plaats.
+
+## Weergave
+
+Op het tabblad **Weergave** stel je de titel bovenaan in, de kleurstelling (donker of licht), de tijd per dia, het aantal nieuwsdia's per ronde, de snelheid van de nieuwsbalk en welke onderdelen zichtbaar zijn. Met **Voorbeeld** bekijk je het resultaat in een nieuw venster. Open schermen nemen wijzigingen binnen 5 minuten over.
+
+## Schermen
+
+Op het tabblad **Schermen** kies je per gebruikersaccount wat het scherm toont: **Google Slides**, **Infoscherm** of **Slides + infoscherm** (de presentatie groot in beeld, met het weer, de mededelingen en de nieuwsbalk eromheen). Dezelfde keuze staat ook bij de gebruiker op het tabblad *Presentatie*.
+
+- **Op een aanraakscherm met medewerkerskaarten** verschijnt het infoscherm na de ingestelde tijd zonder aanraking (vinkje *Automatisch tonen*). Aanraken sluit het weer.
+- **Een scherm dat alleen het infoscherm toont** (een tv in de hal): log op dat scherm in met het schermaccount, vink *Blijf ingelogd* aan en open `infoscherm.php`. Met een kiosk token opent het scherm zichzelf, ook na een herstart: voeg dan `&page=infoscherm` toe aan de token-URL. Het tabblad toont de volledige adressen.
+
+Het infoscherm haalt elke 5 minuten nieuwe gegevens op, blijft bij een korte internetstoring het laatste tonen en laadt zichzelf opnieuw na een update.
+
+> **Bijwerken van nieuws en weer** — Nieuws en weer worden elke 15 minuten bijgewerkt, zodra een scherm gegevens opvraagt. Met de cronjob `cron/cron_infoscreen.php` (zie de Installatiehandleiding) hoeft een scherm daar nooit op te wachten.
 
 # Online gebruikers
 

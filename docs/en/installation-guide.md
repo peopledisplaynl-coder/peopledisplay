@@ -117,6 +117,7 @@ Some tasks must run at fixed times: resetting extra statuses whose end date has 
 | `cron/cron_auto_checkout.php` | daily at 23:55 | Checks out visitors (except multi-day visits) |
 | `cron/cron_auto_delete.php` | daily at 02:00 | Deletes visitor data after 7 days (GDPR) |
 | `cron/cleanup_tokens_cron.php` | daily at 02:00 | Removes expired "stay logged in" tokens |
+| `cron/cron_infoscreen.php` | every 15 minutes | Fetches news and weather for the infoscreen (only needed when you use the infoscreen; with cron-job.org: `cron_endpoint.php?action=infoscreen_refresh&key=YOUR-KEY`) |
 
 ## In your hosting control panel (recommended)
 

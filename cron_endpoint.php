@@ -116,6 +116,25 @@ try {
             ]);
             break;
             
+        case 'infoscreen_refresh':
+            // Infoscherm: nieuwsfeeds en weer ophalen die aan de beurt zijn (elke 15 minuten)
+            require_once __DIR__ . '/includes/infoscreen.php';
+            $run = pd_infoscreen_refresh($db, false, 25);
+            $ok = count(array_filter($run['results'], fn($r) => $r['ok']));
+            $message = $run['ran']
+                ? "Infoscreen refresh: {$ok} of " . count($run['results']) . " sources updated"
+                : 'Infoscreen refresh: skipped (already running)';
+            logCron($message);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'action' => 'infoscreen_refresh',
+                'results' => $run['results'],
+                'message' => $message,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+            break;
+
         case 'test':
             // Test endpoint
             $message = "Test successful - cron endpoint is working";
@@ -137,7 +156,7 @@ try {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'error' => 'Unknown action. Valid actions: daily_reset, cleanup_tokens, test',
+                'error' => 'Unknown action. Valid actions: daily_reset, cleanup_tokens, infoscreen_refresh, test',
                 'timestamp' => date('Y-m-d H:i:s')
             ]);
             break;

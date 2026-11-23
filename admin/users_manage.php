@@ -36,6 +36,8 @@ requireAdmin();
 requireAdminFeature('manage_users');
 require_once __DIR__ . '/../includes/security.php';
 require_once __DIR__ . '/../includes/twofa.php';
+require_once __DIR__ . '/../includes/infoscreen.php';
+pd_infoscreen_ensure_schema($db); // users.screen_mode (Infoscherm, 2.4.0)
 pd_security_ensure_schema($db);
 pd_2fa_ensure_schema($db);
 
@@ -215,6 +217,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_user' && isset($_GET['use
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user) {
+        // Wachtwoord-hash nooit naar de browser sturen
+        unset($user['password_hash']);
+
         // Parse features JSON
         $features = json_decode($user['features'] ?? '{}', true) ?: [];
         
@@ -302,7 +307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'manage_departments_order', 'manage_kiosk_tokens', 'manage_visitors',
             'manage_badges', 'manage_bulk_actions', 'view_audit_log',
             'manage_system_config', 'manage_substatus_dates', 'manage_users',
-            'create_backup'
+            'create_backup', 'manage_infoscreen'
         ];
         foreach ($adminFeatureKeys as $key) {
             $adminFeatures[$key] = isset($_POST['admin_feature_' . $key]);
@@ -397,6 +402,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         if ($newPasswordInput !== '') {
             $passwordHash = password_hash($newPasswordInput, PASSWORD_DEFAULT);
             $db->prepare("UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?")->execute([$passwordHash, $userId]);
+        }
+
+        // Infoscherm (2.4.0): wat het scherm bij inactiviteit toont
+        require_once __DIR__ . '/../includes/infoscreen.php';
+        $screenMode = $_POST['screen_mode'] ?? 'slides';
+        if (in_array($screenMode, PD_IS_MODES, true) && pd_infoscreen_ensure_schema($db)) {
+            $db->prepare("UPDATE users SET screen_mode = ? WHERE id = ?")->execute([$screenMode, $userId]);
         }
 
         // Verplichte wachtwoordwijziging bij eerstvolgende inlog (vinkje)
@@ -640,6 +652,7 @@ $usersStmt = $db->query("
            u.group_id, g.name AS group_name,
            u.linked_employee_id,
            u.can_show_presentation, u.presentation_id, u.presentation_idle_seconds,
+           u.screen_mode,
            u.can_use_scanner,
            u.features,
            u.must_change_password,
@@ -1502,7 +1515,9 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </td>
                         <td>
-                            <?php if ($user['can_show_presentation'] && $user['presentation_id']): ?>
+                            <?php if ($user['can_show_presentation'] && in_array($user['screen_mode'] ?? 'slides', ['infoscreen', 'combined'], true)): ?>
+                                <span title="<?= ($user['screen_mode'] ?? '') === 'combined' ? 'Google Slides + infoscherm' : 'Infoscherm' ?>">📺 <?= $user['presentation_idle_seconds'] ?>s</span>
+                            <?php elseif ($user['can_show_presentation'] && $user['presentation_id']): ?>
                                 <span title="Presentatie: <?= htmlspecialchars($user['presentation_id']) ?>">🎬 <?= $user['presentation_idle_seconds'] ?>s</span>
                             <?php else: ?>
                                 <span style="color: #cbd5e0;">-</span>
@@ -1714,6 +1729,7 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
             { key: 'manage_substatus_dates',   label: 'Sub-status datum instellingen' },
             { key: 'manage_users',             label: 'Gebruikersbeheer' },
             { key: 'create_backup',            label: '🗄️ Backup aanmaken' },
+            { key: 'manage_infoscreen',        label: '📺 Infoscherm beheren' },
         ];
 
         /**
@@ -2161,6 +2177,18 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                     <!-- TAB 3: PRESENTATION -->
                     <div id="presentation-${userId}" class="tab-content">
                         <h4>🎬 Presentatie Instellingen</h4>
+                        
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label>Wat toont het scherm bij inactiviteit?</label>
+                            <select name="screen_mode">
+                                <option value="slides" ${(user.screen_mode || 'slides') === 'slides' ? 'selected' : ''}>Google Slides presentatie</option>
+                                <option value="infoscreen" ${user.screen_mode === 'infoscreen' ? 'selected' : ''}>Infoscherm (berichten, nieuws en weer)</option>
+                                <option value="combined" ${user.screen_mode === 'combined' ? 'selected' : ''}>Google Slides + infoscherm (weer, mededelingen en nieuwsbalk eromheen)</option>
+                            </select>
+                            <div class="info-text">
+                                💡 Berichten, nieuws en weer beheert u onder Dashboard → Infoscherm. Het infoscherm heeft geen presentatie-ID nodig.
+                            </div>
+                        </div>
                         
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label>Presentatie ID</label>

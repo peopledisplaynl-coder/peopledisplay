@@ -102,6 +102,13 @@ try {
         $pd_migrations_changes[] = '2FA schema (user_2fa, user_2fa_recovery, user_trusted_devices) ensured';
     }
 
+    // Infoscherm (2.4.0): tabellen infoscreen_messages, infoscreen_sources, infoscreen_items,
+    // infoscreen_settings en de kolom users.screen_mode (definitie in includes/infoscreen.php).
+    require_once __DIR__ . '/infoscreen.php';
+    if (pd_infoscreen_ensure_schema($db)) {
+        $pd_migrations_changes[] = 'infoscreen schema (messages, sources, items, settings) ensured';
+    }
+
     // Ensure foreign key constraint exists.
     $fkStmt = $db->prepare("SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
         WHERE TABLE_SCHEMA = DATABASE()

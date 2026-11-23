@@ -64,6 +64,11 @@ test('install wizard uses an exact copy of install.sql (npm run sync-sql)', () =
   assert.equal(read('install/sql/install.sql'), read('install.sql'));
 });
 
+test('install.sql has no semicolon in a comment (the install wizard splits on every ;)', () => {
+  const bad = read('install.sql').split('\n').filter((l) => /^\s*--.*;/.test(l));
+  assert.deepEqual(bad, [], 'remove the semicolon from these comment lines');
+});
+
 test('install.sql table count comment matches its CREATE TABLE statements', () => {
   const sql = read('install.sql');
   const count = Object.keys(tablesIn(sql)).length;
@@ -72,8 +77,8 @@ test('install.sql table count comment matches its CREATE TABLE statements', () =
 });
 
 test('every table and column that migrations.php adds also exists in install.sql', () => {
-  // includes/security.php en includes/twofa.php maken hun eigen tabellen/kolommen aan (de migraties draaien alleen voor beheerders)
-  const migrations = read('includes/migrations.php') + '\n' + read('includes/security.php') + '\n' + read('includes/twofa.php');
+  // includes/security.php, includes/twofa.php en includes/infoscreen.php maken hun eigen tabellen/kolommen aan (de migraties draaien alleen voor beheerders)
+  const migrations = read('includes/migrations.php') + '\n' + read('includes/security.php') + '\n' + read('includes/twofa.php') + '\n' + read('includes/infoscreen.php');
   const tables = tablesIn(read('install.sql'));
 
   for (const m of migrations.matchAll(/CREATE TABLE IF NOT EXISTS `(\w+)`/g)) {
@@ -339,6 +344,20 @@ test('2FA: TOTP matches the RFC 6238 test vectors, codes work once, secrets roun
   assert.equal(r.stdout.trim(), 'OK', r.stdout + r.stderr);
   assert.ok(keyCreated, 'the key file must be created automatically');
   assert.equal(existsSync(join(ROOT, 'data', 'twofa_key.php')), false, 'the test must not leave a key file in the repository');
+});
+
+// ── Infoscherm ─────────────────────────────────────────────────────────
+test('infoscreen: feed and weather parsers, URL guard (tests/infoscreen_test.php)', { skip: hasPhp ? false : 'PHP not installed on this computer' }, () => {
+  const r = spawnSync('php', [join(ROOT, 'tests', 'infoscreen_test.php')], { encoding: 'utf8', cwd: ROOT });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+});
+
+test('infoscreen: API and pages need a login, the cron script only runs from the command line', () => {
+  assert.match(read('api/infoscreen_data.php'), /empty\(\$_SESSION\['user_id'\]\)/);
+  assert.match(read('infoscherm.php'), /isset\(\$_SESSION\['user_id'\]\)/);
+  assert.match(read('admin/infoscreen_manage.php'), /requireAdmin\(\);\s*requireAdminFeature\('manage_infoscreen'\)/);
+  assert.match(read('admin/infoscreen_manage.php'), /pd_infoscreen_csrf_ok/);
+  assert.match(read('cron/cron_infoscreen.php'), /php_sapi_name\(\) !== 'cli'/);
 });
 
 // ── PHP syntax ─────────────────────────────────────────────────────────

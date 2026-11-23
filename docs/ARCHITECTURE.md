@@ -36,13 +36,14 @@ Browser / PWA / kiosk screen
 | `frontpage.php` | start screen with navigation buttons |
 | `index.php` + `app.js`, `style.css` | the card check-in screen (IN/OUT, sub-status, location pin, filters, sort, zoom, BHV) |
 | `inuitbord.php` | IN/UIT board display mode (two columns, auto-refresh) |
+| `infoscherm.php` | Infoscreen: own messages, news slides, weather, clock and a headline ticker; `?embed=1` inside the idle overlay of `index.php`, combined mode shows Google Slides in the main area |
 | `overzicht.php` + `overzicht.js` | presence overview |
 | `scan.php` | badge/QR scan check-in |
 | `visitor_register.php`, `visitor_checkin.php`, `visitor_checkout.php` | visitor registration |
 | `bhv-print/` | printable BHV (emergency response) overview |
 | `user/profile.php` | own profile, photo, password |
 | `admin/dashboard.php` | admin home: tiles, update banner, migrations |
-| `admin/*_manage.php` | employees, users, locations, departments, visitors, kiosk tokens, badges, features, config |
+| `admin/*_manage.php` | employees, users, locations, departments, visitors, kiosk tokens, badges, features, config, infoscreen (`infoscreen_manage.php`: messages, news feeds, weather, display settings, screen mode per user) |
 | `admin/backup.php`, `restore.php` | backups; full restore to a new domain/host |
 | `activate_license.php`, `admin/license_management.php` | licence and continuity-key activation |
 | `install.php` (+ `install.sql`) | 8-step installer in the root |
@@ -90,7 +91,8 @@ All return JSON and check the session/role themselves.
 | `update_sub_status_until.php`, `get_button_config_until.php` | sub-status with end date |
 | `process_scan.php` | badge scans |
 | `generate_badges.php`, `generate_badge_png.php` | badge PDF/PNG |
-| `get_user_presentation.php` | presentation mode settings |
+| `get_user_presentation.php` | presentation mode settings (Slides ID, idle seconds, `screen_mode`) |
+| `infoscreen_data.php` | everything the infoscreen shows, filtered for the screen account's locations; fetches due sources after the response |
 | `get_todays_visitors.php`, `get_visitors_inside.php`, `visitor_checkin.php`, `visitor_checkout.php` | visitors |
 
 Root endpoints: `email-proxy.php` (BHV overview e-mail), `cron_endpoint.php` (external cron).
@@ -104,12 +106,13 @@ Root endpoints: `email-proxy.php` (BHV overview e-mail), `cron_endpoint.php` (ex
 | `cron_reset_expired_sub_status.php` | clear expired sub-statuses |
 | `cron_auto_delete.php` | delete old data |
 | `cleanup_tokens_cron.php` | remove expired tokens |
+| `cron_infoscreen.php` | fetch infoscreen news feeds and weather (every 15 min; also `cron_endpoint.php?action=infoscreen_refresh`) |
 
 Run from the hosting panel (CLI) or via `cron_endpoint.php?action=…&key=…` from cron-job.org.
 
 ## Database
 
-31 tables, defined in `install.sql` (the single schema file). Core ones:
+39 tables, defined in `install.sql` (the single schema file). Core ones:
 
 | Table | Holds |
 |---|---|
@@ -122,6 +125,7 @@ Run from the hosting panel (CLI) or via `cron_endpoint.php?action=…&key=…` f
 | `employee_audit`, `feature_audit` | audit logs (migrations log here too) |
 | `license_tiers`, `license_log` | licence tiers and licence events |
 | `button_config`, `user_button_names`, `filters`, `user_filters`, `user_locations`, `user_afdelingen` | screen configuration per user |
+| `infoscreen_messages`, `infoscreen_sources`, `infoscreen_items`, `infoscreen_settings` | infoscreen: messages, news feeds and weather places (with cached data), settings; `users.screen_mode` picks Slides / infoscreen / combined |
 
 Schema changes: `includes/migrations.php` upgrades existing installs (idempotent,
 runs on admin page load) and `install.sql` gets the same change for new installs —
@@ -165,3 +169,23 @@ continuity keys (Unlimited/Corporate) that permanently lift the domain lock.
 | `tests/foundation.test.mjs` | project checks (`npm test`) |
 | `tests/db_smoke.php` | optional database check against a throw-away MariaDB |
 | `tools/` | user-manual generator (docx) |
+
+## Infoscreen (2.4.0)
+
+`includes/infoscreen.php` holds everything: the schema (`pd_infoscreen_ensure_schema()`, also
+called by the infoscreen pages so a screen works before an admin visits the dashboard), the
+fetchers and parsers, and `pd_infoscreen_screen_data()` for the screen.
+
+- **Sources.** RSS 2.0, RSS 1.0/RDF and Atom (images from enclosures, Media RSS, or the first
+  `<img>` in the text); weather from Buienradar (nearest station with a temperature, 5-day
+  forecast, weather report) or Open-Meteo. Both weather sources are free for non-commercial use
+  with attribution; the screen always shows the source. News images are hot-linked, never copied.
+- **Fetching.** At most every 15 minutes per source, one run at a time (MySQL `GET_LOCK`), from
+  `cron/cron_infoscreen.php`, `cron_endpoint.php?action=infoscreen_refresh`, or after a screen
+  request (`fastcgi_finish_request()`, otherwise briefly before the answer). Outgoing requests
+  only go to public addresses (no loopback/private/link-local, also after redirects), with a
+  timeout and a 3 MB cap.
+- **Screen.** `infoscherm.php` polls `api/infoscreen_data.php` every 5 minutes, keeps the last
+  answer in `localStorage` for outages, reloads itself after a version change or after 24 hours,
+  and reports touches to the parent page (`postMessage`) when shown in the idle overlay.
+- **Tests.** `tests/infoscreen_test.php` (fixtures in `tests/fixtures/infoscreen/`), run by `npm test`.

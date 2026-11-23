@@ -1,0 +1,16 @@
+{"$id":"1","buienradar":{"copyright":"(C)opyright Buienradar / RTL. Alle rechten voorbehouden","terms":"Deze feed mag vrij worden gebruikt onder voorwaarde van bronvermelding buienradar.nl inclusief een hyperlink naar https://www.buienradar.nl. Aan de feed kunnen door gebruikers of andere personen geen rechten worden ontleend."},
+"actual":{"actualradarurl":"https://api.buienradar.nl/image/1.0/RadarMapNL?w=500&h=512","sunrise":"2026-11-23T08:07:00","sunset":"2026-11-23T16:39:00",
+"stationmeasurements":[
+{"$id":"4","stationid":6350,"stationname":"Meetstation Gilze-Rijen","lat":51.57,"lon":4.93,"regio":"Breda","timestamp":"2026-11-23T11:50:00","weatherdescription":"Licht bewolkt","iconurl":"https://www.buienradar.nl/resources/images/icons/weather/30x30/b.png","winddirection":"ZW","temperature":7.4,"groundtemperature":6.1,"feeltemperature":4.9,"windgusts":9.3,"windspeed":4.6,"windspeedBft":3,"humidity":81.0,"precipitation":0.0,"sunpower":210.0},
+{"$id":"5","stationid":6260,"stationname":"Meetstation De Bilt","lat":52.1,"lon":5.18,"regio":"Utrecht","timestamp":"2026-11-23T11:50:00","weatherdescription":"Zwaar bewolkt","iconurl":"https://www.buienradar.nl/resources/images/icons/weather/30x30/c.png","winddirection":"W","temperature":6.9,"feeltemperature":4.1,"windspeedBft":3,"humidity":88.0},
+{"$id":"6","stationid":6340,"stationname":"Meetstation Woensdrecht","lat":51.45,"lon":4.33,"regio":"Woensdrecht","timestamp":"2026-11-23T11:50:00","weatherdescription":"Mix van opklaringen en hoge bewolking","iconurl":"https://www.buienradar.nl/resources/images/icons/weather/30x30/r.png","winddirection":"ZW","temperature":null,"windspeedBft":4}
+]},
+"forecast":{"weatherreport":{"published":"2026-11-23T10:33:00","title":"Wisselvallig met af en toe regen","summary":"Vandaag wolkenvelden en droog, vanavond regen uit het zuidwesten. Morgen buien en een stevige wind.","text":"&lt;p&gt;Lange tekst&lt;/p&gt;","author":"Weerman","authorbio":""},
+"shortterm":{"startdate":"2026-11-23T00:00:00","enddate":"2026-11-27T00:00:00","forecast":"Wisselvallig"},
+"fivedayforecast":[
+{"day":"2026-11-24T00:00:00","mintemperature":"3/5","maxtemperature":"8/10","mintemperatureMax":5,"mintemperatureMin":3,"maxtemperatureMax":10,"maxtemperatureMin":8,"rainChance":70,"sunChance":20,"windDirection":"zw","wind":5,"mmRainMin":1.0,"mmRainMax":4.0,"weatherdescription":"Regenachtig met buien","iconurl":"https://www.buienradar.nl/resources/images/icons/weather/96x96/f.png"},
+{"day":"2026-11-25T00:00:00","mintemperatureMax":4,"maxtemperatureMax":9,"rainChance":30,"weatherdescription":"Half bewolkt","iconurl":"https://www.buienradar.nl/resources/images/icons/weather/96x96/j.png"},
+{"day":"2026-11-26T00:00:00","mintemperatureMax":1,"maxtemperatureMax":4,"rainChance":60,"weatherdescription":"Kans op natte sneeuw","iconurl":"https://www.buienradar.nl/resources/images/icons/weather/96x96/w.png"},
+{"day":"2026-11-27T00:00:00","mintemperatureMax":2,"maxtemperatureMax":6,"rainChance":10,"weatherdescription":"Zonnig","iconurl":"https://www.buienradar.nl/resources/images/icons/weather/96x96/a.png"},
+{"day":"2026-11-28T00:00:00","mintemperatureMax":3,"maxtemperatureMax":7,"rainChance":20,"weatherdescription":"","iconurl":"https://www.buienradar.nl/resources/images/icons/weather/96x96/s.png"}
+]}}

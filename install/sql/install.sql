@@ -8,7 +8,7 @@
 -- Run this script ONCE during installation.
 -- All statements use IF NOT EXISTS — safe to re-run.
 --
--- Tables: 35
+-- Tables: 39
 --
 -- Single source: edit THIS file (repository root). install/sql/install.sql
 -- is an exact copy for the install wizard — run `npm run sync-sql` after editing.
@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password_changed_at`      datetime                          DEFAULT NULL,
   `twofa_required`           tinyint(1)                        NOT NULL DEFAULT 0 COMMENT '2FA verplicht gesteld door een beheerder',
   `twofa_grace_until`        datetime                          DEFAULT NULL COMMENT 'Einde van het uitstel voor het instellen van 2FA',
+  `screen_mode`              enum('slides','infoscreen','combined') NOT NULL DEFAULT 'slides' COMMENT 'Wat het scherm toont bij inactiviteit: Google Slides, Infoscherm of beide',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_username`   (`username`),
   KEY `idx_group_id`         (`group_id`),
@@ -294,7 +295,7 @@ CREATE TABLE IF NOT EXISTS `remember_tokens` (
 
 -- ============================================================
 -- TABLE: login_attempts
--- Log of login attempts (successful and failed); used for the automatic block
+-- Log of login attempts (successful and failed), used for the automatic block
 -- after too many failed attempts (includes/security.php). Kept 90 days.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `login_attempts` (
@@ -325,7 +326,7 @@ CREATE TABLE IF NOT EXISTS `user_2fa` (
 
 -- ============================================================
 -- TABLE: user_2fa_recovery
--- Herstelcodes voor 2FA (alleen een hash; elke code werkt eenmalig)
+-- Herstelcodes voor 2FA (alleen een hash, elke code werkt eenmalig)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `user_2fa_recovery` (
   `id`        int(11)  NOT NULL AUTO_INCREMENT,
@@ -745,10 +746,93 @@ CREATE TABLE IF NOT EXISTS `license_log` (
   KEY `idx_created_at`  (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================
+-- TABLE: infoscreen_messages
+-- Infoscherm: own messages (title, text, image) with a time window
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `infoscreen_messages` (
+  `id`               int(11)      NOT NULL AUTO_INCREMENT,
+  `title`            varchar(200) NOT NULL,
+  `body`             text         DEFAULT NULL,
+  `image_path`       varchar(255) DEFAULT NULL,
+  `location`         varchar(100) DEFAULT NULL COMMENT 'NULL = alle locaties (locations.location_name)',
+  `starts_at`        datetime     DEFAULT NULL,
+  `ends_at`          datetime     DEFAULT NULL,
+  `duration_seconds` int(11)      DEFAULT NULL COMMENT 'NULL = standaard uit de instellingen',
+  `priority`         tinyint(1)   NOT NULL DEFAULT 0 COMMENT '1 = belangrijk',
+  `color`            varchar(20)  NOT NULL DEFAULT 'blauw',
+  `active`           tinyint(1)   NOT NULL DEFAULT 1,
+  `sort_order`       int(11)      NOT NULL DEFAULT 0,
+  `source`           varchar(30)  NOT NULL DEFAULT 'handmatig',
+  `created_by`       int(11)      DEFAULT NULL,
+  `created_at`       datetime     NOT NULL DEFAULT current_timestamp(),
+  `updated_at`       datetime     DEFAULT NULL ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_active_window` (`active`, `starts_at`, `ends_at`),
+  KEY `idx_location` (`location`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: infoscreen_sources
+-- Infoscherm: news feeds (RSS/Atom) and weather places
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `infoscreen_sources` (
+  `id`            int(11)       NOT NULL AUTO_INCREMENT,
+  `type`          enum('rss','weather') NOT NULL,
+  `name`          varchar(150)  NOT NULL,
+  `url`           varchar(500)  DEFAULT NULL,
+  `provider`      varchar(30)   DEFAULT NULL,
+  `latitude`      decimal(9,6)  DEFAULT NULL,
+  `longitude`     decimal(9,6)  DEFAULT NULL,
+  `location`      varchar(100)  DEFAULT NULL COMMENT 'NULL = alle locaties',
+  `max_items`     int(11)       NOT NULL DEFAULT 8,
+  `show_images`   tinyint(1)    NOT NULL DEFAULT 1,
+  `attribution`   varchar(200)  DEFAULT NULL,
+  `active`        tinyint(1)    NOT NULL DEFAULT 1,
+  `sort_order`    int(11)       NOT NULL DEFAULT 0,
+  `data_json`     mediumtext    DEFAULT NULL COMMENT 'Laatste weerdata (genormaliseerd)',
+  `last_fetch_at` datetime      DEFAULT NULL,
+  `last_ok_at`    datetime      DEFAULT NULL,
+  `last_status`   varchar(255)  DEFAULT NULL,
+  `created_at`    datetime      NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_type_active` (`type`, `active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: infoscreen_items
+-- Infoscherm: cached news items per source (images are links, not copies)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `infoscreen_items` (
+  `id`           int(11)      NOT NULL AUTO_INCREMENT,
+  `source_id`    int(11)      NOT NULL,
+  `item_key`     char(40)     NOT NULL,
+  `title`        varchar(300) NOT NULL,
+  `summary`      text         DEFAULT NULL,
+  `image_url`    varchar(800) DEFAULT NULL,
+  `link`         varchar(800) DEFAULT NULL,
+  `published_at` datetime     DEFAULT NULL,
+  `fetched_at`   datetime     NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_source_item` (`source_id`, `item_key`),
+  KEY `idx_source_published` (`source_id`, `published_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: infoscreen_settings
+-- Infoscherm: display settings (key/value)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `infoscreen_settings` (
+  `setting_key`   varchar(50)  NOT NULL,
+  `setting_value` text         DEFAULT NULL,
+  `updated_at`    datetime     DEFAULT NULL ON UPDATE current_timestamp(),
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
 -- END OF SCHEMA
--- Tables created: 35
+-- Tables created: 39
 -- Run install.php after this to create your admin account
 -- ============================================================

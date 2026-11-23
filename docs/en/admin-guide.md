@@ -45,7 +45,7 @@ The dashboard has four groups:
 - **Navigatie** (navigation) — to the welcome screen, the check-in screen and the overview.
 - **Personeelsbeheer** (staff management) — staff, users, the badge generator and bulk actions.
 - **Bezoekers & Locaties** (visitors & locations) — visitors, visitor emails, the registration form, locations and departments (and their order).
-- **Systeem Configuratie** (system configuration) — online users, system configuration, kiosk tokens, audit log, sub-status dates, licence management and backup.
+- **Systeem Configuratie** (system configuration) — online users, system configuration, kiosk tokens, infoscreen, audit log, sub-status dates, licence management and backup.
 
 At the top right you see your role and **Migraties toegepast** (migrations applied) or **Database schema gecontroleerd** (database schema checked): every time the dashboard opens, PeopleDisplay checks that the database matches the installed version and updates it itself if needed. The version is shown at the bottom.
 
@@ -106,7 +106,7 @@ Click the pencil (✏️) behind a user. The edit panel has four tabs.
 
 - **Account** — display name, email, role, group, **gekoppelde medewerker** (linked staff member — optional: links this account to one staff card, so the user sees that own card right after logging in instead of the location view or the admin dashboard — works for every role), a new password (leave empty to keep the current one; at least 10 characters), the checkbox **Gebruiker moet bij de eerstvolgende inlog een nieuw wachtwoord kiezen** (user must choose a new password at next login) and whether the account is active. This is also where the checkbox **Tweestapsverificatie (2FA) verplicht voor deze gebruiker** is, and (if the user has 2FA) the button **🔄 2FA resetten (telefoon kwijt)**; see *Two-step verification (2FA)* below.
 - **Features** — what this user sees and may do on the check-in screen (see below).
-- **Presentatie** (presentation) — a Google Slides presentation that starts automatically after the screen has not been touched for a while, with the number of seconds to wait. Handy for an information screen in the hall.
+- **Presentatie** (presentation) — what the screen shows after it has not been touched for a while: a Google Slides presentation, the [Infoscreen](#infoscreen) or both, with the number of seconds to wait. Handy for a screen in the hall.
 - **Scanner** — whether the user may scan badges to check staff in and out.
 
 Click **Opslaan** (save) to keep the changes.
@@ -148,7 +148,7 @@ With two-step verification a user enters, besides the password, a 6-digit code f
 - **IN/UIT Bord weergave** — the user sees the IN/OUT board instead of the cards. Suitable for a large screen.
 - **Zichtbare Locaties** and **Zichtbare Afdelingen** (visible locations and departments) — which cards this user sees. No department ticked means: all departments.
 
-If the role is **Admin**, this tab also lists the management functions (locations, departments, kiosk tokens, visitors, badges, bulk actions, audit log, system configuration, sub-status dates, users, backup). Only the ticked functions are available to that admin.
+If the role is **Admin**, this tab also lists the management functions (locations, departments, kiosk tokens, visitors, badges, bulk actions, audit log, system configuration, sub-status dates, users, backup, infoscreen). Only the ticked functions are available to that admin.
 
 # Locations
 
@@ -253,6 +253,61 @@ A kiosk token is a permanent login link for a screen without a keyboard, such as
 **Deactiveren** (deactivate) or **Verwijderen** (delete) stops the link working immediately, for example when a tablet is lost.
 
 > **Tip for a fixed kiosk PC** — Start Chrome with `--kiosk` followed by the token URL. Chrome then opens full screen, without an address bar. The emergency overview has its own **Venster sluiten** (close window) button, so you can also get back in kiosk mode.
+
+# Infoscreen
+
+The infoscreen shows **your own messages, news and the weather** on a screen, with the date and time. You use it instead of the Google Slides presentation, or together with it. It is available in every package, Starter included. You manage it under **Infoscherm** on the dashboard (group *Systeem Configuratie*).
+
+![The infoscreen with an own message, the weather in the sidebar and the news ticker](../images/infoscherm-scherm.png)
+
+The screen has three parts:
+
+- **Slides in the middle** — your own messages, news with an image as a large slide, and once per round a weather slide with the five-day forecast. With several news sources they take turns, and every round shows the next items.
+- **The sidebar** — the current weather and the coming days. Without a weather place it shows a large clock.
+- **The news ticker at the bottom** — all news headlines scroll by, with the name of the source. Important messages are in it too.
+
+## Messages
+
+![Managing infoscreen messages](../images/infoscherm-berichten.png)
+
+Click **Nieuw bericht** (new message) and fill in:
+
+- **Titel** (title) and a short **Tekst** (text). A message with only an image and no text shows the image large, for example a poster.
+- **Afbeelding** (image: JPG, PNG, GIF or WEBP, at most 5 MB; landscape works best).
+- **Achtergrondkleur** (background colour), **Tonen vanaf** and **Tonen tot en met** (show from / until; empty = now and indefinitely), **Locatie** (a screen shows the messages of the locations set for its user account) and **Tijd in beeld** (time on screen).
+- **Belangrijk** (important) — the message gets a red label, appears more often and is also shown in the news ticker.
+
+The list shows for each message whether it is **Op het scherm** (on screen), **Gepland** (scheduled), **Verlopen** (expired) or **Uit** (off). **Uitzetten** (switch off) removes a message from the screens without deleting it.
+
+## News
+
+On the **Nieuws** tab you add RSS or Atom feeds: a name, the address of the feed, the location, the number of items and whether images are shown. The feed is fetched as soon as you save it, so you see right away whether it works. Feeds of your own organisation are handy: a WordPress website has one at `https://yourwebsite.com/feed/`.
+
+> **Mind the terms of a news source** — Many news sites only allow their feed for personal, non-commercial use, sometimes only the headlines, and always with credit to the source. The infoscreen shows the source with every item. Check the terms before you add a source and switch off **Afbeeldingen tonen** (show images) when needed. Images are never copied to your own server.
+
+## Weather
+
+On the **Weer** tab you add a place. Type its name and click **Zoek plaats** (find place); the coordinates are filled in. Then choose the weather source:
+
+- **Buienradar** — current measurements from the nearest KNMI weather station, the five-day forecast and the weather report. The Netherlands only.
+- **Open-Meteo** — works for any place, without a weather report.
+
+Both are free for non-commercial use, with credit to the source (always shown on the screen). You can set one place for all screens, or a place per location.
+
+## Display
+
+On the **Weergave** tab you set the title at the top, the colour scheme (dark or light), the time per slide, the number of news slides per round, the speed of the news ticker and which parts are shown. **Voorbeeld** (preview) opens the result in a new window. Open screens pick up changes within 5 minutes.
+
+## Screens
+
+On the **Schermen** tab you choose per user account what its screen shows: **Google Slides**, **Infoscherm** or **Slides + infoscherm** (the presentation large, with the weather, notices and the news ticker around it). The same choice is also on the user's *Presentatie* tab.
+
+- **On a touch screen with staff cards** the infoscreen appears after the set time without touches (checkbox *Automatisch tonen*). A touch closes it.
+- **A screen that only shows the infoscreen** (a TV in the hall): log in on that screen with the screen account, tick *Blijf ingelogd* (stay logged in) and open `infoscherm.php`. With a kiosk token the screen opens by itself, also after a restart: add `&page=infoscherm` to the token URL. The tab shows the full addresses.
+
+The infoscreen fetches new data every 5 minutes, keeps showing the last data during a short internet outage and reloads itself after an update.
+
+> **Updating news and weather** — News and weather are updated every 15 minutes, as soon as a screen asks for data. With the cron job `cron/cron_infoscreen.php` (see the Installation guide) a screen never has to wait for it.
 
 # Online users
 

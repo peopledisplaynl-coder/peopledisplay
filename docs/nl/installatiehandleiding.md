@@ -115,6 +115,7 @@ Sommige taken moeten op vaste tijden draaien: extra statussen terugzetten als hu
 | `cron/cron_auto_checkout.php` | elke dag 23:55 | Checkt bezoekers uit (behalve meerdaagse bezoeken) |
 | `cron/cron_auto_delete.php` | elke dag 02:00 | Verwijdert bezoekersgegevens na 7 dagen (AVG) |
 | `cron/cleanup_tokens_cron.php` | elke dag 02:00 | Ruimt verlopen "blijf ingelogd"-tokens op |
+| `cron/cron_infoscreen.php` | elke 15 minuten | Haalt nieuws en weer op voor het infoscherm (alleen nodig als je het infoscherm gebruikt; via cron-job.org: `cron_endpoint.php?action=infoscreen_refresh&key=JOUW-SLEUTEL`) |
 
 ## Via het beheerpaneel van je hosting (aanbevolen)
 

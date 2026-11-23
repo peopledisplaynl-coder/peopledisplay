@@ -12,14 +12,15 @@
     console.log('🎬 Presentation module loading...');
     
     // Configuration
-    const IDLE_TIMEOUT = 60000; // 60 seconds idle before showing presentation
     const CHECK_INTERVAL = 5000; // Check every 5 seconds
     
-    // State
+    // State — idleTimeout comes from the user's setting (presentation_idle_seconds)
     let presentationConfig = {
         canShow: false,
         presentationId: null,
-        hasPresentation: false
+        hasPresentation: false,
+        screenMode: 'slides',   // 'slides' | 'infoscreen' | 'combined' (Infoscherm, 2.4.0)
+        idleTimeout: 120000
     };
     
     let idleTimer = null;
@@ -61,7 +62,9 @@
                 presentationConfig = {
                     canShow: data.can_show,
                     presentationId: data.presentation_id,
-                    hasPresentation: data.has_presentation
+                    hasPresentation: data.has_presentation,
+                    screenMode: data.screen_mode || 'slides',
+                    idleTimeout: Math.max(10, parseInt(data.idle_seconds, 10) || 120) * 1000
                 };
                 
                 console.log('✅ Presentation settings loaded:', presentationConfig);
@@ -88,6 +91,13 @@
         
         events.forEach(event => {
             document.addEventListener(event, handleActivity, true);
+        });
+        
+        // Infoscherm (2.4.0): touches inside the infoscreen iframe are reported via postMessage
+        window.addEventListener('message', (event) => {
+            if (event.origin === window.location.origin && event.data && event.data.type === 'pd-infoscreen-activity') {
+                handleActivity();
+            }
         });
         
         console.log('✅ Activity listeners registered');
@@ -128,7 +138,7 @@
         
         const idleTime = Date.now() - lastActivityTime;
         
-        if (idleTime >= IDLE_TIMEOUT) {
+        if (idleTime >= presentationConfig.idleTimeout) {
             console.log('💤 User idle for ' + Math.round(idleTime / 1000) + ' seconds - showing presentation');
             showPresentation();
         }
@@ -197,15 +207,33 @@
      * Show presentation
      */
     function showPresentation() {
-        if (!presentationConfig.presentationId) {
+        const useInfoscreen = presentationConfig.screenMode === 'infoscreen' || presentationConfig.screenMode === 'combined';
+        if (!useInfoscreen && !presentationConfig.presentationId) {
             console.log('⚠️ No presentation ID to show');
             return;
         }
         
         const iframe = document.getElementById('presentation-iframe');
         
-        // Build Google Slides embed URL
-        const embedUrl = `https://docs.google.com/presentation/d/${presentationConfig.presentationId}/embed?start=true&loop=true&delayms=5000`;
+        // The infoscreen closes on any touch (postMessage), so its own clock stays visible without the close button
+        const closeBtn = presentationContainer.querySelector('button');
+        if (closeBtn) closeBtn.style.display = useInfoscreen ? 'none' : '';
+        
+        let embedUrl;
+        if (useInfoscreen) {
+            // Infoscherm (own messages, news, weather); the combined mode shows the Slides inside it
+            // Relative URL: this script runs on index.php in the app root (also in a subfolder install)
+            embedUrl = 'infoscherm.php?embed=1';
+            iframe.style.width = '100vw';
+            iframe.style.height = '100vh';
+            iframe.style.borderRadius = '0';
+        } else {
+            // Build Google Slides embed URL
+            embedUrl = `https://docs.google.com/presentation/d/${presentationConfig.presentationId}/embed?start=true&loop=true&delayms=5000`;
+            iframe.style.width = '95vw';
+            iframe.style.height = '90vh';
+            iframe.style.borderRadius = '8px';
+        }
         
         iframe.src = embedUrl;
         presentationContainer.style.display = 'flex';

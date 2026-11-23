@@ -586,7 +586,7 @@ $user_id = $_SESSION['user_id'];
     <script src="index-refresh.js"></script>
     
     <!-- 🎬 Presentation Controller (idle auto-show) -->
-    <script src="presentation-controller.js"></script>
+    <script src="presentation-controller.js?v=<?= urlencode(PD_CURRENT_VERSION) ?>"></script>
     
     <!-- PWA Installer -->
     <script src="/pwa-installer.js"></script>

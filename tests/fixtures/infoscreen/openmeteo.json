@@ -1,0 +1,5 @@
+{"latitude":51.56,"longitude":4.93,"generationtime_ms":0.1,"utc_offset_seconds":3600,"timezone":"Europe/Amsterdam","timezone_abbreviation":"GMT+1","elevation":11.0,
+"current_units":{"time":"iso8601","interval":"seconds","temperature_2m":"°C"},
+"current":{"time":"2026-11-23T12:00","interval":900,"temperature_2m":7.8,"apparent_temperature":4.6,"relative_humidity_2m":79,"weather_code":61,"wind_speed_10m":18.4,"wind_direction_10m":225,"is_day":1},
+"daily_units":{"time":"iso8601"},
+"daily":{"time":["2026-11-23","2026-11-24","2026-11-25","2026-11-26","2026-11-27"],"weather_code":[61,80,3,71,0],"temperature_2m_max":[9.1,10.4,8.0,3.6,5.2],"temperature_2m_min":[4.2,5.0,3.9,0.4,-1.3],"precipitation_probability_max":[85,70,20,55,5]}}

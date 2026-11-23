@@ -37,9 +37,7 @@ try {
     
     // Get user presentation settings
     $stmt = $db->prepare("
-        SELECT 
-            can_show_presentation,
-            presentation_id
+        SELECT *
         FROM users
         WHERE id = ?
     ");
@@ -66,12 +64,21 @@ try {
         }
     }
     
+    // Infoscherm (2.4.0): wat het scherm bij inactiviteit toont — Google Slides, het
+    // Infoscherm of beide (Slides met zijbalk). De kolom bestaat pas na de migratie.
+    $screenMode = in_array($user['screen_mode'] ?? '', ['slides', 'infoscreen', 'combined'], true)
+        ? $user['screen_mode'] : 'slides';
+    $idleSeconds = max(10, min(3600, (int)($user['presentation_idle_seconds'] ?? 120)));
+
     // Return settings
     echo json_encode([
         'success' => true,
         'can_show' => (bool)$user['can_show_presentation'],
         'presentation_id' => $presentationId,
-        'has_presentation' => !empty($presentationId)
+        'screen_mode' => $screenMode,
+        'idle_seconds' => $idleSeconds,
+        // Het Infoscherm heeft geen presentatie-ID nodig (zonder ID toont 'combined' alleen het Infoscherm)
+        'has_presentation' => !empty($presentationId) || $screenMode !== 'slides'
     ]);
     
 } catch (PDOException $e) {

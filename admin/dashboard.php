@@ -73,6 +73,7 @@ $canManageConfig         = hasAdminFeature('manage_system_config');
 $canManageSubstatus      = hasAdminFeature('manage_substatus_dates');
 $canManageUsers          = hasAdminFeature('manage_users');
 $canCreateBackup         = ($userRole === 'superadmin') || hasAdminFeature('create_backup');
+$canManageInfoscreen     = hasAdminFeature('manage_infoscreen');
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -550,6 +551,14 @@ $canCreateBackup         = ($userRole === 'superadmin') || hasAdminFeature('crea
                 <h3>Kiosk Tokens <span style="font-size:11px;background:#eee;color:#888;padding:1px 6px;border-radius:10px;font-weight:400;">Upgrade</span></h3>
                 <p>Upgrade naar Business voor kiosk modus</p>
             </div>
+            <?php endif; ?>
+
+            <?php if ($canManageInfoscreen): ?>
+            <a href="infoscreen_manage.php" class="menu-card config">
+                <div class="menu-icon">📺</div>
+                <h3>Infoscherm</h3>
+                <p>Berichten, nieuws en weer op de schermen</p>
+            </a>
             <?php endif; ?>
 
             <?php if ($canViewAuditLog): ?>

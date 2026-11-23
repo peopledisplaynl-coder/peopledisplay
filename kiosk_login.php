@@ -92,6 +92,13 @@ try {
     error_log("Session tracking start failed: " . $e->getMessage());
 }
 
+// Infoscherm (2.4.0): kiosk_login.php?token=…&page=infoscherm opent direct het infoscherm
+// (voor schermen zonder aanraking die alleen berichten, nieuws en weer tonen)
+if (($_GET['page'] ?? '') === 'infoscherm') {
+    header('Location: infoscherm.php');
+    exit;
+}
+
 // Redirect based on role (EXACT zoals login.php)
 if (in_array($user['role'], ['admin', 'superadmin'])) {
     header('Location: admin/dashboard.php');
