@@ -2,6 +2,16 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.4.0 — 2026-11-23
+
+- Nieuw: Infoscherm — toon eigen berichten (met afbeelding, kleur, periode en locatie), nieuws uit RSS-feeds en het weer (Buienradar of Open-Meteo) op uw schermen, met datum, tijd en een nieuwsbalk. Beschikbaar in alle pakketten, ook Starter. Beheer via Dashboard → Infoscherm
+- Nieuw: per scherm kiezen wat er bij inactiviteit verschijnt: Google Slides, het Infoscherm, of Google Slides met weer, mededelingen en nieuwsbalk eromheen. Een aanraking sluit het infoscherm weer
+- Nieuw: een scherm dat alleen het infoscherm toont, via infoscherm.php of kiosk_login.php?token=…&page=infoscherm
+- Nieuw: cronjob cron/cron_infoscreen.php (of cron_endpoint.php?action=infoscreen_refresh) om nieuws en weer elke 15 minuten bij te werken; zonder cronjob gebeurt dat zodra een scherm gegevens opvraagt
+- Opgelost: de wachttijd voordat de presentatie start gebruikt nu de ingestelde seconden bij de gebruiker (stond vast op 60 seconden)
+- Opgelost: de installatiewizard kon een nieuwe installatie niet afronden door commentaar in install.sql
+- Beveiliging: gebruikersbeheer stuurt de wachtwoord-hash van een gebruiker niet meer naar de browser
+
 ## v2.3.1 — 2026-11-22
 
 - Nieuw: tweestapsverificatie instellen werkt nu ook op een telefoon of tablet, waar je de QR-code niet op hetzelfde apparaat kunt scannen. Op een telefoon staat nu de knop 'Open in je authenticator-app' (voegt het account direct toe in Google Authenticator, Microsoft Authenticator, Authy of 1Password) en de knop 'Sleutel kopiëren' om de sleutel in de app te plakken. De QR-code blijft op een computer gewoon bovenaan staan en is op een telefoon met één tik alsnog te tonen
