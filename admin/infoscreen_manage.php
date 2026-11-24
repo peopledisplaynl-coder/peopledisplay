@@ -18,6 +18,9 @@
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/version.php';
 require_once __DIR__ . '/../includes/infoscreen.php';
+require_once __DIR__ . '/../includes/infoscreen_ical.php';
+require_once __DIR__ . '/../includes/infoscreen_api.php';
+require_once __DIR__ . '/../includes/twofa.php';
 require_once __DIR__ . '/auth_helper.php';
 
 requireAdmin();
@@ -29,6 +32,8 @@ $tabs = [
     'berichten' => '📝 Berichten',
     'nieuws'    => '📰 Nieuws',
     'weer'      => '🌤️ Weer',
+    'agenda'    => '📅 Agenda',
+    'koppelingen' => '🔗 Koppelingen',
     'weergave'  => '🎨 Weergave',
     'schermen'  => '🖥️ Schermen',
 ];
@@ -130,8 +135,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             case 'save_source':
                 $id = (int)($_POST['id'] ?? 0);
-                $type = ($_POST['type'] ?? '') === 'weather' ? 'weather' : 'rss';
-                $tabFor = $type === 'weather' ? 'weer' : 'nieuws';
+                $type = in_array($_POST['type'] ?? '', ['rss', 'weather', 'ical'], true) ? $_POST['type'] : 'rss';
+                $tabFor = ['rss' => 'nieuws', 'weather' => 'weer', 'ical' => 'agenda'][$type];
                 $editQs = $id ? '&edit=' . $id : '&new=1';
                 $name = mb_substr(trim((string)($_POST['name'] ?? '')), 0, 150);
                 if ($name === '') pd_is_redirect($tabFor, 'Vul een naam in.', false, $editQs);
@@ -144,6 +149,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!$url) pd_is_redirect($tabFor, 'Vul een geldig webadres van de feed in (begint met https://).', false, $editQs);
                     $maxItems = max(1, min(30, (int)($_POST['max_items'] ?? 8)));
                     $showImages = !empty($_POST['show_images']) ? 1 : 0;
+                    $attribution = mb_substr(trim((string)($_POST['attribution'] ?? '')), 0, 200) ?: null;
+                } elseif ($type === 'ical') {
+                    $url = pd_infoscreen_clean_url(pd_ical_url((string)($_POST['url'] ?? '')));
+                    if (!$url) pd_is_redirect($tabFor, 'Vul het webadres van de agenda in (begint met https:// of webcal://).', false, $editQs);
+                    $showImages = 0;
                     $attribution = mb_substr(trim((string)($_POST['attribution'] ?? '')), 0, 200) ?: null;
                 } else {
                     $provider = isset(PD_IS_WEATHER_PROVIDERS[$_POST['provider'] ?? '']) ? $_POST['provider'] : 'buienradar';
@@ -187,8 +197,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             case 'delete_source':
                 $db->prepare("DELETE FROM infoscreen_items WHERE source_id = ?")->execute([(int)$_POST['id']]);
+                $db->prepare("DELETE FROM infoscreen_events WHERE source_id = ?")->execute([(int)$_POST['id']]);
                 $db->prepare("DELETE FROM infoscreen_sources WHERE id = ?")->execute([(int)$_POST['id']]);
                 pd_is_redirect($back, 'Bron verwijderd.');
+
+            case 'create_key':
+                $type = ($_POST['type'] ?? '') === 'teams' ? 'teams' : 'api';
+                $name = mb_substr(trim((string)($_POST['name'] ?? '')), 0, 100);
+                if ($name === '') pd_is_redirect('koppelingen', 'Vul een naam in.', false, '&new=' . $type);
+                if ($type === 'teams' && !preg_match('/^[\p{L}\p{N} _-]{1,40}$/u', $name)) {
+                    pd_is_redirect('koppelingen', 'Gebruik voor een Teams-koppeling een korte naam zonder leestekens, bijv. Infoscherm.', false, '&new=teams');
+                }
+                $location = pd_is_location($_POST['location'] ?? '', $locations);
+                $days = max(1, min(90, (int)($_POST['default_days'] ?? 7)));
+                $color = in_array($_POST['color'] ?? '', PD_IS_COLORS, true) ? $_POST['color'] : 'blauw';
+                $hash = $hint = null;
+                if ($type === 'api') {
+                    [$key, $hash, $hint] = pd_is_api_new_key();
+                }
+                $db->prepare("INSERT INTO infoscreen_api_keys (type, name, key_hash, key_hint, location, default_days, color, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+                   ->execute([$type, $name, $hash, $hint, $location, $days, $color, (int)$_SESSION['user_id']]);
+                $newId = (int)$db->lastInsertId();
+                if ($type === 'api') {
+                    $_SESSION['pd_is_new_key'] = ['id' => $newId, 'key' => $key]; // shown once
+                    pd_is_redirect('koppelingen', 'Koppeling aangemaakt. Kopieer de sleutel nu: hij wordt maar één keer getoond.');
+                }
+                pd_is_redirect('koppelingen', 'Teams-koppeling aangemaakt. Maak nu de uitgaande webhook in Teams en vul het beveiligingstoken in.', true, '&setup=' . $newId);
+
+            case 'save_teams_token':
+                $id = (int)($_POST['id'] ?? 0);
+                $token = preg_replace('/\s+/', '', (string)($_POST['token'] ?? ''));
+                $raw = base64_decode($token, true);
+                if ($raw === false || strlen($raw) < 16) {
+                    pd_is_redirect('koppelingen', 'Dit lijkt geen beveiligingstoken van Teams. Kopieer het token uit het venster dat Teams toonde na "Maken".', false, '&setup=' . $id);
+                }
+                $db->prepare("UPDATE infoscreen_api_keys SET secret_enc = ? WHERE id = ? AND type = 'teams'")->execute([pd_2fa_encrypt($token), $id]);
+                pd_is_redirect('koppelingen', 'Beveiligingstoken opgeslagen. Typ nu in het Teams-kanaal: @naam help');
+
+            case 'new_api_key':
+                [$key, $hash, $hint] = pd_is_api_new_key();
+                $db->prepare("UPDATE infoscreen_api_keys SET key_hash = ?, key_hint = ? WHERE id = ? AND type = 'api'")->execute([$hash, $hint, (int)$_POST['id']]);
+                $_SESSION['pd_is_new_key'] = ['id' => (int)$_POST['id'], 'key' => $key];
+                pd_is_redirect('koppelingen', 'Nieuwe sleutel gemaakt. De oude sleutel werkt niet meer.');
+
+            case 'toggle_key':
+                $db->prepare("UPDATE infoscreen_api_keys SET active = 1 - active WHERE id = ?")->execute([(int)$_POST['id']]);
+                pd_is_redirect('koppelingen', 'Koppeling bijgewerkt.');
+
+            case 'delete_key':
+                $db->prepare("UPDATE infoscreen_messages SET api_key_id = NULL WHERE api_key_id = ?")->execute([(int)$_POST['id']]);
+                $db->prepare("DELETE FROM infoscreen_api_keys WHERE id = ?")->execute([(int)$_POST['id']]);
+                pd_is_redirect('koppelingen', 'Koppeling verwijderd. Berichten die al geplaatst waren, blijven staan tot hun einddatum.');
 
             case 'save_settings':
                 pd_infoscreen_save_settings($db, $_POST);
@@ -229,13 +288,23 @@ $sources = $db->query("SELECT s.*, (SELECT COUNT(*) FROM infoscreen_items i WHER
                        FROM infoscreen_sources s ORDER BY s.type, s.sort_order, s.id")->fetchAll(PDO::FETCH_ASSOC);
 $rssSources = array_values(array_filter($sources, fn($s) => $s['type'] === 'rss'));
 $weatherSources = array_values(array_filter($sources, fn($s) => $s['type'] === 'weather'));
+$icalSources = array_values(array_filter($sources, fn($s) => $s['type'] === 'ical'));
+$eventCounts = [];
+foreach ($db->query("SELECT source_id, COUNT(*) AS n, SUM(starts_at < NOW() + INTERVAL 7 DAY) AS week FROM infoscreen_events GROUP BY source_id") as $r) {
+    $eventCounts[(int)$r['source_id']] = $r;
+}
+$keys = $db->query("SELECT k.*, (SELECT COUNT(*) FROM infoscreen_messages m WHERE m.api_key_id = k.id AND (m.ends_at IS NULL OR m.ends_at >= NOW())) AS live_count
+                    FROM infoscreen_api_keys k ORDER BY k.type, k.name")->fetchAll(PDO::FETCH_ASSOC);
+$keyNames = array_column($keys, 'name', 'id');
+$newKey = $_SESSION['pd_is_new_key'] ?? null;
+unset($_SESSION['pd_is_new_key']);
 
 $editMessage = null;
 $editSource = null;
 if ($editId && $tab === 'berichten') {
     foreach ($messages as $m) if ((int)$m['id'] === $editId) $editMessage = $m;
 }
-if ($editId && in_array($tab, ['nieuws', 'weer'], true)) {
+if ($editId && in_array($tab, ['nieuws', 'weer', 'agenda'], true)) {
     foreach ($sources as $s) if ((int)$s['id'] === $editId) $editSource = $s;
 }
 
@@ -323,7 +392,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     .pill { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .pill.live { background: #d1fae5; color: #065f46; } .pill.planned { background: #dbeafe; color: #1e40af; }
     .pill.expired { background: #f3f4f6; color: #6b7280; } .pill.off { background: #f3f4f6; color: #9ca3af; }
-    .pill.prio { background: #fee2e2; color: #b91c1c; } .pill.ok { background: #d1fae5; color: #065f46; } .pill.err { background: #fee2e2; color: #991b1b; }
+    .pill.prio { background: #fee2e2; color: #b91c1c; } .pill.src { background: #ede9fe; color: #5b21b6; } .pill.ok { background: #d1fae5; color: #065f46; } .pill.err { background: #fee2e2; color: #991b1b; }
     .muted { color: #6b7280; font-size: 12.5px; }
     .actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
     .actions form { display: inline; }
@@ -470,6 +539,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
             <tr>
                 <td><?php if ($m['image_path']): ?><img class="thumb" src="../<?= $h($m['image_path']) ?>" alt=""><?php else: ?><span class="thumb" style="background:<?= $colors[$m['color']] ?? '#1d4ed8' ?>"></span><?php endif; ?></td>
                 <td><strong><?= $h($m['title']) ?></strong><?php if ((int)$m['priority']): ?> <span class="pill prio">Belangrijk</span><?php endif; ?>
+                    <?php if (($m['source'] ?? 'handmatig') !== 'handmatig'): ?><span class="pill src" title="Geplaatst via <?= $h($m['source'] === 'teams' ? 'Teams' : 'de Berichten-API') ?>"><?= $m['source'] === 'teams' ? 'Teams' : 'API' ?><?= isset($keyNames[$m['api_key_id']]) ? ' · ' . $h($keyNames[$m['api_key_id']]) : '' ?><?= $m['author'] ? ' · ' . $h($m['author']) : '' ?></span><?php endif; ?>
                     <?php if ($m['body']): ?><div class="muted"><?= $h(mb_strimwidth($m['body'], 0, 90, '…')) ?></div><?php endif; ?></td>
                 <td class="hide-sm"><?= $h($m['location'] ?: 'Alle') ?></td>
                 <td class="hide-sm muted"><?= $h(pd_is_period($m)) ?></td>
@@ -705,6 +775,219 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     </table>
     <?php endif; ?>
 
+<?php elseif ($tab === 'agenda'): ?>
+    <div class="info">
+        <strong>Een agenda koppelen.</strong> Het infoscherm leest een agenda via een iCal-link (.ics). Afspraken verschijnen in de zijbalk en
+        één keer per ronde als agendadia, met terugkerende afspraken, verplaatste en geannuleerde afspraken. Privé-afspraken worden niet getoond.
+        <br>• <strong>Outlook / Microsoft 365:</strong> Outlook op het web → Instellingen → Agenda → Gedeelde agenda's → <em>Een agenda publiceren</em>:
+        kies de agenda en "Kan titels en locaties bekijken" → Publiceren → kopieer de <strong>ICS</strong>-link.
+        <br>• <strong>Google Agenda:</strong> Instellingen → kies de agenda → <em>Geheim adres in iCal-indeling</em> → kopieer.
+        <br>Iedereen met de link kan de agenda lezen; deel hem dus niet verder. Het infoscherm haalt de agenda elke <?= PD_IS_FETCH_MINUTES ?> minuten op.
+    </div>
+
+    <?php if ($showForm): $s = $editSource ?? ['id' => 0, 'name' => '', 'url' => '', 'location' => null, 'attribution' => '', 'active' => 1]; ?>
+    <div class="panel">
+        <h2><?= $s['id'] ? '✏️ Agenda bewerken' : '➕ Agenda koppelen' ?></h2>
+        <form method="post">
+            <input type="hidden" name="csrf" value="<?= $h($csrf) ?>">
+            <input type="hidden" name="action" value="save_source">
+            <input type="hidden" name="type" value="ical">
+            <input type="hidden" name="tab" value="agenda">
+            <input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
+            <div class="grid">
+                <div>
+                    <label class="f" for="name">Naam *</label>
+                    <input type="text" id="name" name="name" maxlength="150" required value="<?= $h($s['name']) ?>" placeholder="Bijv. Schoolagenda">
+                </div>
+                <div>
+                    <label class="f" for="attribution">Naam op het scherm</label>
+                    <input type="text" id="attribution" name="attribution" maxlength="200" value="<?= $h($s['attribution']) ?>" placeholder="Leeg = de naam (alleen getoond bij meer agenda's)">
+                </div>
+                <div class="full">
+                    <label class="f" for="url">iCal-link (.ics) *</label>
+                    <input type="text" id="url" name="url" maxlength="500" required value="<?= $h($s['url']) ?>" placeholder="https://outlook.office365.com/owa/calendar/…/calendar.ics">
+                    <div class="help">Na het opslaan wordt de agenda meteen opgehaald, zodat u direct ziet hoeveel afspraken er gevonden zijn.</div>
+                </div>
+                <div>
+                    <label class="f" for="location">Locatie</label>
+                    <select id="location" name="location">
+                        <option value="">Alle locaties</option>
+                        <?php foreach ($locations as $loc): ?><option value="<?= $h($loc) ?>" <?= $s['location'] === $loc ? 'selected' : '' ?>><?= $h($loc) ?></option><?php endforeach; ?>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:flex-end">
+                    <label class="check"><input type="checkbox" name="active" value="1" <?= (int)$s['active'] ? 'checked' : '' ?>> Actief</label>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">💾 Opslaan en ophalen</button>
+                <a class="btn btn-light" href="?tab=agenda">Annuleren</a>
+            </div>
+        </form>
+    </div>
+    <?php endif; ?>
+
+    <div class="toolbar">
+        <div class="muted"><?= count($icalSources) ?> agenda('s) · getoond: <?= (int)$settings['agenda_days'] ?> dagen vooruit (aan te passen bij Weergave)</div>
+        <?php if (!$showForm): ?><a class="btn btn-primary" href="?tab=agenda&amp;new=1">➕ Agenda koppelen</a><?php endif; ?>
+    </div>
+    <?php if (!$icalSources): ?>
+        <div class="empty"><div class="big">📅</div>Nog geen agenda gekoppeld.</div>
+    <?php else: ?>
+    <table>
+        <thead><tr><th>Agenda</th><th class="hide-sm">Locatie</th><th>Afspraken</th><th>Laatst opgehaald</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($icalSources as $s): $ok = str_starts_with((string)$s['last_status'], 'OK'); $cnt = $eventCounts[(int)$s['id']] ?? null; ?>
+            <tr>
+                <td><strong><?= $h($s['name']) ?></strong> <?php if (!(int)$s['active']): ?><span class="pill off">Uit</span><?php endif; ?>
+                    <div class="muted"><code><?= $h(mb_strimwidth((string)$s['url'], 0, 60, '…')) ?></code></div></td>
+                <td class="hide-sm"><?= $h($s['location'] ?: 'Alle') ?></td>
+                <td><?= (int)($cnt['n'] ?? 0) ?> <span class="muted">(<?= (int)($cnt['week'] ?? 0) ?> komende week)</span></td>
+                <td><?php if ($s['last_status']): ?><span class="pill <?= $ok ? 'ok' : 'err' ?>"><?= $ok ? 'OK' : 'Fout' ?></span><?php endif; ?>
+                    <span class="muted"><?= $h(pd_is_ago($s['last_fetch_at'])) ?></span>
+                    <?php if (!$ok && $s['last_status']): ?><div class="muted" style="color:#991b1b"><?= $h(preg_replace('/^Fout: /', '', $s['last_status'])) ?></div><?php endif; ?></td>
+                <td><div class="actions">
+                    <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="agenda"><input type="hidden" name="action" value="fetch_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-light btn-sm">🔄 Nu ophalen</button></form>
+                    <a class="btn btn-light btn-sm" href="?tab=agenda&amp;edit=<?= (int)$s['id'] ?>">Bewerken</a>
+                    <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="agenda"><input type="hidden" name="action" value="toggle_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-light btn-sm"><?= (int)$s['active'] ? 'Uitzetten' : 'Aanzetten' ?></button></form>
+                    <form method="post" onsubmit="return confirm('Agenda ontkoppelen?')"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="agenda"><input type="hidden" name="action" value="delete_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-danger btn-sm">Verwijderen</button></form>
+                </div></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+
+<?php elseif ($tab === 'koppelingen'):
+    $pushUrl = $appUrl . '/api/infoscreen_push.php';
+    $newType = in_array($_GET['new'] ?? '', ['api', 'teams'], true) ? $_GET['new'] : '';
+    $setupId = (int)($_GET['setup'] ?? 0);
+?>
+    <div class="info">
+        <strong>Berichten uit andere systemen.</strong> Met een koppeling zetten andere systemen zelf een bericht op het infoscherm.
+        <br>• <strong>Teams</strong> — gratis, zonder extra licentie: in een team typt iemand <code>@Infoscherm Studiedag vrijdag</code> in een kanaal en het bericht staat op de schermen.
+        <br>• <strong>Berichten-API</strong> — voor eigen systemen, scripts, Zapier/Make of Power Automate (de HTTP-actie van Power Automate vraagt een Premium-licentie).
+        <br>Berichten van een koppeling krijgen de locatie, kleur en looptijd van de koppeling, tenzij het bericht zelf iets anders opgeeft. U ziet ze gewoon bij Berichten en kunt ze daar aanpassen of uitzetten.
+    </div>
+
+    <?php if ($newKey): ?>
+    <div class="panel" style="border-color:#f59e0b;background:#fffbeb">
+        <h2>🔑 De sleutel van "<?= $h($keyNames[$newKey['id']] ?? '') ?>"</h2>
+        <p class="help" style="font-size:14px;color:#5b4204">Kopieer deze sleutel nu en bewaar hem veilig, bijvoorbeeld in het systeem dat de berichten stuurt. Hij wordt <strong>niet nog een keer getoond</strong>; kwijt = een nieuwe maken.</p>
+        <div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="newkey" readonly value="<?= $h($newKey['key']) ?>" style="font-family:monospace"><button type="button" class="btn btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('newkey').value);this.textContent='✓ Gekopieerd'">📋 Kopiëren</button></div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($newType): ?>
+    <div class="panel">
+        <h2><?= $newType === 'teams' ? '➕ Teams-koppeling maken' : '➕ API-koppeling maken' ?></h2>
+        <form method="post">
+            <input type="hidden" name="csrf" value="<?= $h($csrf) ?>">
+            <input type="hidden" name="action" value="create_key">
+            <input type="hidden" name="type" value="<?= $newType ?>">
+            <input type="hidden" name="tab" value="koppelingen">
+            <div class="grid">
+                <div>
+                    <label class="f" for="name">Naam *</label>
+                    <input type="text" id="name" name="name" maxlength="<?= $newType === 'teams' ? 40 : 100 ?>" required placeholder="<?= $newType === 'teams' ? 'Infoscherm' : 'Bijv. Roostersysteem' ?>" value="<?= $newType === 'teams' ? 'Infoscherm' : '' ?>">
+                    <div class="help"><?= $newType === 'teams' ? 'Gebruik dezelfde naam voor de webhook in Teams. Collega\'s typen @naam om een bericht te plaatsen.' : 'Waar komen de berichten vandaan? Alleen voor uzelf.' ?></div>
+                </div>
+                <div>
+                    <label class="f" for="location">Standaardlocatie</label>
+                    <select id="location" name="location">
+                        <option value="">Alle locaties</option>
+                        <?php foreach ($locations as $loc): ?><option value="<?= $h($loc) ?>"><?= $h($loc) ?></option><?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="f" for="default_days">Standaard looptijd (dagen)</label>
+                    <input type="number" id="default_days" name="default_days" min="1" max="90" value="7">
+                    <div class="help">Hoe lang een bericht blijft staan als er geen einddatum bij staat.</div>
+                </div>
+                <div>
+                    <label class="f" for="color">Standaardkleur</label>
+                    <select id="color" name="color"><?php foreach (array_keys($colors) as $c): ?><option value="<?= $c ?>"><?= ucfirst($c) ?></option><?php endforeach; ?></select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">💾 Aanmaken</button>
+                <a class="btn btn-light" href="?tab=koppelingen">Annuleren</a>
+            </div>
+        </form>
+    </div>
+    <?php endif; ?>
+
+    <?php foreach ($keys as $k): if ((int)$k['id'] !== $setupId || $k['type'] !== 'teams') continue; $teamsUrl = $appUrl . '/api/infoscreen_teams.php?k=' . (int)$k['id']; ?>
+    <div class="panel" style="border-color:#667eea">
+        <h2>🟣 Teams-koppeling "<?= $h($k['name']) ?>" instellen</h2>
+        <ol style="margin:0 0 14px 20px;line-height:1.8;font-size:14px">
+            <li>Open in Teams het team → <strong>⋯</strong> → <strong>Team beheren</strong> → tabblad <strong>Apps</strong> → <strong>Een uitgaande webhook maken</strong>
+                (staat de knop er niet, dan moet de Teams-beheerder "aangepaste apps" toestaan).</li>
+            <li>Naam: <code><?= $h($k['name']) ?></code> — Callback-URL: <code><?= $h($teamsUrl) ?></code> — Beschrijving: bijv. <em>Zet berichten op het infoscherm</em>.</li>
+            <li>Klik op <strong>Maken</strong>. Teams toont een <strong>beveiligingstoken</strong>: kopieer het en plak het hieronder.</li>
+        </ol>
+        <form method="post" style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="hidden" name="csrf" value="<?= $h($csrf) ?>">
+            <input type="hidden" name="action" value="save_teams_token">
+            <input type="hidden" name="tab" value="koppelingen">
+            <input type="hidden" name="id" value="<?= (int)$k['id'] ?>">
+            <input type="text" name="token" required placeholder="Beveiligingstoken uit Teams" style="flex:1;min-width:260px;font-family:monospace" autocomplete="off">
+            <button class="btn btn-primary" type="submit">💾 Token opslaan</button>
+        </form>
+        <p class="help">Werkt alleen in openbare kanalen van dat team (niet in privéchats of privékanalen). Afbeeldingen uit Teams worden niet meegenomen.</p>
+    </div>
+    <?php endforeach; ?>
+
+    <div class="toolbar">
+        <div class="muted"><?= count($keys) ?> koppeling(en) · maximaal <?= PD_IS_API_PER_HOUR ?> berichten per uur per koppeling</div>
+        <?php if (!$newType): ?><div style="display:flex;gap:8px"><a class="btn btn-primary" href="?tab=koppelingen&amp;new=teams">➕ Teams-koppeling</a><a class="btn btn-light" href="?tab=koppelingen&amp;new=api">➕ API-koppeling</a></div><?php endif; ?>
+    </div>
+    <?php if (!$keys): ?>
+        <div class="empty"><div class="big">🔗</div>Nog geen koppelingen.</div>
+    <?php else: ?>
+    <table>
+        <thead><tr><th>Koppeling</th><th>Soort</th><th class="hide-sm">Standaard</th><th>Nu op het scherm</th><th>Laatst gebruikt</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($keys as $k): ?>
+            <tr>
+                <td><strong><?= $h($k['name']) ?></strong> <?php if (!(int)$k['active']): ?><span class="pill off">Uit</span><?php endif; ?>
+                    <?php if ($k['type'] === 'api'): ?><div class="muted">Sleutel eindigt op <code>…<?= $h($k['key_hint']) ?></code></div>
+                    <?php elseif (!$k['secret_enc']): ?><div class="muted" style="color:#b45309">Beveiligingstoken nog niet ingevuld</div><?php endif; ?></td>
+                <td><?= $k['type'] === 'teams' ? 'Teams' : 'Berichten-API' ?></td>
+                <td class="hide-sm muted"><?= $h($k['location'] ?: 'Alle locaties') ?> · <?= (int)$k['default_days'] ?> dagen · <?= $h($k['color']) ?></td>
+                <td><?= (int)$k['live_count'] ?></td>
+                <td class="muted"><?= $h(pd_is_ago($k['last_used_at'])) ?></td>
+                <td><div class="actions">
+                    <?php if ($k['type'] === 'teams'): ?><a class="btn btn-light btn-sm" href="?tab=koppelingen&amp;setup=<?= (int)$k['id'] ?>">Instellen</a>
+                    <?php else: ?><form method="post" onsubmit="return confirm('Een nieuwe sleutel maken? De huidige sleutel werkt daarna niet meer.')"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="koppelingen"><input type="hidden" name="action" value="new_api_key"><input type="hidden" name="id" value="<?= (int)$k['id'] ?>"><button class="btn btn-light btn-sm">Nieuwe sleutel</button></form><?php endif; ?>
+                    <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="koppelingen"><input type="hidden" name="action" value="toggle_key"><input type="hidden" name="id" value="<?= (int)$k['id'] ?>"><button class="btn btn-light btn-sm"><?= (int)$k['active'] ? 'Uitzetten' : 'Aanzetten' ?></button></form>
+                    <form method="post" onsubmit="return confirm('Koppeling verwijderen?')"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="koppelingen"><input type="hidden" name="action" value="delete_key"><input type="hidden" name="id" value="<?= (int)$k['id'] ?>"><button class="btn btn-danger btn-sm">Verwijderen</button></form>
+                </div></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+
+    <div class="panel" style="margin-top:26px">
+        <h2>📘 Berichten-API in het kort</h2>
+        <p class="help" style="font-size:14px;color:#374151">Stuur een POST naar <code><?= $h($pushUrl) ?></code> met de kop <code>Authorization: Bearer &lt;sleutel&gt;</code> en JSON:</p>
+<pre style="background:#0f172a;color:#e2e8f0;padding:14px;border-radius:8px;overflow:auto;font-size:12.5px;line-height:1.5;margin:10px 0">{
+  "title": "Studiedag vrijdag",             // verplicht
+  "body": "Alle groepen vrij.",             // tekst (HTML wordt platte tekst)
+  "image_url": "https://…/foto.jpg",        // of "image_base64"
+  "location": "Hoofdgebouw",                // leeg = standaard van de koppeling
+  "starts_at": "2026-12-01T08:00:00+01:00", // leeg = direct
+  "ends_at": "2026-12-05T17:00:00+01:00",   // leeg = standaard looptijd
+  "priority": true, "color": "rood",
+  "external_id": "rooster-123"              // zelfde id = bijwerken
+}</pre>
+        <p class="help" style="font-size:14px;color:#374151">Verwijderen: <code>{"action": "delete", "external_id": "rooster-123"}</code>. Overzicht: <code>GET</code> met dezelfde sleutel. Voorbeeld in PowerShell:</p>
+<pre style="background:#0f172a;color:#e2e8f0;padding:14px;border-radius:8px;overflow:auto;font-size:12.5px;line-height:1.5;margin:10px 0">Invoke-RestMethod -Method Post -Uri "<?= $h($pushUrl) ?>" `
+  -Headers @{ Authorization = "Bearer UW-SLEUTEL" } -ContentType "application/json; charset=utf-8" `
+  -Body '{"title":"Testbericht","body":"Verstuurd met PowerShell"}'</pre>
+    </div>
+
 <?php elseif ($tab === 'weergave'): ?>
     <form method="post" class="panel">
         <input type="hidden" name="csrf" value="<?= $h($csrf) ?>">
@@ -739,13 +1022,19 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 <input type="number" id="ticker_speed" name="ticker_speed" min="20" max="200" value="<?= (int)$settings['ticker_speed'] ?>">
                 <div class="help">20 = rustig, 60 = normaal, 120 = snel.</div>
             </div>
-            <div></div>
+            <div>
+                <label class="f" for="agenda_days">Agenda: dagen vooruit</label>
+                <input type="number" id="agenda_days" name="agenda_days" min="1" max="31" value="<?= (int)$settings['agenda_days'] ?>">
+                <div class="help">Alleen als er een agenda is gekoppeld (tabblad Agenda).</div>
+            </div>
             <div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                 <label class="check"><input type="checkbox" name="sidebar" value="1" <?= $settings['sidebar'] === '1' ? 'checked' : '' ?>> Zijbalk met weer (of klok)</label>
                 <label class="check"><input type="checkbox" name="ticker" value="1" <?= $settings['ticker'] === '1' ? 'checked' : '' ?>> Nieuwsbalk onderaan</label>
                 <label class="check"><input type="checkbox" name="news_slides" value="1" <?= $settings['news_slides'] === '1' ? 'checked' : '' ?>> Nieuws met afbeelding als dia</label>
                 <label class="check"><input type="checkbox" name="weather_slide" value="1" <?= $settings['weather_slide'] === '1' ? 'checked' : '' ?>> Weerdia (één keer per ronde)</label>
                 <label class="check"><input type="checkbox" name="show_clock" value="1" <?= $settings['show_clock'] === '1' ? 'checked' : '' ?>> Datum en tijd bovenaan</label>
+                <label class="check"><input type="checkbox" name="agenda_sidebar" value="1" <?= $settings['agenda_sidebar'] === '1' ? 'checked' : '' ?>> Agenda in de zijbalk</label>
+                <label class="check"><input type="checkbox" name="agenda_slide" value="1" <?= $settings['agenda_slide'] === '1' ? 'checked' : '' ?>> Agendadia (één keer per ronde)</label>
             </div>
         </div>
         <div class="form-actions">

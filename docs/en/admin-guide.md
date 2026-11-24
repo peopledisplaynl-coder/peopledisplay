@@ -256,14 +256,14 @@ A kiosk token is a permanent login link for a screen without a keyboard, such as
 
 # Infoscreen
 
-The infoscreen shows **your own messages, news and the weather** on a screen, with the date and time. You use it instead of the Google Slides presentation, or together with it. It is available in every package, Starter included. You manage it under **Infoscherm** on the dashboard (group *Systeem Configuratie*).
+The infoscreen shows **your own messages, news, the weather and the agenda** on a screen, with the date and time. Colleagues can also post a message from **Teams**. You use it instead of the Google Slides presentation, or together with it. It is available in every package, Starter included. You manage it under **Infoscherm** on the dashboard (group *Systeem Configuratie*).
 
 ![The infoscreen with an own message, the weather in the sidebar and the news ticker](../images/infoscherm-scherm.png)
 
 The screen has three parts:
 
 - **Slides in the middle** — your own messages, news with an image as a large slide, and once per round a weather slide with the five-day forecast. With several news sources they take turns, and every round shows the next items.
-- **The sidebar** — the current weather and the coming days. Without a weather place it shows a large clock.
+- **The sidebar** — the current weather and the coming days, and the agenda when one is connected. Without a weather place it shows a large clock.
 - **The news ticker at the bottom** — all news headlines scroll by, with the name of the source. Important messages are in it too.
 
 ## Messages
@@ -294,9 +294,45 @@ On the **Weer** tab you add a place. Type its name and click **Zoek plaats** (fi
 
 Both are free for non-commercial use, with credit to the source (always shown on the screen). You can set one place for all screens, or a place per location.
 
+## Agenda
+
+On the **Agenda** tab you connect a calendar through an iCal link (.ics). Today's and the coming days' appointments then show in the sidebar, and once per round an agenda slide appears. Repeating, moved and cancelled appointments are shown correctly; **private appointments are not shown**.
+
+- **Outlook / Microsoft 365** — Outlook on the web → **Settings** → **Calendar** → **Shared calendars** → *Publish a calendar*. Choose the calendar and *Can view titles and locations*, click **Publish** and copy the **ICS** link.
+- **Google Calendar** — **Settings** → choose the calendar → *Secret address in iCal format* → copy.
+
+Fill in a name and the link and click **Opslaan en ophalen** (save and fetch): you see right away how many appointments were found. Anyone with the link can read the calendar, so do not pass it on. How many days ahead the screen shows (default 7) is set under **Weergave**. An agenda can also be linked to one location.
+
+## Connections: Teams and other systems
+
+![Connections for Teams and the Berichten-API](../images/infoscherm-koppelingen.png)
+
+With a connection, colleagues or other systems put a message on the infoscreen themselves. Such a message gets the connection's default location, colour and duration (default 7 days), and appears under **Berichten** with *Teams* or *API* and the sender's name. You can change, switch off or delete it there. Each connection can post at most 120 messages per hour.
+
+**Teams (free, no extra licence)**
+
+1. Click **➕ Teams-koppeling**, keep the name *Infoscherm* (or choose another short name) and click **Aanmaken** (create).
+2. In Teams open the team → **⋯** → **Manage team** → **Apps** → **Create an outgoing webhook**. Enter the same name and the **callback URL** PeopleDisplay shows, and click **Create**. If the button is missing, the Microsoft 365 administrator must allow custom apps.
+3. Teams shows a **security token**. Paste it in PeopleDisplay and click **Token opslaan** (save token).
+
+After that, someone types in a channel of that team, for example:
+
+```
+@Infoscherm Schoolreis groep 6
+Vertrek 8:15 bij de bus.
+tot vrijdag
+belangrijk
+```
+
+The first line becomes the title, the rest the text. `tot …` (e.g. *tot vrijdag*, *tot 12-12*, *tot morgen 16:00*) is the end date, `belangrijk` makes it an important message, and `kleur rood` or `locatie Hoofdgebouw` work too. Teams replies right away with the message number. `@Infoscherm lijst` shows what is on the screen now, `@Infoscherm stop 12` removes message 12 and `@Infoscherm help` shows the instructions. It works in public channels of that team, not in chats or private channels; images from Teams are not taken along.
+
+**Berichten-API (for own systems and scripts)**
+
+Click **➕ API-koppeling**. You see a key once: copy and keep it. A system then sends a POST to `/api/infoscreen_push.php` with the header `Authorization: Bearer <key>` and JSON with at least a `title`. The tab shows a complete example, also for PowerShell. The same `external_id` updates a message, `"action": "delete"` removes it. Power Automate can do this too, but its HTTP action needs a Premium licence.
+
 ## Display
 
-On the **Weergave** tab you set the title at the top, the colour scheme (dark or light), the time per slide, the number of news slides per round, the speed of the news ticker and which parts are shown. **Voorbeeld** (preview) opens the result in a new window. Open screens pick up changes within 5 minutes.
+On the **Weergave** tab you set the title at the top, the colour scheme (dark or light), the time per slide, the number of news slides per round, the speed of the news ticker, how many days ahead the agenda goes and which parts are shown (sidebar, news ticker, news slides, weather slide, agenda in the sidebar, agenda slide). **Voorbeeld** (preview) opens the result in a new window. Open screens pick up changes within 5 minutes.
 
 ## Screens
 

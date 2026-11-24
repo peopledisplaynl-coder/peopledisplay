@@ -118,6 +118,74 @@ try {
 }
 check(str_contains(pd_infoscreen_weather_url('open-meteo', 51.5667, 4.9333), 'latitude=51.5667'), 'open-meteo url');
 
+// ── iCal agenda ─────────────────────────────────────────────────────────
+require __DIR__ . '/../includes/infoscreen_ical.php';
+$tz = new DateTimeZone('Europe/Amsterdam');
+$events = pd_ical_parse($fx('outlook.ics'));
+$occ = pd_ical_occurrences($events, new DateTimeImmutable('2026-11-23 00:00', $tz), new DateTimeImmutable('2026-12-07 00:00', $tz));
+$list = array_map(fn($o) => $o['start'] . ' ' . $o['title'], $occ);
+eq($list, [
+    '2026-11-23 15:00:00 Teamoverleg',
+    '2026-11-23 19:00:00 Ouderavond groep 1 tot en met 8 met een hele lange titel die over de regelgrens heen loopt',
+    '2026-11-24 19:00:00 Ouderavond groep 1 tot en met 8 met een hele lange titel die over de regelgrens heen loopt',
+    '2026-11-25 19:00:00 Ouderavond groep 1 tot en met 8 met een hele lange titel die over de regelgrens heen loopt',
+    '2026-11-27 00:00:00 Studiedag, alle groepen vrij',
+    '2026-11-30 17:00:00 Teamoverleg (verplaatst)',
+    '2026-12-05 00:00:00 Sinterklaas',
+], 'ical: weekly (summer→winter time, EXDATE, moved and cancelled occurrence), daily UNTIL, all-day, yearly, private left out');
+eq($occ[0]['place'], 'Personeelskamer', 'ical: location');
+eq($occ[0]['end'], '2026-11-23 16:00:00', 'ical: end time');
+eq($occ[1]['end'], '2026-11-23 21:00:00', 'ical: DURATION');
+eq($occ[4]['all_day'], true, 'ical: all-day flag');
+eq($occ[4]['end'], '2026-11-28 00:00:00', 'ical: all-day end');
+$mr = array_values(array_filter(pd_ical_occurrences($events, new DateTimeImmutable('2026-10-01', $tz), new DateTimeImmutable('2027-12-31', $tz)), fn($o) => $o['title'] === 'MR-vergadering'));
+eq(array_column($mr, 'start'), ['2026-10-13 20:00:00', '2026-11-10 19:00:00', '2026-12-08 19:00:00', '2027-01-12 19:00:00', '2027-02-09 19:00:00', '2027-03-09 19:00:00'],
+   'ical: monthly 2nd Tuesday, COUNT=6, UTC times shown in Amsterdam time');
+// Ongoing event that started before the window
+$now = pd_ical_occurrences($events, new DateTimeImmutable('2026-11-23 20:00', $tz), new DateTimeImmutable('2026-11-23 23:00', $tz));
+eq(array_column($now, 'start'), ['2026-11-23 19:00:00'], 'ical: event still going on is included');
+// Monthly on the 31st skips short months; weekly with INTERVAL; last Friday of the month
+$ics = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:a\nSUMMARY:Op de 31e\nDTSTART:20270131T090000\nRRULE:FREQ=MONTHLY;COUNT=4\nEND:VEVENT\n"
+     . "BEGIN:VEVENT\nUID:b\nSUMMARY:Om de week\nDTSTART:20270104T090000\nRRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=20270201T000000Z\nEND:VEVENT\n"
+     . "BEGIN:VEVENT\nUID:c\nSUMMARY:Laatste vrijdag\nDTSTART:20270129T090000\nRRULE:FREQ=MONTHLY;BYDAY=-1FR;COUNT=3\nEND:VEVENT\nEND:VCALENDAR\n";
+$all = pd_ical_occurrences(pd_ical_parse($ics), new DateTimeImmutable('2027-01-01', $tz), new DateTimeImmutable('2027-12-31', $tz));
+$by = fn($t) => array_column(array_values(array_filter($all, fn($o) => $o['title'] === $t)), 'start');
+eq(array_map(fn($d) => substr($d, 0, 10), $by('Op de 31e')), ['2027-01-31', '2027-03-31', '2027-05-31', '2027-07-31'], 'ical: monthly on the 31st');
+eq(array_map(fn($d) => substr($d, 0, 10), $by('Om de week')), ['2027-01-04', '2027-01-18'], 'ical: every other week until');
+eq(array_map(fn($d) => substr($d, 0, 10), $by('Laatste vrijdag')), ['2027-01-29', '2027-02-26', '2027-03-26'], 'ical: last Friday');
+try {
+    pd_ical_parse('<html>login</html>');
+    check(false, 'ical: html must throw');
+} catch (RuntimeException $e) {
+    check(true, 'ical not a calendar');
+}
+eq(pd_ical_url('webcal://outlook.office365.com/owa/calendar/x/calendar.ics'), 'https://outlook.office365.com/owa/calendar/x/calendar.ics', 'ical: webcal → https');
+
+// ── Berichten-API and Teams ─────────────────────────────────────────────
+require __DIR__ . '/../includes/infoscreen_api.php';
+[$key, $hash, $hint] = pd_is_api_new_key();
+check((bool)preg_match('/^pdis_[0-9a-f]{40}$/', $key), 'api: key format');
+eq($hash, hash('sha256', $key), 'api: stored hash');
+eq($hint, substr($key, -6), 'api: hint');
+eq(pd_is_api_text('<p>Regel <b>één</b></p><p>Regel&nbsp;twee<br>drie</p><script>x()</script>', 200), "Regel één\nRegel twee\ndrie", 'api: html to text with lines');
+$token = base64_encode(random_bytes(32));
+$body = '{"type":"message","text":"<at>Infoscherm</at> Test"}';
+$sig = base64_encode(hash_hmac('sha256', $body, base64_decode($token), true));
+eq(pd_is_teams_verify($token, $body, 'HMAC ' . $sig), true, 'teams: valid signature');
+eq(pd_is_teams_verify($token, $body . ' ', 'HMAC ' . $sig), false, 'teams: changed body refused');
+eq(pd_is_teams_verify($token, $body, 'Bearer ' . $sig), false, 'teams: wrong scheme refused');
+eq(pd_is_teams_verify(base64_encode(random_bytes(32)), $body, 'HMAC ' . $sig), false, 'teams: other token refused');
+eq(pd_is_teams_lines('<div><at>Infoscherm</at>&nbsp;Studiedag vrijdag</div><div>Alle groepen vrij.</div><div>tot vrijdag</div>'),
+   ['Studiedag vrijdag', 'Alle groepen vrij.', 'tot vrijdag'], 'teams: mention removed, lines kept');
+$mon = strtotime('2026-11-23 10:00'); // a Monday
+eq(pd_is_teams_until('vrijdag', $mon), '2026-11-27 23:59:00', 'teams: tot vrijdag');
+eq(pd_is_teams_until('maandag', $mon), '2026-11-23 23:59:00', 'teams: tot maandag (today)');
+eq(pd_is_teams_until('morgen 12:00', $mon), '2026-11-24 12:00:00', 'teams: tot morgen 12:00');
+eq(pd_is_teams_until('5-12', $mon), '2026-12-05 23:59:00', 'teams: tot 5-12');
+eq(pd_is_teams_until('3-1', $mon), '2027-01-03 23:59:00', 'teams: tot 3-1 → next year');
+eq(pd_is_teams_until('31-2', $mon), null, 'teams: invalid date');
+eq(pd_is_teams_until('ooit', $mon), null, 'teams: unknown');
+
 // ── Helpers ──────────────────────────────────────────────────────────────
 eq(pd_infoscreen_clean_url('https://a.test/x?y=1&amp;z=2'), 'https://a.test/x?y=1&z=2', 'clean url: entity decode');
 eq(pd_infoscreen_clean_url('//cdn.test/a.jpg'), 'https://cdn.test/a.jpg', 'clean url: protocol-relative');

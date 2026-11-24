@@ -1,0 +1,11 @@
+# /api/.htaccess
+# Pass the Authorization header on to PHP (FastCGI/CGI hosting drops it otherwise).
+# Needed for the infoscreen Berichten-API (Bearer key) and the Teams webhook (HMAC signature).
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>

@@ -224,8 +224,31 @@ $weather['fetched_at'] = date('c');
 $db->prepare("INSERT INTO infoscreen_sources (type, name, provider, latitude, longitude, active, data_json, last_fetch_at, last_ok_at, last_status)
               VALUES ('weather', 'Voorbeeldstad', 'buienradar', 51.5667, 4.9333, 1, ?, NOW(), NOW(), ?)")
    ->execute([json_encode($weather, JSON_UNESCAPED_UNICODE), 'OK: Weer opgehaald: 7.4°C, Licht bewolkt (meetstation Gilze-Rijen)']);
+// Agenda (2.5.0): a published school calendar, with appointments relative to today
+$db->prepare("INSERT INTO infoscreen_sources (type, name, url, active, last_fetch_at, last_ok_at, last_status)
+              VALUES ('ical', 'Schoolagenda', 'https://outlook.office365.com/owa/calendar/voorbeeld/calendar.ics', 1, NOW(), NOW(), 'OK: 5 afspraken in de komende 60 dagen, waarvan 5 deze week')")->execute();
+$icalId = (int)$db->lastInsertId();
+$ev = $db->prepare("INSERT INTO infoscreen_events (source_id, event_key, title, place, starts_at, ends_at, all_day) VALUES (?, ?, ?, ?, ?, ?, ?)");
+$day = fn(int $plus, string $time) => date('Y-m-d', strtotime("+$plus days")) . ' ' . $time;
+foreach ([
+    ['Teamoverleg', 'Personeelskamer', $day(0, '15:15:00'), $day(0, '16:30:00'), 0],
+    ['Schoolfotograaf', 'Aula', $day(1, '08:30:00'), $day(1, '12:00:00'), 0],
+    ['Sinterklaasviering', null, $day(2, '00:00:00'), $day(3, '00:00:00'), 1],
+    ['Ouderavond groep 7 en 8', 'Speellokaal', $day(2, '19:30:00'), $day(2, '21:00:00'), 0],
+    ['MR-vergadering', 'Personeelskamer', $day(3, '19:00:00'), $day(3, '20:30:00'), 0],
+] as $i => $e) {
+    $ev->execute([$icalId, sha1('demo-ev' . $i), $e[0], $e[1], $e[2], $e[3], $e[4]]);
+}
+// A Teams connection and a message posted through it
+$db->exec("INSERT INTO infoscreen_api_keys (type, name, location, default_days, color, last_used_at) VALUES ('teams', 'Infoscherm', NULL, 7, 'paars', NOW() - INTERVAL 20 MINUTE)");
+$teamsId = (int)$db->lastInsertId();
+$db->prepare("INSERT INTO infoscreen_messages (title, body, location, ends_at, color, active, source, api_key_id, external_id, author)
+              VALUES ('Gevonden: blauwe muts', 'Ligt bij de conciërge.', NULL, ?, 'paars', 1, 'teams', ?, 'teams:demo-1', 'Daan Visser')")
+   ->execute([date('Y-m-d 23:59:00', strtotime('+3 days')), $teamsId]);
+
 pd_infoscreen_save_settings($db, ['title' => 'Welkom op OBS De Voorbeeldschool', 'slide_seconds' => 12, 'news_slides' => 1, 'news_slide_max' => 4,
-    'weather_slide' => 1, 'ticker' => 1, 'ticker_speed' => 60, 'sidebar' => 1, 'theme' => 'donker', 'show_clock' => 1]);
+    'weather_slide' => 1, 'ticker' => 1, 'ticker_speed' => 60, 'sidebar' => 1, 'theme' => 'donker', 'show_clock' => 1,
+    'agenda_sidebar' => 1, 'agenda_slide' => 1, 'agenda_days' => 7]);
 $db->exec("UPDATE users SET screen_mode = 'infoscreen', can_show_presentation = 1 WHERE username = 'receptie'");
 
 // ── Organisation settings and demo licence (local only) ───────────────

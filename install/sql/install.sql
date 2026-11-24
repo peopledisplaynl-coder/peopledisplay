@@ -8,7 +8,7 @@
 -- Run this script ONCE during installation.
 -- All statements use IF NOT EXISTS — safe to re-run.
 --
--- Tables: 39
+-- Tables: 41
 --
 -- Single source: edit THIS file (repository root). install/sql/install.sql
 -- is an exact copy for the install wizard — run `npm run sync-sql` after editing.
@@ -764,21 +764,25 @@ CREATE TABLE IF NOT EXISTS `infoscreen_messages` (
   `active`           tinyint(1)   NOT NULL DEFAULT 1,
   `sort_order`       int(11)      NOT NULL DEFAULT 0,
   `source`           varchar(30)  NOT NULL DEFAULT 'handmatig',
+  `api_key_id`       int(11)      DEFAULT NULL COMMENT 'Koppeling (Berichten-API of Teams) die het bericht plaatste',
+  `external_id`      varchar(100) DEFAULT NULL COMMENT 'Eigen kenmerk van het andere systeem, om bij te werken of te verwijderen',
+  `author`           varchar(150) DEFAULT NULL,
   `created_by`       int(11)      DEFAULT NULL,
   `created_at`       datetime     NOT NULL DEFAULT current_timestamp(),
   `updated_at`       datetime     DEFAULT NULL ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_active_window` (`active`, `starts_at`, `ends_at`),
-  KEY `idx_location` (`location`)
+  KEY `idx_location` (`location`),
+  KEY `idx_api_external` (`api_key_id`, `external_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
 -- TABLE: infoscreen_sources
--- Infoscherm: news feeds (RSS/Atom) and weather places
+-- Infoscherm: news feeds (RSS/Atom), weather places and agendas (iCal)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `infoscreen_sources` (
   `id`            int(11)       NOT NULL AUTO_INCREMENT,
-  `type`          enum('rss','weather') NOT NULL,
+  `type`          enum('rss','weather','ical') NOT NULL,
   `name`          varchar(150)  NOT NULL,
   `url`           varchar(500)  DEFAULT NULL,
   `provider`      varchar(30)   DEFAULT NULL,
@@ -829,10 +833,52 @@ CREATE TABLE IF NOT EXISTS `infoscreen_settings` (
   PRIMARY KEY (`setting_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================
+-- TABLE: infoscreen_events
+-- Infoscherm: appointments from iCal agendas (repeating ones expanded)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `infoscreen_events` (
+  `id`         int(11)      NOT NULL AUTO_INCREMENT,
+  `source_id`  int(11)      NOT NULL,
+  `event_key`  char(40)     NOT NULL,
+  `title`      varchar(300) NOT NULL,
+  `place`      varchar(200) DEFAULT NULL,
+  `starts_at`  datetime     NOT NULL,
+  `ends_at`    datetime     DEFAULT NULL,
+  `all_day`    tinyint(1)   NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_source_event` (`source_id`, `event_key`),
+  KEY `idx_starts` (`starts_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: infoscreen_api_keys
+-- Infoscherm: connections that post messages (Berichten-API keys, Teams webhooks)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `infoscreen_api_keys` (
+  `id`           int(11)      NOT NULL AUTO_INCREMENT,
+  `type`         enum('api','teams') NOT NULL DEFAULT 'api',
+  `name`         varchar(100) NOT NULL,
+  `key_hash`     char(64)     DEFAULT NULL COMMENT 'SHA-256 van de API-sleutel (de sleutel zelf wordt niet bewaard)',
+  `key_hint`     varchar(12)  DEFAULT NULL COMMENT 'Laatste tekens van de sleutel, om hem te herkennen',
+  `secret_enc`   text         DEFAULT NULL COMMENT 'Teams-beveiligingstoken, versleuteld',
+  `location`     varchar(100) DEFAULT NULL COMMENT 'Standaardlocatie voor berichten, NULL = alle locaties',
+  `default_days` int(11)      NOT NULL DEFAULT 7,
+  `color`        varchar(20)  NOT NULL DEFAULT 'blauw',
+  `active`       tinyint(1)   NOT NULL DEFAULT 1,
+  `window_start` datetime     DEFAULT NULL,
+  `window_count` int(11)      NOT NULL DEFAULT 0,
+  `last_used_at` datetime     DEFAULT NULL,
+  `created_by`   int(11)      DEFAULT NULL,
+  `created_at`   datetime     NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_key_hash` (`key_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
 -- END OF SCHEMA
--- Tables created: 39
+-- Tables created: 41
 -- Run install.php after this to create your admin account
 -- ============================================================

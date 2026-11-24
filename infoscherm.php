@@ -176,6 +176,31 @@ body:not(.mode-combined) #wx-card .days { flex: 1; justify-content: space-evenly
 body:not(.mode-combined) #wx-card .day { font-size: clamp(12px, 2.5vmin, 38px); }
 body:not(.mode-combined) #wx-card .day svg { width: 5.6vmin; height: 5.6vmin; }
 #notes-card { flex: 1; min-height: 0; overflow: hidden; display: none; flex-direction: column; }
+/* Agenda (2.5.0) */
+#agenda-card { display: none; flex-direction: column; min-height: 0; overflow: hidden; }
+body.has-agenda #agenda-card { display: flex; flex: 1; }
+body.has-agenda:not(.mode-combined) #wx-card { flex: 0 0 auto; }
+body.has-agenda #wx-card .days { display: none; }
+body.mode-combined.has-agenda #agenda-card { flex: 0 0 auto; }
+.ag-list { display: flex; flex-direction: column; gap: .4vmin; min-height: 0; overflow: hidden; }
+.ag-day { font-size: clamp(10px, 1.6vmin, 24px); font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin-top: .8vmin; }
+.ag-day:first-child { margin-top: 0; }
+.ag-ev { display: grid; grid-template-columns: minmax(7.5vmin, auto) 1fr; gap: .8vw; align-items: baseline; font-size: clamp(12px, 2.1vmin, 32px); line-height: 1.25; }
+.ag-ev .t { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.ag-ev .w { min-width: 0; }
+.ag-ev .n { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.ag-ev .p { font-size: .8em; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.ag-ev.now .t { color: #22c55e; }
+.ag-empty { color: var(--muted); font-size: clamp(12px, 2vmin, 30px); }
+.agenda-slide { flex-direction: column; padding: 4% 5%; color: #fff; background: linear-gradient(150deg, #1e3a8a, #0f2350); }
+.agenda-slide h1 { font-size: clamp(26px, 6vmin, 96px); font-weight: 800; margin-bottom: 3%; letter-spacing: -.01em; }
+.agenda-slide .cols { display: flex; flex-direction: column; gap: 2.2vmin; flex: 1; min-height: 0; overflow: hidden; }
+.agenda-slide .col { display: grid; grid-template-columns: 30% 1fr; gap: 3%; padding-top: 2vmin; border-top: 2px solid rgba(255,255,255,.15); }
+.agenda-slide .col h2 { font-size: clamp(15px, 3vmin, 48px); font-weight: 800; color: #93c5fd; line-height: 1.2; }
+.agenda-slide .ev { display: grid; grid-template-columns: minmax(4.2em, auto) 1fr; gap: 1em; font-size: clamp(14px, 2.7vmin, 44px); margin-bottom: .55em; line-height: 1.25; }
+.agenda-slide .ev .t { font-weight: 700; opacity: .8; font-variant-numeric: tabular-nums; }
+.agenda-slide .ev .p { display: block; font-size: .78em; opacity: .75; }
+.agenda-slide .ev .c { display: inline-block; font-size: .7em; opacity: .7; margin-left: .4em; }
 body.mode-combined #notes-card.has-notes { display: flex; }
 #notes-card .note { flex: 1; display: flex; flex-direction: column; justify-content: center; animation: fadein .8s ease; min-height: 0; }
 #notes-card .note img { width: 100%; max-height: 40%; object-fit: cover; border-radius: calc(var(--radius) * .7); margin-bottom: 1.2vmin; }
@@ -237,6 +262,7 @@ body.no-weather #side-clock { display: block; }
     <aside id="sidebar">
         <div class="card" id="wx-card"></div>
         <div class="card" id="side-clock"><div class="big" id="side-time"></div><div class="sub" id="side-date"></div></div>
+        <div class="card" id="agenda-card"><div class="card-title">Agenda</div><div class="ag-list" id="agenda-list"></div></div>
         <div class="card" id="notes-card"><div class="card-title">Mededelingen</div><div id="note-holder" style="flex:1;display:flex;min-height:0"></div></div>
     </aside>
     <footer id="ticker"><div class="label">Nieuws</div><div class="viewport"><div class="track" id="ticker-track"></div></div></footer>
@@ -410,6 +436,10 @@ body.no-weather #side-clock { display: block; }
         if (s.weather_slide && d.weather && d.weather.current) {
             list.splice(Math.ceil(list.length / 2), 0, { type: 'wx', html: weatherSlide(d.weather), seconds: s.slide_seconds });
         }
+        // Agenda once per round, after the first quarter
+        if (s.agenda_slide && (d.agenda || []).length) {
+            list.splice(Math.ceil(list.length / 4), 0, { type: 'agenda', html: agendaSlide(d.agenda), seconds: Math.max(s.slide_seconds, 15) });
+        }
         // Important messages come back halfway through a long round
         if (important.length && list.length > 5) {
             list.splice(Math.floor(list.length * .75), 0, ...important.map((m) => ({ type: 'msg', html: messageSlide(m), seconds: m.duration || s.slide_seconds })));
@@ -511,6 +541,55 @@ body.no-weather #side-clock { display: block; }
             + (m.image ? `<img src="${esc(m.image)}" alt="">` : '') + `<h3>${esc(m.title)}</h3>${m.body ? `<p>${esc(m.body)}</p>` : ''}</div>`;
     }
 
+    // ── Agenda ───────────────────────────────────────────────────────────
+    const fmtDayLong = new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+    const parseLocal = (str) => new Date(String(str).replace(' ', 'T'));
+    function agendaDayLabel(ymdStr) {
+        const name = dayName(ymdStr);
+        if (name === 'Vandaag' || name === 'Morgen') return name;
+        return upperFirst(fmtDayLong.format(new Date(ymdStr + 'T12:00:00')));
+    }
+    function agendaTime(e) {
+        if (e.all_day) return 'Hele dag';
+        return fmtTime.format(parseLocal(e.start));
+    }
+    // Group by day; an event that started on an earlier day but is still going on shows under today
+    function agendaGroups(agenda, max) {
+        const today = ymd(new Date());
+        const groups = [];
+        agenda.slice(0, max).forEach((e) => {
+            let day = String(e.start).slice(0, 10);
+            if (day < today) day = today;
+            let g = groups.find((x) => x.day === day);
+            if (!g) { g = { day, events: [] }; groups.push(g); }
+            g.events.push(e);
+        });
+        return groups;
+    }
+    function isNow(e) {
+        const now = Date.now();
+        return !e.all_day && parseLocal(e.start).getTime() <= now && (!e.end || parseLocal(e.end).getTime() > now);
+    }
+    function renderAgendaCard(d) {
+        const agenda = d.agenda || [];
+        const show = d.settings.agenda_sidebar && agenda.length > 0;
+        document.body.classList.toggle('has-agenda', show);
+        if (!show) return;
+        const max = currentMode === 'combined' ? 2 : 8;
+        $('agenda-list').innerHTML = agendaGroups(agenda, max).map((g) => `<div class="ag-day">${esc(agendaDayLabel(g.day))}</div>`
+            + g.events.map((e) => `<div class="ag-ev${isNow(e) ? ' now' : ''}"><span class="t">${isNow(e) ? 'Nu' : esc(agendaTime(e))}</span>`
+                + `<span class="w"><span class="n">${esc(e.title)}</span>${e.place ? `<span class="p">${esc(e.place)}</span>` : ''}</span></div>`).join('')).join('');
+    }
+    function agendaSlide(agenda) {
+        const groups = agendaGroups(agenda, 9).slice(0, 3);
+        return `<div class="slide agenda-slide"><h1>📅 Agenda</h1><div class="cols">`
+            + groups.map((g) => `<div class="col"><h2>${esc(agendaDayLabel(g.day))}</h2>`
+                + '<div>' + g.events.slice(0, 4).map((e) => `<div class="ev"><span class="t">${isNow(e) ? 'Nu' : esc(agendaTime(e))}</span><span>${esc(e.title)}`
+                    + (e.calendar ? `<span class="c">· ${esc(e.calendar)}</span>` : '')
+                    + (e.place ? `<span class="p">${esc(e.place)}</span>` : '') + '</span></div>').join('') + '</div></div>').join('')
+            + '</div></div>';
+    }
+
     // ── Sidebar and ticker ───────────────────────────────────────────────
     function renderWeatherCard(w) {
         document.body.classList.toggle('no-weather', !(w && w.current));
@@ -559,6 +638,7 @@ body.no-weather #side-clock { display: block; }
         currentMode = mode;
         $('title').textContent = s.title || '';
         renderWeatherCard(d.weather);
+        renderAgendaCard(d);
         renderTicker(d);
 
         if (mode === 'combined') {
@@ -633,6 +713,7 @@ body.no-weather #side-clock { display: block; }
     tick();
     setInterval(tick, 1000);
     setInterval(() => { if (currentMode === 'combined') rotateNote(); }, 15000);
+    setInterval(() => { if (data) renderAgendaCard(data); }, 60000); // "Nu" and passing appointments
     setInterval(load, REFRESH_MS);
     wakeLock();
     load();

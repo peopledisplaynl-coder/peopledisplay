@@ -314,6 +314,11 @@ shot('infoscherm-scherm', async () => {
   await p.evaluate(() => document.getAnimations().forEach((a) => { if (a.effect && a.effect.target && a.effect.target.id === 'ticker-track') a.pause(); }));
   await save('infoscherm-scherm', p);
 });
+shot('infoscherm-koppelingen', async () => {
+  const p = await pageFor('admin');
+  await open(p, 'admin/infoscreen_manage.php?tab=koppelingen', 800);
+  await save('infoscherm-koppelingen', p, { full: true });
+});
 shot('infoscherm-berichten', async () => {
   const p = await pageFor('admin');
   await open(p, 'admin/infoscreen_manage.php?tab=berichten', 800);

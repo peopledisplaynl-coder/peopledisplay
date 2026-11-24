@@ -93,6 +93,8 @@ All return JSON and check the session/role themselves.
 | `generate_badges.php`, `generate_badge_png.php` | badge PDF/PNG |
 | `get_user_presentation.php` | presentation mode settings (Slides ID, idle seconds, `screen_mode`) |
 | `infoscreen_data.php` | everything the infoscreen shows, filtered for the screen account's locations; fetches due sources after the response |
+| `infoscreen_push.php` | Berichten-API: other systems post, update, list or delete messages with a connection key (Bearer / X-Api-Key), no session |
+| `infoscreen_teams.php` | Teams outgoing webhook (`?k=<id>`): HMAC-signed channel messages become infoscreen messages; replies in the channel |
 | `get_todays_visitors.php`, `get_visitors_inside.php`, `visitor_checkin.php`, `visitor_checkout.php` | visitors |
 
 Root endpoints: `email-proxy.php` (BHV overview e-mail), `cron_endpoint.php` (external cron).
@@ -112,7 +114,7 @@ Run from the hosting panel (CLI) or via `cron_endpoint.php?action=…&key=…` f
 
 ## Database
 
-39 tables, defined in `install.sql` (the single schema file). Core ones:
+41 tables, defined in `install.sql` (the single schema file). Core ones:
 
 | Table | Holds |
 |---|---|
@@ -125,7 +127,7 @@ Run from the hosting panel (CLI) or via `cron_endpoint.php?action=…&key=…` f
 | `employee_audit`, `feature_audit` | audit logs (migrations log here too) |
 | `license_tiers`, `license_log` | licence tiers and licence events |
 | `button_config`, `user_button_names`, `filters`, `user_filters`, `user_locations`, `user_afdelingen` | screen configuration per user |
-| `infoscreen_messages`, `infoscreen_sources`, `infoscreen_items`, `infoscreen_settings` | infoscreen: messages, news feeds and weather places (with cached data), settings; `users.screen_mode` picks Slides / infoscreen / combined |
+| `infoscreen_messages`, `infoscreen_sources`, `infoscreen_items`, `infoscreen_events`, `infoscreen_settings`, `infoscreen_api_keys` | infoscreen: messages, news feeds, weather places and iCal agendas (with cached items and expanded appointments), settings, connections (API keys, Teams webhooks); `users.screen_mode` picks Slides / infoscreen / combined |
 
 Schema changes: `includes/migrations.php` upgrades existing installs (idempotent,
 runs on admin page load) and `install.sql` gets the same change for new installs —
@@ -188,4 +190,11 @@ fetchers and parsers, and `pd_infoscreen_screen_data()` for the screen.
 - **Screen.** `infoscherm.php` polls `api/infoscreen_data.php` every 5 minutes, keeps the last
   answer in `localStorage` for outages, reloads itself after a version change or after 24 hours,
   and reports touches to the parent page (`postMessage`) when shown in the idle overlay.
+- **Agenda (2.5.0).** `includes/infoscreen_ical.php` reads an .ics (Outlook published calendar, Google
+  secret address), expands repeating appointments (RRULE subset, EXDATE, RECURRENCE-ID, Windows
+  time zone names) and stores 60 days ahead in `infoscreen_events`; private appointments are skipped.
+- **Connections (2.5.0).** `includes/infoscreen_api.php`: Berichten-API keys (only the SHA-256 is
+  stored, shown once) and Teams outgoing webhooks (security token encrypted with the 2FA key file,
+  HMAC-SHA256 checked in constant time). 120 requests per hour per connection; a connection only
+  changes its own messages. `api/.htaccess` passes the Authorization header on FastCGI hosting.
 - **Tests.** `tests/infoscreen_test.php` (fixtures in `tests/fixtures/infoscreen/`), run by `npm test`.

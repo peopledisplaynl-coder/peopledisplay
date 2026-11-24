@@ -186,6 +186,8 @@ test('every API script checks the login, except the few that are public on purpo
     'api/check_location_by_ip.php',      // location name for the WiFi check-in
     'api/get_employees_by_location.php', // visitor form: names only, no e-mail addresses
     'admin/api/changelog.php',           // public version history
+    'api/infoscreen_push.php',           // infoscreen Berichten-API: own key per connection (checked below)
+    'api/infoscreen_teams.php',          // Teams outgoing webhook: HMAC signature (checked below)
   ];
   const isApi = (f) => /^(api|admin\/api)\/[^/]+\.php$/.test(f);
   const hasCheck = (text) => /requireAuth\(|requireAdmin\(|\$_SESSION\[\s*['"](user_id|role)['"]\s*\]/.test(text);
@@ -350,6 +352,20 @@ test('2FA: TOTP matches the RFC 6238 test vectors, codes work once, secrets roun
 test('infoscreen: feed and weather parsers, URL guard (tests/infoscreen_test.php)', { skip: hasPhp ? false : 'PHP not installed on this computer' }, () => {
   const r = spawnSync('php', [join(ROOT, 'tests', 'infoscreen_test.php')], { encoding: 'utf8', cwd: ROOT });
   assert.equal(r.status, 0, r.stdout + r.stderr);
+});
+
+test('infoscreen: the Berichten-API needs a key and the Teams endpoint a valid HMAC signature, both rate-limited', () => {
+  const push = read('api/infoscreen_push.php');
+  assert.match(push, /pd_is_api_find_key\(\$db, pd_is_api_request_key\(\)\)/);
+  assert.match(push, /if \(!\$keyRow\) \{[\s\S]*?401/);
+  assert.match(push, /pd_is_api_rate_ok/);
+  const teams = read('api/infoscreen_teams.php');
+  assert.match(teams, /if \(!pd_is_teams_verify\(\$secret, \$raw, \$auth\)\) \{\s*pd_teams_reply\(401/);
+  assert.match(teams, /pd_is_api_rate_ok/);
+  const lib = read('includes/infoscreen_api.php');
+  assert.match(lib, /hash_equals\(\$expected, \$m\[1\]\)/, 'HMAC compared in constant time');
+  assert.match(lib, /hash\('sha256', \$key\)/, 'only the hash of an API key is stored');
+  assert.ok(existsSync(join(ROOT, 'api', '.htaccess')), 'api/.htaccess passes the Authorization header to PHP');
 });
 
 test('infoscreen: API and pages need a login, the cron script only runs from the command line', () => {

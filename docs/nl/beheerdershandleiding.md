@@ -254,14 +254,14 @@ Met **Deactiveren** of **Verwijderen** werkt de link direct niet meer, bijvoorbe
 
 # Infoscherm
 
-Het infoscherm toont **eigen berichten, nieuws en het weer** op een scherm, met datum en tijd. Je gebruikt het in plaats van de Google Slides-presentatie, of samen ermee. Het is beschikbaar in alle pakketten, ook in Starter. Je beheert het via **Infoscherm** op het dashboard (groep *Systeem Configuratie*).
+Het infoscherm toont **eigen berichten, nieuws, het weer en de agenda** op een scherm, met datum en tijd. Collega's kunnen ook vanuit **Teams** een bericht plaatsen. Je gebruikt het in plaats van de Google Slides-presentatie, of samen ermee. Het is beschikbaar in alle pakketten, ook in Starter. Je beheert het via **Infoscherm** op het dashboard (groep *Systeem Configuratie*).
 
 ![Het infoscherm met een eigen bericht, het weer in de zijbalk en de nieuwsbalk](../images/infoscherm-scherm.png)
 
 Het scherm bestaat uit:
 
 - **Dia's in het midden** — je eigen berichten, nieuws met een afbeelding als grote dia, en één keer per ronde een weerdia met de verwachting voor vijf dagen. Heb je meer nieuwsbronnen, dan komen ze om de beurt aan bod, en elke ronde toont de volgende berichten.
-- **De zijbalk** — het weer van nu en van de komende dagen. Zonder weerplaats staat hier een grote klok.
+- **De zijbalk** — het weer van nu en van de komende dagen, en de agenda als die gekoppeld is. Zonder weerplaats staat hier een grote klok.
 - **De nieuwsbalk onderaan** — alle nieuwskoppen lopen voorbij, met de naam van de bron. Belangrijke berichten staan er ook in.
 
 ## Berichten
@@ -292,9 +292,45 @@ Op het tabblad **Weer** voeg je een plaats toe. Typ de naam en klik op **Zoek pl
 
 Beide zijn gratis voor niet-commercieel gebruik, met bronvermelding (die staat altijd op het scherm). Je kunt één plaats voor alle schermen instellen, of per locatie een eigen plaats.
 
+## Agenda
+
+Op het tabblad **Agenda** koppel je een agenda via een iCal-link (.ics). De afspraken van vandaag en de komende dagen staan dan in de zijbalk, en één keer per ronde verschijnt een agendadia. Terugkerende afspraken, verplaatste en geannuleerde afspraken worden goed getoond; **privé-afspraken niet**.
+
+- **Outlook / Microsoft 365** — Outlook op het web → **Instellingen** → **Agenda** → **Gedeelde agenda's** → *Een agenda publiceren*. Kies de agenda en *Kan titels en locaties bekijken*, klik op **Publiceren** en kopieer de **ICS**-link.
+- **Google Agenda** — **Instellingen** → kies de agenda → *Geheim adres in iCal-indeling* → kopieer.
+
+Vul een naam en de link in en klik op **Opslaan en ophalen**: je ziet meteen hoeveel afspraken er gevonden zijn. Iedereen met de link kan de agenda lezen; deel hem dus niet verder. Hoeveel dagen vooruit het scherm toont (standaard 7), stel je in bij **Weergave**. Ook een agenda kun je aan één locatie koppelen.
+
+## Koppelingen: Teams en andere systemen
+
+![Koppelingen voor Teams en de Berichten-API](../images/infoscherm-koppelingen.png)
+
+Met een koppeling zetten collega's of andere systemen zelf een bericht op het infoscherm. Zo'n bericht krijgt de standaardlocatie, -kleur en -looptijd van de koppeling (standaard 7 dagen), en staat gewoon bij **Berichten**, met *Teams* of *API* en de naam van de afzender erbij. Je kunt het daar aanpassen, uitzetten of verwijderen. Per koppeling kunnen maximaal 120 berichten per uur worden geplaatst.
+
+**Teams (gratis, zonder extra licentie)**
+
+1. Klik op **➕ Teams-koppeling**, laat de naam *Infoscherm* staan (of kies een andere korte naam) en klik op **Aanmaken**.
+2. Open in Teams het team → **⋯** → **Team beheren** → **Apps** → **Een uitgaande webhook maken**. Vul dezelfde naam in en de **callback-URL** die PeopleDisplay toont, en klik op **Maken**. Staat de knop er niet, dan moet de beheerder van Microsoft 365 "aangepaste apps" toestaan.
+3. Teams toont een **beveiligingstoken**. Plak dat in PeopleDisplay en klik op **Token opslaan**.
+
+Daarna typt iemand in een kanaal van dat team bijvoorbeeld:
+
+```
+@Infoscherm Schoolreis groep 6
+Vertrek 8:15 bij de bus.
+tot vrijdag
+belangrijk
+```
+
+De eerste regel wordt de titel, de rest de tekst. `tot …` (bijvoorbeeld *tot vrijdag*, *tot 12-12*, *tot morgen 16:00*) is de einddatum, `belangrijk` maakt het een belangrijk bericht, en `kleur rood` of `locatie Hoofdgebouw` mag ook. Teams antwoordt meteen met het nummer van het bericht. Met `@Infoscherm lijst` zie je wat er nu staat, met `@Infoscherm stop 12` haal je bericht 12 weg en `@Infoscherm help` toont de uitleg. Het werkt in openbare kanalen van dat team, niet in chats of privékanalen; afbeeldingen uit Teams worden niet meegenomen.
+
+**Berichten-API (voor eigen systemen en scripts)**
+
+Klik op **➕ API-koppeling**. Je krijgt één keer een sleutel te zien: kopieer en bewaar hem. Een systeem stuurt dan een POST naar `/api/infoscreen_push.php` met de kop `Authorization: Bearer <sleutel>` en JSON met minimaal een `title`. Op het tabblad staat een volledig voorbeeld, ook voor PowerShell. Met hetzelfde `external_id` werk je een bericht bij, met `"action": "delete"` haal je het weg. Power Automate kan dit ook, maar de HTTP-actie daarvan vraagt een Premium-licentie.
+
 ## Weergave
 
-Op het tabblad **Weergave** stel je de titel bovenaan in, de kleurstelling (donker of licht), de tijd per dia, het aantal nieuwsdia's per ronde, de snelheid van de nieuwsbalk en welke onderdelen zichtbaar zijn. Met **Voorbeeld** bekijk je het resultaat in een nieuw venster. Open schermen nemen wijzigingen binnen 5 minuten over.
+Op het tabblad **Weergave** stel je de titel bovenaan in, de kleurstelling (donker of licht), de tijd per dia, het aantal nieuwsdia's per ronde, de snelheid van de nieuwsbalk, hoeveel dagen vooruit de agenda gaat en welke onderdelen zichtbaar zijn (zijbalk, nieuwsbalk, nieuwsdia's, weerdia, agenda in de zijbalk, agendadia). Met **Voorbeeld** bekijk je het resultaat in een nieuw venster. Open schermen nemen wijzigingen binnen 5 minuten over.
 
 ## Schermen
 

@@ -60,6 +60,9 @@ const PD_IS_DEFAULT_SETTINGS = [
     'sidebar'        => '1',     // weather/clock sidebar
     'theme'          => 'donker',// donker | licht
     'show_clock'     => '1',
+    'agenda_sidebar' => '1',     // upcoming appointments in the sidebar
+    'agenda_slide'   => '1',     // an agenda slide once per round
+    'agenda_days'    => '7',     // how many days ahead
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,17 +90,21 @@ function pd_infoscreen_ensure_schema(PDO $db): bool
             `active`           tinyint(1)   NOT NULL DEFAULT 1,
             `sort_order`       int(11)      NOT NULL DEFAULT 0,
             `source`           varchar(30)  NOT NULL DEFAULT 'handmatig',
+            `api_key_id`       int(11)      DEFAULT NULL COMMENT 'Koppeling (Berichten-API of Teams) die het bericht plaatste',
+            `external_id`      varchar(100) DEFAULT NULL COMMENT 'Eigen kenmerk van het andere systeem, om bij te werken of te verwijderen',
+            `author`           varchar(150) DEFAULT NULL,
             `created_by`       int(11)      DEFAULT NULL,
             `created_at`       datetime     NOT NULL DEFAULT current_timestamp(),
             `updated_at`       datetime     DEFAULT NULL ON UPDATE current_timestamp(),
             PRIMARY KEY (`id`),
             KEY `idx_active_window` (`active`, `starts_at`, `ends_at`),
-            KEY `idx_location` (`location`)
+            KEY `idx_location` (`location`),
+            KEY `idx_api_external` (`api_key_id`, `external_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $db->exec("CREATE TABLE IF NOT EXISTS `infoscreen_sources` (
             `id`            int(11)       NOT NULL AUTO_INCREMENT,
-            `type`          enum('rss','weather') NOT NULL,
+            `type`          enum('rss','weather','ical') NOT NULL,
             `name`          varchar(150)  NOT NULL,
             `url`           varchar(500)  DEFAULT NULL,
             `provider`      varchar(30)   DEFAULT NULL,
@@ -139,6 +146,60 @@ function pd_infoscreen_ensure_schema(PDO $db): bool
             `updated_at`    datetime     DEFAULT NULL ON UPDATE current_timestamp(),
             PRIMARY KEY (`setting_key`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Agenda (2.5.0): events from iCal sources, already expanded (repeating appointments)
+        $db->exec("CREATE TABLE IF NOT EXISTS `infoscreen_events` (
+            `id`         int(11)      NOT NULL AUTO_INCREMENT,
+            `source_id`  int(11)      NOT NULL,
+            `event_key`  char(40)     NOT NULL,
+            `title`      varchar(300) NOT NULL,
+            `place`      varchar(200) DEFAULT NULL,
+            `starts_at`  datetime     NOT NULL,
+            `ends_at`    datetime     DEFAULT NULL,
+            `all_day`    tinyint(1)   NOT NULL DEFAULT 0,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uq_source_event` (`source_id`, `event_key`),
+            KEY `idx_starts` (`starts_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Koppelingen (2.5.0): keys for the Berichten-API and Teams outgoing webhooks
+        $db->exec("CREATE TABLE IF NOT EXISTS `infoscreen_api_keys` (
+            `id`           int(11)      NOT NULL AUTO_INCREMENT,
+            `type`         enum('api','teams') NOT NULL DEFAULT 'api',
+            `name`         varchar(100) NOT NULL,
+            `key_hash`     char(64)     DEFAULT NULL COMMENT 'SHA-256 van de API-sleutel (de sleutel zelf wordt niet bewaard)',
+            `key_hint`     varchar(12)  DEFAULT NULL COMMENT 'Laatste tekens van de sleutel, om hem te herkennen',
+            `secret_enc`   text         DEFAULT NULL COMMENT 'Teams-beveiligingstoken, versleuteld',
+            `location`     varchar(100) DEFAULT NULL COMMENT 'Standaardlocatie voor berichten, NULL = alle locaties',
+            `default_days` int(11)      NOT NULL DEFAULT 7,
+            `color`        varchar(20)  NOT NULL DEFAULT 'blauw',
+            `active`       tinyint(1)   NOT NULL DEFAULT 1,
+            `window_start` datetime     DEFAULT NULL,
+            `window_count` int(11)      NOT NULL DEFAULT 0,
+            `last_used_at` datetime     DEFAULT NULL,
+            `created_by`   int(11)      DEFAULT NULL,
+            `created_at`   datetime     NOT NULL DEFAULT current_timestamp(),
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uq_key_hash` (`key_hash`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // 2.4.0 → 2.5.0: agenda sources and messages from other systems
+        $type = $db->query("SHOW COLUMNS FROM `infoscreen_sources` LIKE 'type'")->fetch();
+        if ($type && strpos($type['Type'], 'ical') === false) {
+            $db->exec("ALTER TABLE `infoscreen_sources` MODIFY `type` ENUM('rss','weather','ical') NOT NULL");
+        }
+        foreach ([
+            'api_key_id'  => "ALTER TABLE `infoscreen_messages` ADD COLUMN `api_key_id` int(11) DEFAULT NULL AFTER `source`",
+            'external_id' => "ALTER TABLE `infoscreen_messages` ADD COLUMN `external_id` varchar(100) DEFAULT NULL AFTER `api_key_id`",
+            'author'      => "ALTER TABLE `infoscreen_messages` ADD COLUMN `author` varchar(150) DEFAULT NULL AFTER `external_id`",
+        ] as $column => $sql) {
+            if (!$db->query("SHOW COLUMNS FROM `infoscreen_messages` LIKE '$column'")->fetch()) {
+                $db->exec($sql);
+            }
+        }
+        if (!$db->query("SHOW INDEX FROM `infoscreen_messages` WHERE Key_name = 'idx_api_external'")->fetch()) {
+            $db->exec("ALTER TABLE `infoscreen_messages` ADD KEY `idx_api_external` (`api_key_id`, `external_id`)");
+        }
 
         $col = $db->query("SHOW COLUMNS FROM `users` LIKE 'screen_mode'")->fetch();
         if (!$col) {
@@ -184,6 +245,9 @@ function pd_infoscreen_save_settings(PDO $db, array $input): array
     $clean['sidebar']        = !empty($input['sidebar']) ? '1' : '0';
     $clean['theme']          = in_array($input['theme'] ?? '', ['donker', 'licht'], true) ? $input['theme'] : 'donker';
     $clean['show_clock']     = !empty($input['show_clock']) ? '1' : '0';
+    $clean['agenda_sidebar'] = !empty($input['agenda_sidebar']) ? '1' : '0';
+    $clean['agenda_slide']   = !empty($input['agenda_slide']) ? '1' : '0';
+    $clean['agenda_days']    = (string)max(1, min(31, (int)($input['agenda_days'] ?? 7)));
 
     $stmt = $db->prepare("INSERT INTO infoscreen_settings (setting_key, setting_value) VALUES (?, ?)
                           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
@@ -756,9 +820,14 @@ function pd_infoscreen_fetch_weather(PDO $db, array $source): array
 function pd_infoscreen_fetch_source(PDO $db, array $source): array
 {
     try {
-        $result = $source['type'] === 'weather'
-            ? pd_infoscreen_fetch_weather($db, $source)
-            : pd_infoscreen_fetch_rss($db, $source);
+        if ($source['type'] === 'ical') {
+            require_once __DIR__ . '/infoscreen_ical.php';
+            $result = pd_infoscreen_fetch_ical($db, $source);
+        } elseif ($source['type'] === 'weather') {
+            $result = pd_infoscreen_fetch_weather($db, $source);
+        } else {
+            $result = pd_infoscreen_fetch_rss($db, $source);
+        }
         $db->prepare("UPDATE infoscreen_sources SET last_fetch_at = NOW(), last_ok_at = NOW(), last_status = ? WHERE id = ?")
            ->execute([mb_substr('OK: ' . $result['message'], 0, 255), $source['id']]);
         return ['ok' => true, 'message' => $result['message']];
@@ -862,7 +931,12 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
     $stmt->execute($params);
     $news = [];
     $weather = null;
+    $calendars = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $s) {
+        if ($s['type'] === 'ical') {
+            $calendars[(int)$s['id']] = $s['attribution'] !== null && $s['attribution'] !== '' ? $s['attribution'] : $s['name'];
+            continue;
+        }
         if ($s['type'] === 'weather') {
             // A screen set to certain locations prefers the weather place of its location; a screen
             // for all locations prefers the place set for "all locations".
@@ -895,6 +969,30 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
     }
     if ($weather) unset($weather['_specific']);
 
+    // Agenda: what is still going on or starts within the set number of days (Amsterdam time)
+    $agenda = [];
+    if ($calendars) {
+        $tz = new DateTimeZone('Europe/Amsterdam');
+        $now = new DateTimeImmutable('now', $tz);
+        $until = $now->setTime(0, 0)->modify('+' . max(1, (int)$settings['agenda_days']) . ' days');
+        $ids = implode(',', array_keys($calendars));
+        $ev = $db->prepare("SELECT source_id, title, place, starts_at, ends_at, all_day FROM infoscreen_events
+            WHERE source_id IN ($ids) AND starts_at < ? AND (ends_at > ? OR (ends_at IS NULL AND starts_at >= ?))
+            ORDER BY starts_at, title LIMIT 60");
+        $nowStr = $now->format('Y-m-d H:i:s');
+        $ev->execute([$until->format('Y-m-d H:i:s'), $nowStr, $now->setTime(0, 0)->format('Y-m-d H:i:s')]);
+        foreach ($ev->fetchAll(PDO::FETCH_ASSOC) as $e) {
+            $agenda[] = [
+                'title'    => $e['title'],
+                'place'    => $e['place'],
+                'start'    => $e['starts_at'],
+                'end'      => $e['ends_at'],
+                'all_day'  => (int)$e['all_day'] === 1,
+                'calendar' => count($calendars) > 1 ? $calendars[(int)$e['source_id']] : null,
+            ];
+        }
+    }
+
     return [
         'settings' => [
             'title'          => $settings['title'],
@@ -907,8 +1005,12 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
             'sidebar'        => $settings['sidebar'] === '1',
             'theme'          => $settings['theme'],
             'show_clock'     => $settings['show_clock'] === '1',
+            'agenda_sidebar' => $settings['agenda_sidebar'] === '1',
+            'agenda_slide'   => $settings['agenda_slide'] === '1',
+            'agenda_days'    => (int)$settings['agenda_days'],
         ],
         'messages' => $messages,
+        'agenda'   => $agenda,
         'news'     => $news,
         'weather'  => $weather,
     ];

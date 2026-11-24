@@ -2,6 +2,14 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.5.0 — 2026-11-24
+
+- Nieuw: Agenda op het infoscherm — koppel een agenda uit Outlook/Microsoft 365 of Google Agenda via een iCal-link (.ics). Afspraken staan in de zijbalk en één keer per ronde als agendadia; terugkerende, verplaatste en geannuleerde afspraken worden goed getoond, privé-afspraken niet
+- Nieuw: Teams-koppeling — collega's zetten een bericht op het infoscherm door in een Teams-kanaal '@Infoscherm Titel' te typen (met 'tot vrijdag', 'belangrijk', 'lijst', 'stop 12', 'help'). Gratis, zonder Power Automate; werkt via een uitgaande webhook van Teams
+- Nieuw: Berichten-API — eigen systemen en scripts plaatsen, wijzigen en verwijderen berichten met een eigen sleutel per koppeling (api/infoscreen_push.php)
+- Nieuw: tabbladen Agenda en Koppelingen bij Infoscherm; bij Berichten staat of een bericht via Teams of de API kwam en van wie
+- Beveiliging: van een API-sleutel wordt alleen een hash bewaard, het Teams-beveiligingstoken staat versleuteld, Teams-berichten worden op hun handtekening gecontroleerd en elke koppeling mag maximaal 120 berichten per uur plaatsen
+
 ## v2.4.0 — 2026-11-23
 
 - Nieuw: Infoscherm — toon eigen berichten (met afbeelding, kleur, periode en locatie), nieuws uit RSS-feeds en het weer (Buienradar of Open-Meteo) op uw schermen, met datum, tijd en een nieuwsbalk. Beschikbaar in alle pakketten, ook Starter. Beheer via Dashboard → Infoscherm
