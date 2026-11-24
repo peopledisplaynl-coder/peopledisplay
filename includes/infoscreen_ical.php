@@ -25,6 +25,7 @@ define('PD_INFOSCREEN_ICAL_LOADED', true);
 
 const PD_IS_TZ = 'Europe/Amsterdam';
 const PD_IS_AGENDA_DAYS_STORED = 60;
+const PD_IS_ICAL_MAX_BYTES = 50 * 1024 * 1024; // a calendar with years of history
 
 /** Windows time zone names (Outlook) → IANA. */
 const PD_IS_WINDOWS_TZ = [
@@ -90,59 +91,93 @@ function pd_ical_date(string $value, array $params, DateTimeZone $calendarTz): ?
     return $d ? [$d, false] : null;
 }
 
+/** One unfolded content line → [name, params, value], or null. */
+function pd_ical_line(string $line): ?array
+{
+    if ($line === '' || !str_contains($line, ':')) return null;
+    // name;param=value;param="a:b":value — the first ':' outside quotes ends the parameters
+    $inQuote = false;
+    $split = null;
+    for ($i = 0, $n = strlen($line); $i < $n; $i++) {
+        if ($line[$i] === '"') $inQuote = !$inQuote;
+        elseif ($line[$i] === ':' && !$inQuote) { $split = $i; break; }
+    }
+    if ($split === null) return null;
+    $parts = explode(';', substr($line, 0, $split));
+    $name = strtoupper(array_shift($parts));
+    $params = [];
+    foreach ($parts as $p) {
+        if (str_contains($p, '=')) {
+            [$k, $v] = explode('=', $p, 2);
+            $params[strtoupper($k)] = trim($v, '"');
+        }
+    }
+    return [$name, $params, substr($line, $split + 1)];
+}
+
+/** Unfolded content lines of an open .ics stream, read line by line (large calendars stay out of memory). */
+function pd_ical_stream_lines($fh): Generator
+{
+    $buf = null;
+    while (($raw = fgets($fh)) !== false) {
+        $raw = rtrim($raw, "\r\n");
+        if ($raw !== '' && ($raw[0] === ' ' || $raw[0] === "\t")) {
+            if ($buf !== null) $buf .= substr($raw, 1); // folded continuation
+            continue;
+        }
+        if ($buf !== null && ($l = pd_ical_line($buf)) !== null) yield $l;
+        $buf = $raw;
+    }
+    if ($buf !== null && ($l = pd_ical_line($buf)) !== null) yield $l;
+}
+
 /** Content lines of an .ics text: unfolded, as [name, params, value]. */
 function pd_ical_lines(string $ics): array
 {
-    $ics = str_replace(["\r\n", "\r"], "\n", $ics);
-    $ics = preg_replace("/\n[ \t]/", '', $ics); // unfold
-    $lines = [];
-    foreach (explode("\n", $ics) as $line) {
-        if ($line === '' || !str_contains($line, ':')) continue;
-        // name;param=value;param="a:b":value — the first ':' outside quotes ends the parameters
-        $inQuote = false;
-        $split = null;
-        for ($i = 0, $n = strlen($line); $i < $n; $i++) {
-            if ($line[$i] === '"') $inQuote = !$inQuote;
-            elseif ($line[$i] === ':' && !$inQuote) { $split = $i; break; }
-        }
-        if ($split === null) continue;
-        $head = substr($line, 0, $split);
-        $value = substr($line, $split + 1);
-        $parts = explode(';', $head);
-        $name = strtoupper(array_shift($parts));
-        $params = [];
-        foreach ($parts as $p) {
-            if (str_contains($p, '=')) {
-                [$k, $v] = explode('=', $p, 2);
-                $params[strtoupper($k)] = trim($v, '"');
-            }
-        }
-        $lines[] = [$name, $params, $value];
-    }
+    $fh = fopen('php://temp', 'w+b');
+    fwrite($fh, $ics);
+    rewind($fh);
+    $lines = iterator_to_array(pd_ical_stream_lines($fh), false);
+    fclose($fh);
     return $lines;
 }
 
 /**
- * Parse VEVENTs. Throws RuntimeException when the text is not a calendar.
- * Each event: uid, title, place, start, end, all_day, rrule (array|null), exdates (string keys),
+ * Parse VEVENTs from text. Throws RuntimeException when the text is not a calendar.
+ * Each event: uid, title, place, start, end, all_day, rrule (array|null), exdates (timestamps),
  * recurrence_id (DateTimeImmutable|null), cancelled, private.
  */
-function pd_ical_parse(string $ics): array
+function pd_ical_parse(string $ics, ?DateTimeImmutable $keepFrom = null): array
 {
-    $ics = ltrim($ics, "\xEF\xBB\xBF \t\r\n");
-    if (stripos($ics, 'BEGIN:VCALENDAR') !== 0) {
+    $fh = fopen('php://temp', 'w+b');
+    fwrite($fh, $ics);
+    rewind($fh);
+    try {
+        return pd_ical_parse_stream($fh, $keepFrom);
+    } finally {
+        fclose($fh);
+    }
+}
+
+/**
+ * Parse VEVENTs from an open stream. With $keepFrom, single appointments that ended before it
+ * are dropped right away, so a calendar with years of history needs little memory.
+ */
+function pd_ical_parse_stream($fh, ?DateTimeImmutable $keepFrom = null): array
+{
+    $first = '';
+    while (($first = fgets($fh)) !== false && trim($first) === '');
+    if ($first === false || stripos(ltrim($first, "\xEF\xBB\xBF \t"), 'BEGIN:VCALENDAR') !== 0) {
         throw new RuntimeException('Dit is geen agenda in iCal-formaat (.ics)');
     }
-    $lines = pd_ical_lines($ics);
     $calendarTz = new DateTimeZone(PD_IS_TZ);
-    foreach ($lines as [$name, , $value]) {
-        if ($name === 'X-WR-TIMEZONE') { $calendarTz = pd_ical_tz($value); break; }
-    }
+    $keepTs = $keepFrom ? $keepFrom->getTimestamp() : null;
 
     $events = [];
     $cur = null;
     $depth = 0; // nested components inside a VEVENT (VALARM)
-    foreach ($lines as [$name, $params, $value]) {
+    foreach (pd_ical_stream_lines($fh) as [$name, $params, $value]) {
+        if ($cur === null && $name === 'X-WR-TIMEZONE') { $calendarTz = pd_ical_tz($value); continue; }
         if ($name === 'BEGIN' && strtoupper($value) === 'VEVENT') { $cur = ['exdates' => [], 'rrule' => null, 'recurrence_id' => null, 'start' => null, 'end' => null, 'duration' => null, 'all_day' => false, 'uid' => '', 'title' => '', 'place' => '', 'cancelled' => false, 'private' => false]; $depth = 0; continue; }
         if ($cur === null) continue;
         if ($name === 'BEGIN') { $depth++; continue; }
@@ -156,7 +191,9 @@ function pd_ical_parse(string $ics): array
                     if (!$cur['end']) $cur['end'] = $cur['all_day'] ? $cur['start']->modify('+1 day') : $cur['start'];
                 }
                 unset($cur['duration']);
-                $events[] = $cur;
+                $old = $keepTs !== null && !$cur['rrule'] && $cur['end']->getTimestamp() < $keepTs
+                    && (!$cur['recurrence_id'] || $cur['recurrence_id']->getTimestamp() < $keepTs);
+                if (!$old) $events[] = $cur;
             }
             $cur = null;
             continue;
@@ -242,10 +279,31 @@ function pd_ical_expand(array $ev, DateTimeImmutable $from, DateTimeImmutable $t
     $h = (int)$start->format('G'); $i = (int)$start->format('i'); $s = (int)$start->format('s');
     $at = fn(int $y, int $mo, int $d) => $start->setDate($y, $mo, $d)->setTime($h, $i, $s);
 
+    if ($until && $until < $from) {
+        return []; // the series ended before the window
+    }
     $out = [];
     $seen = 0;
     $period = $start;
-    for ($guard = 0; $guard < 3000; $guard++) {
+    // Without COUNT, skip whole periods up to just before the window (a daily series from years ago)
+    if ($count === null && $from > $start) {
+        $sy = (int)$start->format('Y'); $sm = (int)$start->format('n');
+        $fy = (int)$from->format('Y'); $fm = (int)$from->format('n');
+        if ($freq === 'DAILY') {
+            $n = intdiv(max(0, (int)floor(($from->getTimestamp() - $start->getTimestamp()) / 86400) - 1), $interval);
+            if ($n > 0) $period = $start->modify('+' . ($n * $interval) . ' days');
+        } elseif ($freq === 'WEEKLY') {
+            $n = intdiv(max(0, (int)floor(($from->getTimestamp() - $start->getTimestamp()) / 604800) - 1), $interval);
+            if ($n > 0) $period = $start->modify('+' . ($n * $interval) . ' weeks');
+        } elseif ($freq === 'MONTHLY') {
+            $n = intdiv(max(0, ($fy - $sy) * 12 + ($fm - $sm) - 1), $interval);
+            if ($n > 0) $period = $start->setDate($sy, $sm, 1)->modify('+' . ($n * $interval) . ' months');
+        } else {
+            $n = intdiv(max(0, $fy - $sy - 1), $interval);
+            if ($n > 0) $period = $start->setDate($sy + $n * $interval, 1, 1);
+        }
+    }
+    for ($guard = 0; $guard < 5000; $guard++) {
         $y = (int)$period->format('Y'); $mo = (int)$period->format('n');
         $cands = [];
         if ($freq === 'DAILY') {
@@ -364,14 +422,30 @@ function pd_ical_url(string $url): string
 
 function pd_infoscreen_fetch_ical(PDO $db, array $source): array
 {
-    $res = pd_infoscreen_http_get(pd_ical_url((string)$source['url']));
-    if (!$res['ok']) {
-        throw new RuntimeException($res['error']);
+    // A calendar holds its whole history and can be tens of MB: download to a temporary file and
+    // read it line by line, keeping only what is not over yet.
+    @set_time_limit(120);
+    $tmp = tempnam(sys_get_temp_dir(), 'pdics');
+    if ($tmp === false) {
+        throw new RuntimeException('Tijdelijk bestand kon niet worden aangemaakt');
     }
-    $events = pd_ical_parse($res['body']);
-    $now = new DateTimeImmutable('now', new DateTimeZone(PD_IS_TZ));
-    $from = $now->setTime(0, 0);
-    $to = $from->modify('+' . PD_IS_AGENDA_DAYS_STORED . ' days');
+    try {
+        $res = pd_infoscreen_http_get(pd_ical_url((string)$source['url']), 30, PD_IS_ICAL_MAX_BYTES, $tmp);
+        if (!$res['ok']) {
+            throw new RuntimeException($res['error']);
+        }
+        $now = new DateTimeImmutable('now', new DateTimeZone(PD_IS_TZ));
+        $from = $now->setTime(0, 0);
+        $to = $from->modify('+' . PD_IS_AGENDA_DAYS_STORED . ' days');
+        $fh = fopen($tmp, 'rb');
+        try {
+            $events = pd_ical_parse_stream($fh, $from);
+        } finally {
+            fclose($fh);
+        }
+    } finally {
+        @unlink($tmp);
+    }
     $occ = pd_ical_occurrences($events, $from, $to);
 
     $db->beginTransaction();

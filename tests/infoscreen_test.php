@@ -159,6 +159,46 @@ try {
 } catch (RuntimeException $e) {
     check(true, 'ical not a calendar');
 }
+// A large calendar (years of history, ~25 MB) is read line by line with little memory, and
+// long-running series (daily since 2015) still reach the window
+$big = tempnam(sys_get_temp_dir(), 'pdtest');
+$fh = fopen($big, 'wb');
+fwrite($fh, "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nX-WR-TIMEZONE:Europe/Amsterdam\r\n");
+for ($i = 0; $i < 60000; $i++) {
+    $d = date('Ymd', strtotime('2015-01-01 +' . intdiv($i, 20) . ' days'));
+    fwrite($fh, "BEGIN:VEVENT\r\nUID:old-$i\r\nSUMMARY:Oude afspraak $i met een wat langere omschrijving zodat het bestand groot wordt\r\n"
+        . "DESCRIPTION:" . str_repeat('Lorem ipsum dolor sit amet ', 12) . "\r\nDTSTART:{$d}T090000\r\nDTEND:{$d}T100000\r\nEND:VEVENT\r\n");
+}
+fwrite($fh, "BEGIN:VEVENT\r\nUID:daily\r\nSUMMARY:Dagstart\r\nDTSTART:20150105T083000\r\nDTEND:20150105T084500\r\nRRULE:FREQ=DAILY\r\nEND:VEVENT\r\n");
+fwrite($fh, "BEGIN:VEVENT\r\nUID:weekly\r\nSUMMARY:Weekoverleg\r\nDTSTART:20160104T150000\r\nDTEND:20160104T160000\r\nRRULE:FREQ=WEEKLY;BYDAY=MO\r\nEND:VEVENT\r\n");
+fwrite($fh, "BEGIN:VEVENT\r\nUID:monthly\r\nSUMMARY:Maandoverleg\r\nDTSTART:20150113T190000\r\nRRULE:FREQ=MONTHLY;BYDAY=2TU\r\nEND:VEVENT\r\n");
+fwrite($fh, "BEGIN:VEVENT\r\nUID:ended\r\nSUMMARY:Afgelopen reeks\r\nDTSTART:20150105T120000\r\nRRULE:FREQ=DAILY;UNTIL=20200101T000000Z\r\nEND:VEVENT\r\n");
+fwrite($fh, "END:VCALENDAR\r\n");
+fclose($fh);
+$sizeMb = round(filesize($big) / 1048576, 1);
+$memBefore = memory_get_usage();
+$from = new DateTimeImmutable('2026-11-23 00:00', $tz);
+$fh = fopen($big, 'rb');
+$t0 = microtime(true);
+$evs = pd_ical_parse_stream($fh, $from);
+fclose($fh);
+$occ = pd_ical_occurrences($evs, $from, $from->modify('+14 days'));
+$secs = round(microtime(true) - $t0, 1);
+$memUsed = round((memory_get_peak_usage() - $memBefore) / 1048576, 1);
+unlink($big);
+check($sizeMb > 20, "ical: big test calendar is $sizeMb MB");
+eq(count($evs), 4, 'ical: old single appointments dropped while reading');
+check($memUsed < 16, "ical: $sizeMb MB calendar parsed with $memUsed MB extra memory");
+check($secs < 20, "ical: $sizeMb MB calendar parsed in $secs s");
+$titles = array_count_values(array_column($occ, 'title'));
+eq($titles['Dagstart'] ?? 0, 14, 'ical: daily since 2015 → 14 occurrences in two weeks');
+eq($titles['Weekoverleg'] ?? 0, 2, 'ical: weekly since 2016 → 2 Mondays');
+$occ30 = pd_ical_occurrences($evs, $from, $from->modify('+30 days'));
+eq(count(array_filter($occ30, fn($o) => $o['title'] === 'Maandoverleg')), 1, 'ical: monthly 2nd Tuesday since 2015 → 8 December');
+eq(isset($titles['Afgelopen reeks']), false, 'ical: series that ended is skipped');
+eq(array_values(array_filter($occ30, fn($o) => $o['title'] === 'Maandoverleg'))[0]['start'] ?? null, '2026-12-08 19:00:00', 'ical: monthly after fast-forward');
+echo "  (big calendar: $sizeMb MB, $secs s, +$memUsed MB)\n";
+
 eq(pd_ical_url('webcal://outlook.office365.com/owa/calendar/x/calendar.ics'), 'https://outlook.office365.com/owa/calendar/x/calendar.ics', 'ical: webcal → https');
 
 // ── Berichten-API and Teams ─────────────────────────────────────────────

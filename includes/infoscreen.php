@@ -329,10 +329,15 @@ function pd_infoscreen_public_host(string $host): bool
  * GET a URL with a short timeout and a size cap. Follows up to 3 redirects, each to a
  * public host. Returns ['ok' => bool, 'status' => int, 'body' => string, 'error' => string].
  */
-function pd_infoscreen_http_get(string $url, int $timeout = PD_IS_HTTP_TIMEOUT): array
+function pd_infoscreen_http_get(string $url, int $timeout = PD_IS_HTTP_TIMEOUT, int $maxBytes = PD_IS_MAX_BYTES, ?string $sinkPath = null): array
 {
     if (function_exists('pd_infoscreen_http_get_override')) {
-        return pd_infoscreen_http_get_override($url); // tests
+        $res = pd_infoscreen_http_get_override($url); // tests
+        if ($sinkPath !== null && $res['ok']) {
+            file_put_contents($sinkPath, $res['body']);
+            $res['body'] = '';
+        }
+        return $res;
     }
     if (!function_exists('curl_init')) {
         return ['ok' => false, 'status' => 0, 'body' => '', 'error' => 'cURL is niet beschikbaar op deze server'];
@@ -350,6 +355,11 @@ function pd_infoscreen_http_get(string $url, int $timeout = PD_IS_HTTP_TIMEOUT):
         }
         $port = (int)(parse_url($clean, PHP_URL_PORT) ?: (str_starts_with($clean, 'https:') ? 443 : 80));
         $body = '';
+        $size = 0;
+        $sink = $sinkPath !== null ? fopen($sinkPath, 'wb') : null;
+        if ($sinkPath !== null && !$sink) {
+            return ['ok' => false, 'status' => 0, 'body' => '', 'error' => 'Tijdelijk bestand kon niet worden aangemaakt'];
+        }
         $ch = curl_init($clean);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => false,
@@ -362,9 +372,13 @@ function pd_infoscreen_http_get(string $url, int $timeout = PD_IS_HTTP_TIMEOUT):
             CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
             // Connect to the address that was checked above (no second DNS lookup)
             CURLOPT_RESOLVE        => filter_var($host, FILTER_VALIDATE_IP) ? [] : [$host . ':' . $port . ':' . $ips[0]],
-            CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (&$body) {
+            // Large downloads (agendas) go to a file instead of memory
+            CURLOPT_WRITEFUNCTION  => function ($ch, $chunk) use (&$body, &$size, $sink, $maxBytes) {
+                $size += strlen($chunk);
+                if ($size > $maxBytes) return 0;
+                if ($sink) return fwrite($sink, $chunk);
                 $body .= $chunk;
-                return strlen($body) > PD_IS_MAX_BYTES ? 0 : strlen($chunk);
+                return strlen($chunk);
             },
         ]);
         $ok = curl_exec($ch);
@@ -372,13 +386,14 @@ function pd_infoscreen_http_get(string $url, int $timeout = PD_IS_HTTP_TIMEOUT):
         $redirect = (string)curl_getinfo($ch, CURLINFO_REDIRECT_URL);
         $err = curl_error($ch);
         curl_close($ch);
+        if ($sink) fclose($sink);
 
         if ($status >= 300 && $status < 400 && $redirect !== '') {
             $url = $redirect;
             continue;
         }
-        if ($ok === false && strlen($body) > PD_IS_MAX_BYTES) {
-            return ['ok' => false, 'status' => $status, 'body' => '', 'error' => 'Bestand is te groot'];
+        if ($ok === false && $size > $maxBytes) {
+            return ['ok' => false, 'status' => $status, 'body' => '', 'error' => 'Bestand is te groot (meer dan ' . round($maxBytes / 1048576) . ' MB)'];
         }
         if ($ok === false) {
             return ['ok' => false, 'status' => $status, 'body' => '', 'error' => 'Verbinding mislukt: ' . $err];

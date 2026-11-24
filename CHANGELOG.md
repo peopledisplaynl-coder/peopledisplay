@@ -2,6 +2,10 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.5.1 — 2026-11-24
+
+- Opgelost: een agenda met veel geschiedenis (bijvoorbeeld een Google-agenda die al jaren loopt) gaf 'Bestand is te groot'. Agenda's tot 50 MB worden nu regel voor regel gelezen en oude afspraken worden daarbij direct overgeslagen, zodat het weinig geheugen kost; reeksen die al jaren lopen worden snel doorgerekend
+
 ## v2.5.0 — 2026-11-24
 
 - Nieuw: Agenda op het infoscherm — koppel een agenda uit Outlook/Microsoft 365 of Google Agenda via een iCal-link (.ics). Afspraken staan in de zijbalk en één keer per ronde als agendadia; terugkerende, verplaatste en geannuleerde afspraken worden goed getoond, privé-afspraken niet

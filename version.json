@@ -1,12 +1,19 @@
 {
-    "version": "2.5.0",
+    "version": "2.5.1",
     "critical": false,
-    "message": "Nieuw: agenda op het infoscherm en berichten plaatsen vanuit Teams. Update aanbevolen.",
+    "message": "Opgelost: grote agenda's (bijv. Google Agenda) koppelen op het infoscherm. Update aanbevolen als u een agenda gebruikt.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
     "release_date": "2026-11-24",
     "changelog": [
+        {
+            "version": "2.5.1",
+            "date": "2026-11-24",
+            "changes": [
+                "Opgelost: een agenda met veel geschiedenis (bijvoorbeeld een Google-agenda die al jaren loopt) gaf 'Bestand is te groot'. Agenda's tot 50 MB worden nu regel voor regel gelezen en oude afspraken worden daarbij direct overgeslagen, zodat het weinig geheugen kost; reeksen die al jaren lopen worden snel doorgerekend"
+            ]
+        },
         {
             "version": "2.5.0",
             "date": "2026-11-24",
