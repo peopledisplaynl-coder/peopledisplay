@@ -325,6 +325,26 @@ shot('infoscherm-berichten', async () => {
   await save('infoscherm-berichten', p, { full: true });
 });
 
+shot('infoscherm-nieuw-bericht', async () => {
+  const p = await pageFor('admin');
+  await open(p, 'admin/infoscreen_manage.php?tab=berichten&new=1', 800);
+  await p.fill('#title', 'Ouderavond in alle gebouwen');
+  await p.locator('input[name=locations_all]').uncheck();
+  await p.locator('input[name="locations[]"][value="Hoofdgebouw"]').check();
+  await p.locator('input[name="locations[]"][value="BSO De Vlinder"]').check();
+  await save('infoscherm-nieuw-bericht', p, { selector: '.panel', pad: 0 });
+});
+shot('infoscherm-redacteur', async () => {
+  const p = await pageFor('concierge');
+  await open(p, 'infoscherm_berichten.php', 800);
+  await save('infoscherm-redacteur', p, { full: true });
+});
+shot('automatische-taken', async () => {
+  const p = await pageFor('admin');
+  await open(p, 'admin/cron_manage.php', 800);
+  await save('automatische-taken', p, { full: true });
+});
+
 // ── Run ────────────────────────────────────────────────────────────────
 for (const s of shots) {
   if (only.size && !only.has(s.name)) continue;

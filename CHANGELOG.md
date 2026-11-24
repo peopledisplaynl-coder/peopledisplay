@@ -2,6 +2,14 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.6.0 — 2026-11-24
+
+- Nieuw: berichten, nieuwsbronnen, weerplaatsen, agenda's en koppelingen op het infoscherm gelden voor één, meer of alle locaties (vinkjes in plaats van één keuze). Bestaande instellingen worden automatisch overgenomen; een nieuwe locatienaam gaat automatisch mee
+- Nieuw: berichtenredacteur voor het infoscherm — bijvoorbeeld receptie of conciërge plaatst en wijzigt berichten alleen voor de eigen locaties, via de knop 'Infoscherm-berichten' op het welkomstscherm. Aanzetten bij Gebruikers > Features. Berichten voor alle locaties blijven bij de beheerder en zijn voor de redacteur alleen te lezen
+- Nieuw: Teams en de Berichten-API kunnen meer locaties meegeven ('locaties A, B' in Teams, "locations": [...] in de API)
+- Beveiliging: elke installatie heeft een eigen geheime sleutel voor cronjobs (cron-job.org) in plaats van één gedeelde sleutel. De nieuwe pagina Beheer > Automatische taken toont alle cronjobs met de juiste links. De oude sleutel werkt na de update nog 30 dagen; het dashboard waarschuwt zolang een cronjob hem gebruikt
+- Beveiliging: cron_reset_expired_sub_status.php controleert nu ook de sleutel bij een aanroep via internet; het logbestand van cron_endpoint.php staat in logs/
+
 ## v2.5.1 — 2026-11-24
 
 - Opgelost: een agenda met veel geschiedenis (bijvoorbeeld een Google-agenda die al jaren loopt) gaf 'Bestand is te groot'. Agenda's tot 50 MB worden nu regel voor regel gelezen en oude afspraken worden daarbij direct overgeslagen, zodat het weinig geheugen kost; reeksen die al jaren lopen worden snel doorgerekend

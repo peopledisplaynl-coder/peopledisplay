@@ -20,6 +20,11 @@
  * ============================================================================
  */
 
+// Security (2.6.0): CLI, or a web call with the installation's cron key. A web call without a key
+// still works during the transition period (it never had a check), see includes/cron_key.php.
+require_once __DIR__ . '/../includes/cron_key.php';
+pd_cron_require_key('cron_reset_expired_sub_status', true);
+
 require_once __DIR__ . '/../includes/db.php';
 
 $logFile = __DIR__ . '/../logs/sub_status_reset.log';

@@ -21,6 +21,7 @@ require_once __DIR__ . '/../includes/infoscreen.php';
 require_once __DIR__ . '/../includes/infoscreen_ical.php';
 require_once __DIR__ . '/../includes/infoscreen_api.php';
 require_once __DIR__ . '/../includes/twofa.php';
+require_once __DIR__ . '/../includes/cron_key.php';
 require_once __DIR__ . '/auth_helper.php';
 
 requireAdmin();
@@ -55,12 +56,6 @@ function pd_is_dt(?string $value): ?string
     return $ts ? date('Y-m-d H:i:s', $ts) : null;
 }
 
-function pd_is_location(?string $value, array $locations): ?string
-{
-    $value = trim((string)$value);
-    return $value !== '' && in_array($value, $locations, true) ? $value : null;
-}
-
 // Locations (names, as used everywhere in PeopleDisplay)
 try {
     $locations = $db->query("SELECT location_name FROM locations WHERE active = 1 ORDER BY sort_order, location_name")->fetchAll(PDO::FETCH_COLUMN);
@@ -92,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ends = pd_is_dt($_POST['ends_at'] ?? '');
                 if ($starts && $ends && $ends <= $starts) pd_is_redirect('berichten', 'De einddatum moet na de begindatum liggen.', false, $id ? '&edit=' . $id : '&new=1');
                 $duration = trim((string)($_POST['duration_seconds'] ?? '')) === '' ? null : max(5, min(300, (int)$_POST['duration_seconds']));
-                $location = pd_is_location($_POST['location'] ?? '', $locations);
+                $locs = pd_infoscreen_locs_from_post($locations);
                 $priority = !empty($_POST['priority']) ? 1 : 0;
                 $active = !empty($_POST['active']) ? 1 : 0;
 
@@ -110,15 +105,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($id) {
-                    $db->prepare("UPDATE infoscreen_messages SET title = ?, body = ?, image_path = ?, location = ?, starts_at = ?, ends_at = ?,
+                    $db->prepare("UPDATE infoscreen_messages SET title = ?, body = ?, image_path = ?, locations = ?, starts_at = ?, ends_at = ?,
                                   duration_seconds = ?, priority = ?, color = ?, active = ? WHERE id = ?")
-                       ->execute([$title, $body, $image, $location, $starts, $ends, $duration, $priority, $color, $active, $id]);
+                       ->execute([$title, $body, $image, $locs, $starts, $ends, $duration, $priority, $color, $active, $id]);
                     if (($old['image_path'] ?? null) && $old['image_path'] !== $image) pd_infoscreen_delete_image($db, $old['image_path'], $appRoot);
                     pd_is_redirect('berichten', 'Bericht opgeslagen.');
                 }
-                $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, location, starts_at, ends_at, duration_seconds, priority, color, active, created_by)
+                $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, locations, starts_at, ends_at, duration_seconds, priority, color, active, created_by)
                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-                   ->execute([$title, $body, $image, $location, $starts, $ends, $duration, $priority, $color, $active, (int)$_SESSION['user_id']]);
+                   ->execute([$title, $body, $image, $locs, $starts, $ends, $duration, $priority, $color, $active, (int)$_SESSION['user_id']]);
                 pd_is_redirect('berichten', 'Bericht toegevoegd.');
 
             case 'toggle_message':
@@ -140,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $editQs = $id ? '&edit=' . $id : '&new=1';
                 $name = mb_substr(trim((string)($_POST['name'] ?? '')), 0, 150);
                 if ($name === '') pd_is_redirect($tabFor, 'Vul een naam in.', false, $editQs);
-                $location = pd_is_location($_POST['location'] ?? '', $locations);
+                $locs = pd_infoscreen_locs_from_post($locations);
                 $url = $provider = $lat = $lon = $attribution = null;
                 $maxItems = 8;
                 $showImages = 1;
@@ -168,13 +163,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $active = !empty($_POST['active']) ? 1 : 0;
                 if ($id) {
-                    $db->prepare("UPDATE infoscreen_sources SET name = ?, url = ?, provider = ?, latitude = ?, longitude = ?, location = ?, max_items = ?,
+                    $db->prepare("UPDATE infoscreen_sources SET name = ?, url = ?, provider = ?, latitude = ?, longitude = ?, locations = ?, max_items = ?,
                                   show_images = ?, attribution = ?, active = ?, last_fetch_at = NULL WHERE id = ? AND type = ?")
-                       ->execute([$name, $url, $provider, $lat, $lon, $location, $maxItems, $showImages, $attribution, $active, $id, $type]);
+                       ->execute([$name, $url, $provider, $lat, $lon, $locs, $maxItems, $showImages, $attribution, $active, $id, $type]);
                 } else {
-                    $db->prepare("INSERT INTO infoscreen_sources (type, name, url, provider, latitude, longitude, location, max_items, show_images, attribution, active)
+                    $db->prepare("INSERT INTO infoscreen_sources (type, name, url, provider, latitude, longitude, locations, max_items, show_images, attribution, active)
                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-                       ->execute([$type, $name, $url, $provider, $lat, $lon, $location, $maxItems, $showImages, $attribution, $active]);
+                       ->execute([$type, $name, $url, $provider, $lat, $lon, $locs, $maxItems, $showImages, $attribution, $active]);
                     $id = (int)$db->lastInsertId();
                 }
                 // Fetch right away so the admin sees whether it works
@@ -208,15 +203,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($type === 'teams' && !preg_match('/^[\p{L}\p{N} _-]{1,40}$/u', $name)) {
                     pd_is_redirect('koppelingen', 'Gebruik voor een Teams-koppeling een korte naam zonder leestekens, bijv. Infoscherm.', false, '&new=teams');
                 }
-                $location = pd_is_location($_POST['location'] ?? '', $locations);
+                $locs = pd_infoscreen_locs_from_post($locations);
                 $days = max(1, min(90, (int)($_POST['default_days'] ?? 7)));
                 $color = in_array($_POST['color'] ?? '', PD_IS_COLORS, true) ? $_POST['color'] : 'blauw';
                 $hash = $hint = null;
                 if ($type === 'api') {
                     [$key, $hash, $hint] = pd_is_api_new_key();
                 }
-                $db->prepare("INSERT INTO infoscreen_api_keys (type, name, key_hash, key_hint, location, default_days, color, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-                   ->execute([$type, $name, $hash, $hint, $location, $days, $color, (int)$_SESSION['user_id']]);
+                $db->prepare("INSERT INTO infoscreen_api_keys (type, name, key_hash, key_hint, locations, default_days, color, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+                   ->execute([$type, $name, $hash, $hint, $locs, $days, $color, (int)$_SESSION['user_id']]);
                 $newId = (int)$db->lastInsertId();
                 if ($type === 'api') {
                     $_SESSION['pd_is_new_key'] = ['id' => $newId, 'key' => $key]; // shown once
@@ -427,6 +422,10 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     .current-img { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
     .current-img img { height: 70px; border-radius: 6px; }
     .wx-now { font-size: 13px; }
+    .loc-picker { border: 1.5px solid #d1d5db; border-radius: 7px; padding: 10px 12px; background: #fff; }
+    .loc-picker .loc-all { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #eef0f3; }
+    .loc-picker .loc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 14px; }
+    .loc-picker input:disabled + * , .loc-picker label:has(input:disabled) { color: #9ca3af; }
     @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .container { padding: 20px 16px; } td, th { padding: 8px 6px; } .hide-sm { display: none; } }
 </style>
 </head>
@@ -454,7 +453,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     <?php endif; ?>
 
 <?php if ($tab === 'berichten'): ?>
-    <?php if ($showForm): $m = $editMessage ?? ['id' => 0, 'title' => '', 'body' => '', 'image_path' => null, 'location' => null, 'starts_at' => null, 'ends_at' => null, 'duration_seconds' => null, 'priority' => 0, 'color' => 'blauw', 'active' => 1]; ?>
+    <?php if ($showForm): $m = $editMessage ?? ['id' => 0, 'title' => '', 'body' => '', 'image_path' => null, 'locations' => null, 'starts_at' => null, 'ends_at' => null, 'duration_seconds' => null, 'priority' => 0, 'color' => 'blauw', 'active' => 1]; ?>
     <div class="panel">
         <h2><?= $m['id'] ? '✏️ Bericht bewerken' : '➕ Nieuw bericht' ?></h2>
         <form method="post" enctype="multipart/form-data">
@@ -499,14 +498,8 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                     <div class="help">Leeg = blijft staan tot u het uitzet.</div>
                 </div>
                 <div>
-                    <label class="f" for="location">Locatie</label>
-                    <select id="location" name="location">
-                        <option value="">Alle locaties</option>
-                        <?php foreach ($locations as $loc): ?>
-                            <option value="<?= $h($loc) ?>" <?= $m['location'] === $loc ? 'selected' : '' ?>><?= $h($loc) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <div class="help">Een scherm toont de berichten van de locaties die bij het schermaccount zijn ingesteld.</div>
+                    <label class="f">Locaties</label>
+                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($m['locations']), true, 'Kies één of meer locaties, of “Alle locaties” voor een bericht dat overal moet staan. Een scherm toont de berichten van de locaties van het schermaccount.') ?>
                 </div>
                 <div>
                     <label class="f" for="duration_seconds">Tijd in beeld (seconden)</label>
@@ -525,6 +518,11 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     </div>
     <?php endif; ?>
 
+    <?php if (!$showForm): ?>
+    <div class="info"><strong>Receptie of conciërge berichten laten plaatsen?</strong> Vink bij <a href="users_manage.php">Gebruikers</a> &gt; Features
+        “Infoscherm-berichten plaatsen (redacteur)” aan en kies de Zichtbare Locaties. Die gebruiker plaatst dan via de knop
+        <em>Infoscherm-berichten</em> alleen berichten voor die locaties. Berichten voor alle locaties plaatst u hier.</div>
+    <?php endif; ?>
     <div class="toolbar">
         <div class="muted"><?= count($messages) ?> bericht(en)</div>
         <?php if (!$showForm): ?><a class="btn btn-primary" href="?tab=berichten&amp;new=1">➕ Nieuw bericht</a><?php endif; ?>
@@ -541,7 +539,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 <td><strong><?= $h($m['title']) ?></strong><?php if ((int)$m['priority']): ?> <span class="pill prio">Belangrijk</span><?php endif; ?>
                     <?php if (($m['source'] ?? 'handmatig') !== 'handmatig'): ?><span class="pill src" title="Geplaatst via <?= $h($m['source'] === 'teams' ? 'Teams' : 'de Berichten-API') ?>"><?= $m['source'] === 'teams' ? 'Teams' : 'API' ?><?= isset($keyNames[$m['api_key_id']]) ? ' · ' . $h($keyNames[$m['api_key_id']]) : '' ?><?= $m['author'] ? ' · ' . $h($m['author']) : '' ?></span><?php endif; ?>
                     <?php if ($m['body']): ?><div class="muted"><?= $h(mb_strimwidth($m['body'], 0, 90, '…')) ?></div><?php endif; ?></td>
-                <td class="hide-sm"><?= $h($m['location'] ?: 'Alle') ?></td>
+                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($m['locations']))) ?></td>
                 <td class="hide-sm muted"><?= $h(pd_is_period($m)) ?></td>
                 <td><span class="pill <?= $statusCls ?>"><?= $statusText ?></span></td>
                 <td>
@@ -570,7 +568,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         Nieuws met een afbeelding verschijnt als grote dia, alle koppen lopen door de nieuwsbalk onderaan.
     </div>
 
-    <?php if ($showForm): $s = $editSource ?? ['id' => 0, 'name' => '', 'url' => '', 'location' => null, 'max_items' => 8, 'show_images' => 1, 'attribution' => '', 'active' => 1]; ?>
+    <?php if ($showForm): $s = $editSource ?? ['id' => 0, 'name' => '', 'url' => '', 'locations' => null, 'max_items' => 8, 'show_images' => 1, 'attribution' => '', 'active' => 1]; ?>
     <div class="panel">
         <h2><?= $s['id'] ? '✏️ Nieuwsbron bewerken' : '➕ Nieuwsbron toevoegen' ?></h2>
         <form method="post">
@@ -594,11 +592,8 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                     <div class="help">Na het opslaan wordt de feed meteen opgehaald, zodat u direct ziet of hij werkt.</div>
                 </div>
                 <div>
-                    <label class="f" for="location">Locatie</label>
-                    <select id="location" name="location">
-                        <option value="">Alle locaties</option>
-                        <?php foreach ($locations as $loc): ?><option value="<?= $h($loc) ?>" <?= $s['location'] === $loc ? 'selected' : '' ?>><?= $h($loc) ?></option><?php endforeach; ?>
-                    </select>
+                    <label class="f">Locaties</label>
+                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($s['locations'])) ?>
                 </div>
                 <div>
                     <label class="f" for="max_items">Aantal berichten</label>
@@ -632,7 +627,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
             <tr>
                 <td><strong><?= $h($s['name']) ?></strong> <?php if (!(int)$s['active']): ?><span class="pill off">Uit</span><?php endif; ?>
                     <div class="muted"><code><?= $h(mb_strimwidth((string)$s['url'], 0, 70, '…')) ?></code></div></td>
-                <td class="hide-sm"><?= $h($s['location'] ?: 'Alle') ?></td>
+                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($s['locations']))) ?></td>
                 <td><?= (int)$s['item_count'] ?> <span class="muted">(<?= (int)$s['image_count'] ?> met afbeelding<?= (int)$s['show_images'] ? '' : ', uitgezet' ?>)</span></td>
                 <td><?php if ($s['last_status']): ?><span class="pill <?= $ok ? 'ok' : 'err' ?>"><?= $ok ? 'OK' : 'Fout' ?></span><?php endif; ?>
                     <span class="muted"><?= $h(pd_is_ago($s['last_fetch_at'])) ?></span>
@@ -655,7 +650,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         en anders die voor “Alle locaties”. Het weer wordt elke <?= PD_IS_FETCH_MINUTES ?> minuten bijgewerkt; de bron staat altijd op het scherm.
     </div>
 
-    <?php if ($showForm): $s = $editSource ?? ['id' => 0, 'name' => '', 'provider' => 'buienradar', 'latitude' => '', 'longitude' => '', 'location' => null, 'active' => 1]; ?>
+    <?php if ($showForm): $s = $editSource ?? ['id' => 0, 'name' => '', 'provider' => 'buienradar', 'latitude' => '', 'longitude' => '', 'locations' => null, 'active' => 1]; ?>
     <div class="panel">
         <h2><?= $s['id'] ? '✏️ Weerplaats bewerken' : '➕ Weerplaats toevoegen' ?></h2>
         <form method="post">
@@ -693,11 +688,8 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                     <div class="help">Buienradar: actuele metingen van het dichtstbijzijnde KNMI-meetstation, 5-daagse verwachting en het weerbericht (alleen Nederland). Open-Meteo: werkt voor elke plaats, zonder weerbericht.</div>
                 </div>
                 <div>
-                    <label class="f" for="location">Locatie</label>
-                    <select id="location" name="location">
-                        <option value="">Alle locaties</option>
-                        <?php foreach ($locations as $loc): ?><option value="<?= $h($loc) ?>" <?= $s['location'] === $loc ? 'selected' : '' ?>><?= $h($loc) ?></option><?php endforeach; ?>
-                    </select>
+                    <label class="f">Locaties</label>
+                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($s['locations'])) ?>
                 </div>
                 <div style="display:flex;align-items:flex-end">
                     <label class="check"><input type="checkbox" name="active" value="1" <?= (int)$s['active'] ? 'checked' : '' ?>> Actief</label>
@@ -758,7 +750,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 <td><strong><?= $h($s['name']) ?></strong> <?php if (!(int)$s['active']): ?><span class="pill off">Uit</span><?php endif; ?>
                     <div class="muted"><?= $h($s['latitude']) ?>, <?= $h($s['longitude']) ?></div></td>
                 <td><?= $h(PD_IS_WEATHER_PROVIDERS[$s['provider']]['label'] ?? $s['provider']) ?></td>
-                <td class="hide-sm"><?= $h($s['location'] ?: 'Alle') ?></td>
+                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($s['locations']))) ?></td>
                 <td class="wx-now"><?php if (is_array($wx) && isset($wx['current'])): ?><?= $h(round($wx['current']['temp'])) ?>°C, <?= $h($wx['current']['desc']) ?><?php if (!empty($wx['station'])): ?><div class="muted">Meetstation <?= $h($wx['station']) ?></div><?php endif; ?><?php else: ?><span class="muted">—</span><?php endif; ?></td>
                 <td><?php if ($s['last_status']): ?><span class="pill <?= $ok ? 'ok' : 'err' ?>"><?= $ok ? 'OK' : 'Fout' ?></span><?php endif; ?>
                     <span class="muted"><?= $h(pd_is_ago($s['last_fetch_at'])) ?></span>
@@ -785,7 +777,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <br>Iedereen met de link kan de agenda lezen; deel hem dus niet verder. Het infoscherm haalt de agenda elke <?= PD_IS_FETCH_MINUTES ?> minuten op.
     </div>
 
-    <?php if ($showForm): $s = $editSource ?? ['id' => 0, 'name' => '', 'url' => '', 'location' => null, 'attribution' => '', 'active' => 1]; ?>
+    <?php if ($showForm): $s = $editSource ?? ['id' => 0, 'name' => '', 'url' => '', 'locations' => null, 'attribution' => '', 'active' => 1]; ?>
     <div class="panel">
         <h2><?= $s['id'] ? '✏️ Agenda bewerken' : '➕ Agenda koppelen' ?></h2>
         <form method="post">
@@ -809,11 +801,8 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                     <div class="help">Na het opslaan wordt de agenda meteen opgehaald, zodat u direct ziet hoeveel afspraken er gevonden zijn.</div>
                 </div>
                 <div>
-                    <label class="f" for="location">Locatie</label>
-                    <select id="location" name="location">
-                        <option value="">Alle locaties</option>
-                        <?php foreach ($locations as $loc): ?><option value="<?= $h($loc) ?>" <?= $s['location'] === $loc ? 'selected' : '' ?>><?= $h($loc) ?></option><?php endforeach; ?>
-                    </select>
+                    <label class="f">Locaties</label>
+                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($s['locations'])) ?>
                 </div>
                 <div style="display:flex;align-items:flex-end">
                     <label class="check"><input type="checkbox" name="active" value="1" <?= (int)$s['active'] ? 'checked' : '' ?>> Actief</label>
@@ -841,7 +830,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
             <tr>
                 <td><strong><?= $h($s['name']) ?></strong> <?php if (!(int)$s['active']): ?><span class="pill off">Uit</span><?php endif; ?>
                     <div class="muted"><code><?= $h(mb_strimwidth((string)$s['url'], 0, 60, '…')) ?></code></div></td>
-                <td class="hide-sm"><?= $h($s['location'] ?: 'Alle') ?></td>
+                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($s['locations']))) ?></td>
                 <td><?= (int)($cnt['n'] ?? 0) ?> <span class="muted">(<?= (int)($cnt['week'] ?? 0) ?> komende week)</span></td>
                 <td><?php if ($s['last_status']): ?><span class="pill <?= $ok ? 'ok' : 'err' ?>"><?= $ok ? 'OK' : 'Fout' ?></span><?php endif; ?>
                     <span class="muted"><?= $h(pd_is_ago($s['last_fetch_at'])) ?></span>
@@ -893,11 +882,8 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                     <div class="help"><?= $newType === 'teams' ? 'Gebruik dezelfde naam voor de webhook in Teams. Collega\'s typen @naam om een bericht te plaatsen.' : 'Waar komen de berichten vandaan? Alleen voor uzelf.' ?></div>
                 </div>
                 <div>
-                    <label class="f" for="location">Standaardlocatie</label>
-                    <select id="location" name="location">
-                        <option value="">Alle locaties</option>
-                        <?php foreach ($locations as $loc): ?><option value="<?= $h($loc) ?>"><?= $h($loc) ?></option><?php endforeach; ?>
-                    </select>
+                    <label class="f">Standaardlocaties</label>
+                    <?= pd_infoscreen_location_picker($locations, [], true, 'Voor berichten waarin geen locatie staat.') ?>
                 </div>
                 <div>
                     <label class="f" for="default_days">Standaard looptijd (dagen)</label>
@@ -954,7 +940,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                     <?php if ($k['type'] === 'api'): ?><div class="muted">Sleutel eindigt op <code>…<?= $h($k['key_hint']) ?></code></div>
                     <?php elseif (!$k['secret_enc']): ?><div class="muted" style="color:#b45309">Beveiligingstoken nog niet ingevuld</div><?php endif; ?></td>
                 <td><?= $k['type'] === 'teams' ? 'Teams' : 'Berichten-API' ?></td>
-                <td class="hide-sm muted"><?= $h($k['location'] ?: 'Alle locaties') ?> · <?= (int)$k['default_days'] ?> dagen · <?= $h($k['color']) ?></td>
+                <td class="hide-sm muted"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($k['locations']))) ?> · <?= (int)$k['default_days'] ?> dagen · <?= $h($k['color']) ?></td>
                 <td><?= (int)$k['live_count'] ?></td>
                 <td class="muted"><?= $h(pd_is_ago($k['last_used_at'])) ?></td>
                 <td><div class="actions">
@@ -976,7 +962,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
   "title": "Studiedag vrijdag",             // verplicht
   "body": "Alle groepen vrij.",             // tekst (HTML wordt platte tekst)
   "image_url": "https://…/foto.jpg",        // of "image_base64"
-  "location": "Hoofdgebouw",                // leeg = standaard van de koppeling
+  "locations": ["Hoofdgebouw"],             // leeg = standaard van de koppeling
   "starts_at": "2026-12-01T08:00:00+01:00", // leeg = direct
   "ends_at": "2026-12-05T17:00:00+01:00",   // leeg = standaard looptijd
   "priority": true, "color": "rood",
@@ -1093,9 +1079,16 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <h2>⏱️ Automatisch bijwerken (aanbevolen)</h2>
         <p class="help" style="font-size:14px;color:#374151">Nieuws en weer worden ook bijgewerkt zodra een scherm gegevens opvraagt. Met een cronjob (elke 15 minuten) hoeft een scherm daar nooit op te wachten:</p>
         <p style="margin:10px 0"><strong>Cronjob in het hostingpaneel:</strong><br><code>php <?= $h($cronPath) ?></code></p>
-        <p style="margin:10px 0"><strong>Of via een webcron (bijv. cron-job.org):</strong><br><code><?= $h($appUrl) ?>/cron_endpoint.php?action=infoscreen_refresh&amp;key=<em>UW-CRON-SLEUTEL</em></code></p>
+        <?php if (hasAdminFeature('manage_system_config') && pd_cron_key() !== null): ?>
+        <p style="margin:10px 0"><strong>Of via een webcron (bijv. cron-job.org):</strong><br><code><?= $h($appUrl) ?>/cron_endpoint.php?action=infoscreen_refresh&amp;key=<?= $h(rawurlencode(pd_cron_key())) ?></code></p>
+        <p class="help">De sleutel is van deze installatie. Alle cronjobs en de sleutel staan bij <a href="cron_manage.php">Automatische taken</a>.</p>
+        <?php else: ?>
+        <p style="margin:10px 0"><strong>Of via een webcron (bijv. cron-job.org):</strong><br><code><?= $h($appUrl) ?>/cron_endpoint.php?action=infoscreen_refresh&amp;key=<em>SLEUTEL</em></code></p>
+        <p class="help">De sleutel staat bij Beheer &gt; Automatische taken (alleen voor beheerders met het recht Systeemconfiguratie).</p>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 </div>
+<?= pd_infoscreen_location_picker_js() ?>
 </body>
 </html>

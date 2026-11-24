@@ -135,7 +135,9 @@ Met de gratis dienst [cron-job.org](https://cron-job.org) roep je de scripts op 
 https://aanmelden.jouwschool.nl/cron/daily_reset_cron.php?key=JOUW-SLEUTEL
 ```
 
-De sleutel (`key`) staat bovenin het script. Scripts die via internet worden aangeroepen, weigeren een verzoek zonder de juiste sleutel.
+Elke installatie heeft een eigen geheime sleutel. De volledige links, met de sleutel erin, staan in het admin-dashboard bij **Automatische taken**; kopieer ze daar. Scripts die via internet worden aangeroepen, weigeren een verzoek zonder de juiste sleutel.
+
+> **Bijwerken vanaf versie 2.5 of ouder** — Tot en met 2.5 gebruikte elke installatie dezelfde, openbare sleutel. Na de update werkt die nog 30 dagen en toont het dashboard een melding zolang een cronjob hem gebruikt. Vervang de links in cron-job.org door die bij **Automatische taken** en klik daarna op **Oude sleutel nu uitzetten**.
 
 # Licentie activeren
 

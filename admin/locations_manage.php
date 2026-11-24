@@ -108,6 +108,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt2->execute([$nieuwe_naam, $oude_naam]);
             $bijgewerkt = $stmt2->rowCount();
 
+            // Infoscherm (2.6.0): berichten, bronnen en koppelingen met deze locatie meenemen
+            if (is_file(__DIR__ . '/../includes/infoscreen.php')) {
+                require_once __DIR__ . '/../includes/infoscreen.php';
+                pd_infoscreen_rename_location($db, (string)$oude_naam, (string)$nieuwe_naam);
+            }
+
             $extra = $bijgewerkt > 0 ? " ($bijgewerkt medewerker(s) automatisch bijgewerkt)" : "";
             $_SESSION['pd_flash'] = "✅ Locatie bijgewerkt!$extra";
             header('Location: locations_manage.php?t=' . time());

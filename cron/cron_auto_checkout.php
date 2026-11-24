@@ -18,11 +18,9 @@
 
 require_once __DIR__ . '/../includes/db.php';
 
-// Security: alleen via command line of met secret key
-$secretKey = 'INZ8U56BCZ'; // Verander dit!
-if (php_sapi_name() !== 'cli' && ($_GET['key'] ?? '') !== $secretKey) {
-    die('Unauthorized');
-}
+// Security: CLI, or a web call with the installation's cron key (Beheer > Automatische taken)
+require_once __DIR__ . '/../includes/cron_key.php';
+pd_cron_require_key('cron_auto_checkout');
 
 try {
     // Auto checkout alle BINNEN visitors behalve multi-day

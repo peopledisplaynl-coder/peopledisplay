@@ -245,5 +245,48 @@ eq(pd_infoscreen_compass(350.0), 'N', 'compass 350 → N');
 $res = pd_infoscreen_http_get('http://127.0.0.1/feed');
 eq($res['ok'], false, 'http get: loopback refused');
 
+// ── Locations (2.6.0) ────────────────────────────────────────────────────
+eq(pd_infoscreen_locs(null), [], 'locs: NULL = all');
+eq(pd_infoscreen_locs('["A","B"]'), ['A', 'B'], 'locs: json list');
+eq(pd_infoscreen_locs('kapot'), [], 'locs: broken json = all');
+eq(pd_infoscreen_locs_json([]), null, 'locs json: empty = NULL');
+eq(pd_infoscreen_locs_json(['B', 'A', 'B']), '["B","A"]', 'locs json: unique, order kept');
+eq(pd_infoscreen_locs_match([], ['A']), true, 'match: all-locations item on a screen');
+eq(pd_infoscreen_locs_match(['A'], []), true, 'match: screen without locations shows everything');
+eq(pd_infoscreen_locs_match(['A', 'B'], ['B']), true, 'match: overlap');
+eq(pd_infoscreen_locs_match(['A'], ['C']), false, 'match: other location');
+eq(pd_infoscreen_locs_label([]), 'Alle locaties', 'label: all');
+eq(pd_infoscreen_locs_label(['A', 'B']), 'A, B', 'label: list');
+$admin = ['all' => true, 'locations' => []];
+$editor = ['all' => false, 'locations' => ['A', 'B']];
+eq(pd_infoscreen_scope_allows($admin, []), true, 'scope: admin may edit all-locations messages');
+eq(pd_infoscreen_scope_allows($editor, []), false, 'scope: editor may not edit all-locations messages');
+eq(pd_infoscreen_scope_allows($editor, ['A']), true, 'scope: editor own location');
+eq(pd_infoscreen_scope_allows($editor, ['A', 'C']), false, 'scope: editor not when another location is in it');
+eq(pd_infoscreen_scope_allows(['all' => false, 'locations' => []], ['A']), false, 'scope: editor without locations');
+$_POST = ['locations_all' => '1', 'locations' => ['A']];
+eq(pd_infoscreen_locs_from_post(['A', 'B']), null, 'post: Alle locaties wins');
+$_POST = ['locations' => ['B', 'X']];
+eq(pd_infoscreen_locs_from_post(['A', 'B']), '["B"]', 'post: unknown location dropped');
+$_POST = ['locations_all' => '1', 'locations' => ['X']];
+eq(pd_infoscreen_locs_from_post(['A', 'B'], false), false, 'post: editor cannot pick all, nothing valid = invalid');
+$_POST = [];
+eq(pd_infoscreen_locs_from_post(['A'], true), null, 'post: admin nothing ticked = all');
+$html = pd_infoscreen_location_picker(['A', 'B<'], ['A'], false);
+check(strpos($html, 'locations_all') === false, 'picker: editor has no Alle locaties');
+check(strpos($html, 'B&lt;') !== false, 'picker: names escaped');
+
+// ── Cron key (2.6.0) ─────────────────────────────────────────────────────
+$cronDir = sys_get_temp_dir() . '/pd_cron_test_' . bin2hex(random_bytes(4));
+define('PD_CRON_KEY_DIR', $cronDir);
+require __DIR__ . '/../includes/cron_key.php';
+$key = pd_cron_key();
+check(is_string($key) && strlen($key) === 32, 'cron: key created');
+check(is_file($cronDir . '/cron_key.php') && is_file($cronDir . '/.htaccess'), 'cron: key file and .htaccess written');
+check(strpos((string)file_get_contents($cronDir . '/cron_key.php'), PD_CRON_LEGACY_KEY) === false, 'cron: new key is not the old one');
+eq(pd_cron_legacy_allowed(), false, 'cron: fresh installation never accepts the old key');
+check($key !== pd_cron_new_key(), 'cron: keys are random');
+@unlink($cronDir . '/cron_key.php'); @unlink($cronDir . '/.htaccess'); @rmdir($cronDir);
+
 echo ($failures ? "FAILED: $failures of $count checks\n" : "OK: $count infoscreen checks passed\n");
 exit($failures ? 1 : 0);

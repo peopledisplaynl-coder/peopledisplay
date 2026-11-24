@@ -16,24 +16,13 @@
  * PUBLIC ENDPOINT voor externe cron services zoals cron-job.org
  * 
  * GEBRUIK:
- * https://onsteam.peopledisplay.nl/cron_endpoint.php?action=daily_reset&key=JOUW_SECRET_KEY
+ * /cron_endpoint.php?action=daily_reset&key=<sleutel uit Beheer > Automatische taken>
  * ============================================================================
  */
 
-// Security: Require secret key
-$providedKey = $_GET['key'] ?? '';
-$expectedKey = 'INZ8U56BCZ';  // âš ï¸ WIJZIG DIT IN PRODUCTIE!
-
-if ($providedKey !== $expectedKey) {
-    http_response_code(403);
-    header('Content-Type: application/json');
-    echo json_encode([
-        'success' => false,
-        'error' => 'Invalid or missing security key',
-        'timestamp' => date('Y-m-d H:i:s')
-    ]);
-    exit;
-}
+// Security: per-installation key (2.6.0, see includes/cron_key.php and Beheer > Automatische taken)
+require_once __DIR__ . '/includes/cron_key.php';
+pd_cron_require_key('endpoint:' . preg_replace('/[^a-z_]/', '', (string)($_GET['action'] ?? '')), false, true);
 
 // Get action
 $action = $_GET['action'] ?? '';
@@ -43,7 +32,9 @@ require_once __DIR__ . '/includes/db.php';
 
 // Log function
 function logCron($message) {
-    $logFile = __DIR__ . '/cron_endpoint.log';
+    $logDir = __DIR__ . '/logs';
+    if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+    $logFile = $logDir . '/cron_endpoint.log';
     $timestamp = date('Y-m-d H:i:s');
     file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
 }

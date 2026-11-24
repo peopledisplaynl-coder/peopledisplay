@@ -33,7 +33,7 @@ if (!isset($_SESSION['user_id'])) {
 require_once __DIR__ . '/includes/logout_checker.php';
 
 // Get user info from database
-$stmt = $db->prepare("SELECT username, display_name, role, can_use_scanner FROM users WHERE id = ?");
+$stmt = $db->prepare("SELECT username, display_name, role, can_use_scanner, features FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
@@ -46,6 +46,8 @@ if (!$user) {
 $userName = $user['display_name'] ?: $user['username'];
 $isAdmin = in_array($user['role'], ['admin', 'superadmin', 'employee_manager', 'user_manager']);
 $canUseScanner = (bool)($user['can_use_scanner'] ?? false);
+$userFeatures = json_decode((string)($user['features'] ?? ''), true);
+$isInfoscreenEditor = is_array($userFeatures) && !empty($userFeatures['infoscreenEditor']) && is_file(__DIR__ . '/infoscherm_berichten.php');
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -220,6 +222,16 @@ $canUseScanner = (bool)($user['can_use_scanner'] ?? false);
             </a>
             <?php endif; ?>
             
+            <?php if ($isInfoscreenEditor): ?>
+            <a href="infoscherm_berichten.php" class="menu-card" style="background: linear-gradient(135deg, #34d399 0%, #059669 100%); color: white;">
+                <div class="menu-card-icon">📝</div>
+                <div class="menu-card-title">Infoscherm-berichten</div>
+                <div class="menu-card-description">
+                    Berichten op het infoscherm plaatsen voor uw locaties
+                </div>
+            </a>
+            <?php endif; ?>
+
             <?php if ($isAdmin): ?>
             <a href="admin/dashboard.php" class="menu-card admin">
                 <div class="menu-card-icon">🔧</div>

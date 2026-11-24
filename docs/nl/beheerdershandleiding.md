@@ -144,6 +144,7 @@ Met tweestapsverificatie vult een gebruiker bij het inloggen, naast het wachtwoo
 - **Standaard sorteervolgorde** — geldt altijd, ook zonder sorteerknop: *Voornaam A→Z, status IN eerst*, *Voornaam* of *Achternaam*.
 - **Zoomknop tonen** en **Standaard zoomniveau** (50–150%).
 - **IN/UIT Bord weergave** — de gebruiker ziet het IN/UIT-bord in plaats van de kaarten. Geschikt voor een groot scherm.
+- **Infoscherm-berichten plaatsen (redacteur)** — de gebruiker plaatst berichten op het infoscherm voor de aangevinkte zichtbare locaties (zie [Wie mag berichten plaatsen?](#wie-mag-berichten-plaatsen)).
 - **Zichtbare locaties** en **Zichtbare afdelingen** — welke kaarten deze gebruiker ziet. Geen afdelingen aangevinkt betekent: alle afdelingen.
 
 Is de rol **Admin**, dan staat hier ook een lijst met beheerfuncties (locaties, afdelingen, kiosk tokens, bezoekers, badges, bulk acties, audit log, systeemconfiguratie, sub-status datums, gebruikers, back-up, infoscherm). Alleen de aangevinkte functies zijn voor die admin beschikbaar.
@@ -272,14 +273,28 @@ Klik op **Nieuw bericht** en vul in:
 
 - **Titel** en (korte) **tekst**. Een bericht met alleen een afbeelding en geen tekst toont de afbeelding groot, bijvoorbeeld een poster.
 - **Afbeelding** (JPG, PNG, GIF of WEBP, maximaal 5 MB; liggend werkt het best).
-- **Achtergrondkleur**, **Tonen vanaf** en **Tonen tot en met** (leeg = direct en blijvend), **Locatie** (een scherm toont de berichten van de locaties die bij zijn gebruikersaccount zijn ingesteld) en de **Tijd in beeld**.
+- **Achtergrondkleur**, **Tonen vanaf** en **Tonen tot en met** (leeg = direct en blijvend) en de **Tijd in beeld**.
+- **Locaties** — vink **🌐 Alle locaties** aan voor een bericht dat overal moet staan, of vink één of meer locaties aan. Een scherm toont de berichten van de locaties die bij zijn gebruikersaccount zijn ingesteld.
 - **Belangrijk** — het bericht krijgt een rode markering, komt vaker in beeld en staat ook in de nieuwsbalk.
 
-In de lijst zie je per bericht of het **Op het scherm** staat, **Gepland** of **Verlopen** is, of **Uit** staat. Met **Uitzetten** haal je een bericht weg zonder het te verwijderen.
+![Een nieuw bericht voor twee locaties](../images/infoscherm-nieuw-bericht.png)
+
+In de lijst zie je per bericht voor welke locaties het is en of het **Op het scherm** staat, **Gepland** of **Verlopen** is, of **Uit** staat. Met **Uitzetten** haal je een bericht weg zonder het te verwijderen.
+
+Ook nieuwsbronnen, weerplaatsen, agenda's en koppelingen kun je aan één, meer of alle locaties koppelen. Wijzig je de naam van een locatie, dan gaan berichten, bronnen en koppelingen automatisch mee.
+
+## Wie mag berichten plaatsen?
+
+- **SuperAdmin** en een **Admin** met het recht *Infoscherm beheren* beheren alles op deze pagina en plaatsen berichten voor **alle locaties**, bijvoorbeeld een belangrijk bericht dat overal moet staan.
+- Een **berichtenredacteur** (bijvoorbeeld de receptie of de conciërge) plaatst en wijzigt berichten **alleen voor de eigen locaties**. Zet bij die gebruiker op het tabblad *Features* het vinkje **📝 Infoscherm-berichten plaatsen (redacteur)** aan en vink bij **Zichtbare locaties** de locaties aan waarvoor hij of zij berichten mag plaatsen. Geen locatie aangevinkt betekent: geen enkele. De rol mag gewoon *User* blijven.
+
+De redacteur krijgt in het menu de knop **📝 Infoscherm-berichten**. Bovenaan staat duidelijk voor welke locaties hij of zij berichten plaatst. Berichten voor alle locaties, of die ook op andere locaties staan, zijn voor de redacteur te zien met **🔒 Alleen lezen**, maar niet aan te passen. Nieuws, weer, agenda, koppelingen en weergave blijven bij de beheerder.
+
+![De pagina van een berichtenredacteur met twee locaties](../images/infoscherm-redacteur.png)
 
 ## Nieuws
 
-Op het tabblad **Nieuws** voeg je RSS- of Atom-feeds toe: een naam, het webadres van de feed, de locatie, het aantal berichten en of afbeeldingen getoond worden. Na het opslaan wordt de feed meteen opgehaald, zodat je direct ziet of hij werkt. Handig zijn feeds van je eigen organisatie: een WordPress-website heeft er standaard een op `https://jouwwebsite.nl/feed/`.
+Op het tabblad **Nieuws** voeg je RSS- of Atom-feeds toe: een naam, het webadres van de feed, de locaties, het aantal berichten en of afbeeldingen getoond worden. Na het opslaan wordt de feed meteen opgehaald, zodat je direct ziet of hij werkt. Handig zijn feeds van je eigen organisatie: een WordPress-website heeft er standaard een op `https://jouwwebsite.nl/feed/`.
 
 > **Let op de voorwaarden van een nieuwsbron** — Veel nieuwssites staan hun feed alleen toe voor persoonlijk, niet-commercieel gebruik, soms alleen de koppen en altijd met bronvermelding. Het infoscherm toont bij elk bericht de bron. Controleer de voorwaarden voordat je een bron toevoegt en zet zo nodig **Afbeeldingen tonen** uit. Afbeeldingen worden nooit naar je eigen server gekopieerd.
 
@@ -290,7 +305,7 @@ Op het tabblad **Weer** voeg je een plaats toe. Typ de naam en klik op **Zoek pl
 - **Buienradar** — actuele metingen van het dichtstbijzijnde KNMI-meetstation, de verwachting voor vijf dagen en het weerbericht. Alleen voor Nederland.
 - **Open-Meteo** — werkt voor elke plaats, zonder weerbericht.
 
-Beide zijn gratis voor niet-commercieel gebruik, met bronvermelding (die staat altijd op het scherm). Je kunt één plaats voor alle schermen instellen, of per locatie een eigen plaats.
+Beide zijn gratis voor niet-commercieel gebruik, met bronvermelding (die staat altijd op het scherm). Je kunt één plaats voor alle schermen instellen, of per locatie (of groep locaties) een eigen plaats.
 
 ## Agenda
 
@@ -299,13 +314,13 @@ Op het tabblad **Agenda** koppel je een agenda via een iCal-link (.ics). De afsp
 - **Outlook / Microsoft 365** — Outlook op het web → **Instellingen** → **Agenda** → **Gedeelde agenda's** → *Een agenda publiceren*. Kies de agenda en *Kan titels en locaties bekijken*, klik op **Publiceren** en kopieer de **ICS**-link.
 - **Google Agenda** — **Instellingen** → kies de agenda → *Geheim adres in iCal-indeling* → kopieer.
 
-Vul een naam en de link in en klik op **Opslaan en ophalen**: je ziet meteen hoeveel afspraken er gevonden zijn. Iedereen met de link kan de agenda lezen; deel hem dus niet verder. Hoeveel dagen vooruit het scherm toont (standaard 7), stel je in bij **Weergave**. Ook een agenda kun je aan één locatie koppelen.
+Vul een naam en de link in en klik op **Opslaan en ophalen**: je ziet meteen hoeveel afspraken er gevonden zijn. Iedereen met de link kan de agenda lezen; deel hem dus niet verder. Hoeveel dagen vooruit het scherm toont (standaard 7), stel je in bij **Weergave**. Ook een agenda kun je aan één of meer locaties koppelen.
 
 ## Koppelingen: Teams en andere systemen
 
 ![Koppelingen voor Teams en de Berichten-API](../images/infoscherm-koppelingen.png)
 
-Met een koppeling zetten collega's of andere systemen zelf een bericht op het infoscherm. Zo'n bericht krijgt de standaardlocatie, -kleur en -looptijd van de koppeling (standaard 7 dagen), en staat gewoon bij **Berichten**, met *Teams* of *API* en de naam van de afzender erbij. Je kunt het daar aanpassen, uitzetten of verwijderen. Per koppeling kunnen maximaal 120 berichten per uur worden geplaatst.
+Met een koppeling zetten collega's of andere systemen zelf een bericht op het infoscherm. Zo'n bericht krijgt de standaardlocaties, -kleur en -looptijd van de koppeling (standaard 7 dagen), en staat gewoon bij **Berichten**, met *Teams* of *API* en de naam van de afzender erbij. Je kunt het daar aanpassen, uitzetten of verwijderen. Per koppeling kunnen maximaal 120 berichten per uur worden geplaatst.
 
 **Teams (gratis, zonder extra licentie)**
 
@@ -322,11 +337,11 @@ tot vrijdag
 belangrijk
 ```
 
-De eerste regel wordt de titel, de rest de tekst. `tot …` (bijvoorbeeld *tot vrijdag*, *tot 12-12*, *tot morgen 16:00*) is de einddatum, `belangrijk` maakt het een belangrijk bericht, en `kleur rood` of `locatie Hoofdgebouw` mag ook. Teams antwoordt meteen met het nummer van het bericht. Met `@Infoscherm lijst` zie je wat er nu staat, met `@Infoscherm stop 12` haal je bericht 12 weg en `@Infoscherm help` toont de uitleg. Het werkt in openbare kanalen van dat team, niet in chats of privékanalen; afbeeldingen uit Teams worden niet meegenomen.
+De eerste regel wordt de titel, de rest de tekst. `tot …` (bijvoorbeeld *tot vrijdag*, *tot 12-12*, *tot morgen 16:00*) is de einddatum, `belangrijk` maakt het een belangrijk bericht, en `kleur rood` of `locatie Hoofdgebouw` (of `locaties Hoofdgebouw, BSO De Vlinder`) mag ook. Teams antwoordt meteen met het nummer van het bericht. Met `@Infoscherm lijst` zie je wat er nu staat, met `@Infoscherm stop 12` haal je bericht 12 weg en `@Infoscherm help` toont de uitleg. Het werkt in openbare kanalen van dat team, niet in chats of privékanalen; afbeeldingen uit Teams worden niet meegenomen.
 
 **Berichten-API (voor eigen systemen en scripts)**
 
-Klik op **➕ API-koppeling**. Je krijgt één keer een sleutel te zien: kopieer en bewaar hem. Een systeem stuurt dan een POST naar `/api/infoscreen_push.php` met de kop `Authorization: Bearer <sleutel>` en JSON met minimaal een `title`. Op het tabblad staat een volledig voorbeeld, ook voor PowerShell. Met hetzelfde `external_id` werk je een bericht bij, met `"action": "delete"` haal je het weg. Power Automate kan dit ook, maar de HTTP-actie daarvan vraagt een Premium-licentie.
+Klik op **➕ API-koppeling**. Je krijgt één keer een sleutel te zien: kopieer en bewaar hem. Een systeem stuurt dan een POST naar `/api/infoscreen_push.php` met de kop `Authorization: Bearer <sleutel>` en JSON met minimaal een `title`, en eventueel `"locations": ["Hoofdgebouw"]`. Op het tabblad staat een volledig voorbeeld, ook voor PowerShell. Met hetzelfde `external_id` werk je een bericht bij, met `"action": "delete"` haal je het weg. Power Automate kan dit ook, maar de HTTP-actie daarvan vraagt een Premium-licentie.
 
 ## Weergave
 
@@ -341,7 +356,16 @@ Op het tabblad **Schermen** kies je per gebruikersaccount wat het scherm toont: 
 
 Het infoscherm haalt elke 5 minuten nieuwe gegevens op, blijft bij een korte internetstoring het laatste tonen en laadt zichzelf opnieuw na een update.
 
-> **Bijwerken van nieuws en weer** — Nieuws en weer worden elke 15 minuten bijgewerkt, zodra een scherm gegevens opvraagt. Met de cronjob `cron/cron_infoscreen.php` (zie de Installatiehandleiding) hoeft een scherm daar nooit op te wachten.
+> **Bijwerken van nieuws en weer** — Nieuws en weer worden elke 15 minuten bijgewerkt, zodra een scherm gegevens opvraagt. Met de cronjob `cron/cron_infoscreen.php` (zie [Automatische taken](#automatische-taken)) hoeft een scherm daar nooit op te wachten.
+
+# Automatische taken
+
+Een aantal taken draait op vaste tijden via cronjobs: iedereen om 23:00 op UIT, bezoekers uitchecken, oude bezoekersgegevens wissen, verlopen statussen terugzetten en het infoscherm bijwerken. Via **Automatische taken** op het dashboard (groep *Systeem Configuratie*, alleen met het recht *Systeemconfiguratie*) zie je per taak wanneer hij moet draaien, de opdracht voor het hostingpaneel en de weblink voor [cron-job.org](https://cron-job.org).
+
+![Automatische taken met de sleutel en de links](../images/automatische-taken.png)
+
+- **Sleutel van deze installatie** — een weblink werkt alleen met deze geheime sleutel. Elke installatie heeft een eigen sleutel; hij staat niet in de code. Met **Tonen** zie je hem, met **Kopiëren** kopieer je hem. Met **Nieuwe sleutel maken** maak je een nieuwe (de oude links werken dan niet meer; pas ze aan in cron-job.org).
+- **Overstappen vanaf versie 2.5 of ouder** — tot en met 2.5 gebruikte elke installatie dezelfde, openbare sleutel. Die werkt na de update nog 30 dagen, zodat je cronjobs blijven draaien. Zolang een cronjob de oude sleutel gebruikt, toont het dashboard een melding. Vervang de links in cron-job.org door die van deze pagina en klik daarna op **Oude sleutel nu uitzetten**.
 
 # Online gebruikers
 
@@ -405,7 +429,7 @@ Controleer bij die gebruiker de tabbladen *Features* → *Zichtbare locaties* en
 Je zit aan de limiet van je pakket. Zie **Licentiebeheer** voor je gebruik.
 
 **De extra statussen worden niet automatisch teruggezet.**
-Dat gebeurt via cronjobs. Controleer of die zijn ingesteld (zie de Installatiehandleiding).
+Dat gebeurt via cronjobs. Controleer bij **Automatische taken** of die zijn ingesteld en de links de juiste sleutel hebben.
 
 **Hoe zet ik het wachtwoord van een gebruiker opnieuw?**
 Open de gebruiker via ✏️, vul op het tabblad *Account* een nieuw wachtwoord in en klik op **Opslaan**.

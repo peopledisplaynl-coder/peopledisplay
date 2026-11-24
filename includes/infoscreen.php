@@ -81,7 +81,8 @@ function pd_infoscreen_ensure_schema(PDO $db): bool
             `title`            varchar(200) NOT NULL,
             `body`             text         DEFAULT NULL,
             `image_path`       varchar(255) DEFAULT NULL,
-            `location`         varchar(100) DEFAULT NULL COMMENT 'NULL = alle locaties (locations.location_name)',
+            `location`         varchar(100) DEFAULT NULL COMMENT 'Verouderd sinds 2.6.0, zie locations',
+            `locations`        text         DEFAULT NULL COMMENT 'JSON-lijst van locations.location_name, NULL = alle locaties',
             `starts_at`        datetime     DEFAULT NULL,
             `ends_at`          datetime     DEFAULT NULL,
             `duration_seconds` int(11)      DEFAULT NULL COMMENT 'NULL = standaard uit de instellingen',
@@ -110,7 +111,8 @@ function pd_infoscreen_ensure_schema(PDO $db): bool
             `provider`      varchar(30)   DEFAULT NULL,
             `latitude`      decimal(9,6)  DEFAULT NULL,
             `longitude`     decimal(9,6)  DEFAULT NULL,
-            `location`      varchar(100)  DEFAULT NULL COMMENT 'NULL = alle locaties',
+            `location`      varchar(100)  DEFAULT NULL COMMENT 'Verouderd sinds 2.6.0, zie locations',
+            `locations`     text          DEFAULT NULL COMMENT 'JSON-lijst van locations.location_name, NULL = alle locaties',
             `max_items`     int(11)       NOT NULL DEFAULT 8,
             `show_images`   tinyint(1)    NOT NULL DEFAULT 1,
             `attribution`   varchar(200)  DEFAULT NULL,
@@ -170,7 +172,8 @@ function pd_infoscreen_ensure_schema(PDO $db): bool
             `key_hash`     char(64)     DEFAULT NULL COMMENT 'SHA-256 van de API-sleutel (de sleutel zelf wordt niet bewaard)',
             `key_hint`     varchar(12)  DEFAULT NULL COMMENT 'Laatste tekens van de sleutel, om hem te herkennen',
             `secret_enc`   text         DEFAULT NULL COMMENT 'Teams-beveiligingstoken, versleuteld',
-            `location`     varchar(100) DEFAULT NULL COMMENT 'Standaardlocatie voor berichten, NULL = alle locaties',
+            `location`     varchar(100) DEFAULT NULL COMMENT 'Verouderd sinds 2.6.0, zie locations',
+            `locations`    text         DEFAULT NULL COMMENT 'Standaardlocaties (JSON-lijst), NULL = alle locaties',
             `default_days` int(11)      NOT NULL DEFAULT 7,
             `color`        varchar(20)  NOT NULL DEFAULT 'blauw',
             `active`       tinyint(1)   NOT NULL DEFAULT 1,
@@ -199,6 +202,18 @@ function pd_infoscreen_ensure_schema(PDO $db): bool
         }
         if (!$db->query("SHOW INDEX FROM `infoscreen_messages` WHERE Key_name = 'idx_api_external'")->fetch()) {
             $db->exec("ALTER TABLE `infoscreen_messages` ADD KEY `idx_api_external` (`api_key_id`, `external_id`)");
+        }
+
+        // 2.5 → 2.6.0: more than one location per message, source and connection (JSON list of names)
+        foreach (['infoscreen_messages', 'infoscreen_sources', 'infoscreen_api_keys'] as $table) {
+            if (!$db->query("SHOW COLUMNS FROM `$table` LIKE 'locations'")->fetch()) {
+                $db->exec("ALTER TABLE `$table` ADD COLUMN `locations` text DEFAULT NULL AFTER `location`");
+                $rows = $db->query("SELECT id, location FROM `$table` WHERE location IS NOT NULL AND location <> ''")->fetchAll(PDO::FETCH_ASSOC);
+                $upd = $db->prepare("UPDATE `$table` SET locations = ? WHERE id = ?");
+                foreach ($rows as $r) {
+                    $upd->execute([json_encode([$r['location']], JSON_UNESCAPED_UNICODE), $r['id']]);
+                }
+            }
         }
 
         $col = $db->query("SHOW COLUMNS FROM `users` LIKE 'screen_mode'")->fetch();
@@ -260,6 +275,134 @@ function pd_infoscreen_save_settings(PDO $db, array $input): array
 // ─────────────────────────────────────────────────────────────────────────────
 // Small helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Location names of an item (JSON list); [] = all locations. */
+function pd_infoscreen_locs(?string $json): array
+{
+    if ($json === null || $json === '') return [];
+    $list = json_decode($json, true);
+    return is_array($list) ? array_values(array_filter(array_map('strval', $list), fn($l) => $l !== '')) : [];
+}
+
+/** JSON for the locations column; null = all locations. */
+function pd_infoscreen_locs_json(array $names): ?string
+{
+    $names = array_values(array_unique(array_filter(array_map(fn($n) => trim((string)$n), $names), fn($n) => $n !== '')));
+    return $names ? json_encode($names, JSON_UNESCAPED_UNICODE) : null;
+}
+
+/** Does an item for $itemLocs show on a screen for $screenLocs? (empty = all, on either side) */
+function pd_infoscreen_locs_match(array $itemLocs, array $screenLocs): bool
+{
+    return !$itemLocs || !$screenLocs || array_intersect($itemLocs, $screenLocs);
+}
+
+function pd_infoscreen_locs_label(array $names): string
+{
+    return $names ? implode(', ', $names) : 'Alle locaties';
+}
+
+/** Keep infoscreen items pointing at a location after it is renamed (called from locations_manage.php). */
+function pd_infoscreen_rename_location(PDO $db, string $old, string $new): void
+{
+    if ($old === '' || $old === $new || !pd_infoscreen_ensure_schema($db)) return;
+    foreach (['infoscreen_messages', 'infoscreen_sources', 'infoscreen_api_keys'] as $table) {
+        $rows = $db->query("SELECT id, locations FROM `$table` WHERE locations IS NOT NULL")->fetchAll(PDO::FETCH_ASSOC);
+        $upd = $db->prepare("UPDATE `$table` SET locations = ? WHERE id = ?");
+        foreach ($rows as $r) {
+            $list = pd_infoscreen_locs($r['locations']);
+            if (in_array($old, $list, true)) {
+                $upd->execute([pd_infoscreen_locs_json(array_map(fn($l) => $l === $old ? $new : $l, $list)), $r['id']]);
+            }
+        }
+    }
+}
+
+/**
+ * Location picker (2.6.0): an "Alle locaties" checkbox plus one checkbox per location.
+ * $allowAll = false (Berichtenredacteur) hides "Alle locaties".
+ * Posts locations_all=1 and/or locations[]; read back with pd_infoscreen_locs_from_post().
+ */
+function pd_infoscreen_location_picker(array $locations, array $selected, bool $allowAll = true, string $help = ''): string
+{
+    $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+    $isAll = $allowAll && $selected === [];
+    $out = '<div class="loc-picker" data-loc-picker>';
+    if ($allowAll) {
+        $out .= '<label class="check loc-all"><input type="checkbox" name="locations_all" value="1"' . ($isAll ? ' checked' : '')
+              . '> <strong>🌐 Alle locaties</strong></label>';
+    }
+    $out .= '<div class="loc-list">';
+    foreach ($locations as $loc) {
+        $on = !$isAll && in_array($loc, $selected, true);
+        $out .= '<label class="check"><input type="checkbox" name="locations[]" value="' . $h($loc) . '"' . ($on ? ' checked' : '')
+              . ($isAll ? ' disabled' : '') . '> 📍 ' . $h($loc) . '</label>';
+    }
+    if (!$locations) $out .= '<div class="help">Er zijn geen locaties beschikbaar.</div>';
+    $out .= '</div>';
+    if ($help !== '') $out .= '<div class="help">' . $help . '</div>';
+    $out .= '</div>';
+    return $out;
+}
+
+/** Script for the picker: "Alle locaties" switches the single locations off. Include once per page. */
+function pd_infoscreen_location_picker_js(): string
+{
+    return <<<'JS'
+<script>
+document.querySelectorAll('[data-loc-picker]').forEach(function (p) {
+    var all = p.querySelector('input[name="locations_all"]');
+    if (!all) return;
+    all.addEventListener('change', function () {
+        p.querySelectorAll('input[name="locations[]"]').forEach(function (c) { c.disabled = all.checked; if (all.checked) c.checked = false; });
+    });
+});
+</script>
+JS;
+}
+
+/**
+ * Read the picker from $_POST. Returns null for "Alle locaties" (or nothing ticked, when allowed),
+ * otherwise the JSON list of the ticked locations that are in $allowed.
+ * With $allowAll = false an empty selection returns false (= invalid).
+ */
+function pd_infoscreen_locs_from_post(array $allowed, bool $allowAll = true)
+{
+    if ($allowAll && !empty($_POST['locations_all'])) return null;
+    $picked = array_values(array_intersect($allowed, array_map('strval', (array)($_POST['locations'] ?? []))));
+    if (!$picked) return $allowAll ? null : false;
+    return pd_infoscreen_locs_json($picked);
+}
+
+/**
+ * Who may place messages for which locations (2.6.0).
+ * - SuperAdmin, and admins with the right "Infoscherm beheren" ($canManage): all locations.
+ * - A user with the feature "infoscreenEditor" (Berichtenredacteur): only the locations set for
+ *   that user (features.locations); none set = nothing.
+ * Returns ['all' => bool, 'locations' => [...]] or null (no access).
+ */
+function pd_infoscreen_editor_scope(PDO $db, int $userId, bool $canManage): ?array
+{
+    if ($canManage) {
+        return ['all' => true, 'locations' => []];
+    }
+    $stmt = $db->prepare("SELECT features FROM users WHERE id = ? AND active = 1");
+    $stmt->execute([$userId]);
+    $features = json_decode((string)$stmt->fetchColumn(), true);
+    if (!is_array($features) || empty($features['infoscreenEditor'])) {
+        return null;
+    }
+    $locs = is_array($features['locations'] ?? null) ? $features['locations'] : [];
+    $known = $db->query("SELECT location_name FROM locations")->fetchAll(PDO::FETCH_COLUMN);
+    return ['all' => false, 'locations' => array_values(array_intersect(array_map('strval', $locs), $known))];
+}
+
+/** May this scope change a message for $msgLocs? A redacteur only for messages within the own locations. */
+function pd_infoscreen_scope_allows(array $scope, array $msgLocs): bool
+{
+    if ($scope['all']) return true;
+    return $msgLocs && $scope['locations'] && !array_diff($msgLocs, $scope['locations']);
+}
 
 function pd_infoscreen_csrf_token(): string
 {
@@ -915,21 +1058,16 @@ function pd_infoscreen_user_locations(PDO $db, int $userId): array
 function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = ''): array
 {
     $settings = pd_infoscreen_settings($db);
-    $locFilter = '';
-    $params = [];
-    if ($locations) {
-        $locFilter = ' AND (location IS NULL OR location = \'\' OR location IN (' . implode(',', array_fill(0, count($locations), '?')) . '))';
-        $params = $locations;
-    }
 
-    // Messages within their time window
-    $stmt = $db->prepare("SELECT id, title, body, image_path, location, starts_at, ends_at, duration_seconds, priority, color
+    // Messages within their time window, for this screen's locations
+    $stmt = $db->query("SELECT id, title, body, image_path, locations, starts_at, ends_at, duration_seconds, priority, color
         FROM infoscreen_messages
-        WHERE active = 1 AND (starts_at IS NULL OR starts_at <= NOW()) AND (ends_at IS NULL OR ends_at >= NOW())" . $locFilter . "
-        ORDER BY priority DESC, sort_order, id DESC LIMIT 50");
-    $stmt->execute($params);
+        WHERE active = 1 AND (starts_at IS NULL OR starts_at <= NOW()) AND (ends_at IS NULL OR ends_at >= NOW())
+        ORDER BY priority DESC, sort_order, id DESC LIMIT 300");
     $messages = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $m) {
+        if (!pd_infoscreen_locs_match(pd_infoscreen_locs($m['locations']), $locations)) continue;
+        if (count($messages) >= 50) break;
         $messages[] = [
             'id'       => (int)$m['id'],
             'title'    => $m['title'],
@@ -942,12 +1080,13 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
     }
 
     // Sources
-    $stmt = $db->prepare("SELECT * FROM infoscreen_sources WHERE active = 1" . $locFilter . " ORDER BY sort_order, id");
-    $stmt->execute($params);
+    $stmt = $db->query("SELECT * FROM infoscreen_sources WHERE active = 1 ORDER BY sort_order, id");
     $news = [];
     $weather = null;
     $calendars = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $s) {
+        $srcLocs = pd_infoscreen_locs($s['locations']);
+        if (!pd_infoscreen_locs_match($srcLocs, $locations)) continue;
         if ($s['type'] === 'ical') {
             $calendars[(int)$s['id']] = $s['attribution'] !== null && $s['attribution'] !== '' ? $s['attribution'] : $s['name'];
             continue;
@@ -957,7 +1096,7 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
             // for all locations prefers the place set for "all locations".
             $data = json_decode((string)$s['data_json'], true);
             if (!is_array($data)) continue;
-            $specific = $s['location'] !== null && $s['location'] !== '';
+            $specific = $srcLocs !== [];
             $better = $weather !== null
                 && ($locations ? ($specific && !$weather['_specific']) : (!$specific && $weather['_specific']));
             if ($weather === null || $better) {

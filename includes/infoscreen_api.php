@@ -139,11 +139,18 @@ function pd_is_api_save_message(PDO $db, array $keyRow, array $in, string $appRo
     if ($title === '') throw new RuntimeException('title (titel) ontbreekt');
     $body = pd_is_api_text($in['body'] ?? ($in['text'] ?? ''), 2000);
 
-    $location = trim((string)($in['location'] ?? ''));
-    if ($location === '') {
-        $location = $keyRow['location'] ?: null;
-    } elseif (!in_array($location, pd_is_api_locations($db), true)) {
-        throw new RuntimeException('Onbekende locatie: ' . $location);
+    // "locations": ["A", "B"] or "A, B"; "location": "A" still works. Empty = the connection's default.
+    $given = $in['locations'] ?? ($in['location'] ?? []);
+    if (is_string($given)) $given = explode(',', $given);
+    $given = array_values(array_filter(array_map(fn($l) => trim((string)$l), (array)$given), fn($l) => $l !== ''));
+    if ($given) {
+        $known = pd_is_api_locations($db);
+        foreach ($given as $l) {
+            if (!in_array($l, $known, true)) throw new RuntimeException('Onbekende locatie: ' . $l);
+        }
+        $locations = pd_infoscreen_locs_json($given);
+    } else {
+        $locations = $keyRow['locations'] ?? null;
     }
 
     $starts = pd_is_api_date($in['starts_at'] ?? null);
@@ -181,15 +188,15 @@ function pd_is_api_save_message(PDO $db, array $keyRow, array $in, string $appRo
     }
     if ($existing) {
         $keepImage = $image ?? (array_key_exists('image_url', $in) || array_key_exists('image_base64', $in) ? null : $existing['image_path']);
-        $db->prepare("UPDATE infoscreen_messages SET title = ?, body = ?, image_path = ?, location = ?, starts_at = ?, ends_at = ?,
+        $db->prepare("UPDATE infoscreen_messages SET title = ?, body = ?, image_path = ?, locations = ?, starts_at = ?, ends_at = ?,
                       duration_seconds = ?, priority = ?, color = ?, author = ?, active = 1 WHERE id = ?")
-           ->execute([$title, $body, $keepImage, $location, $starts, $ends, $duration, $priority, $color, $author, $existing['id']]);
+           ->execute([$title, $body, $keepImage, $locations, $starts, $ends, $duration, $priority, $color, $author, $existing['id']]);
         if ($existing['image_path'] && $existing['image_path'] !== $keepImage) pd_infoscreen_delete_image($db, $existing['image_path'], $appRoot);
         return ['id' => (int)$existing['id'], 'ends_at' => $ends, 'updated' => true];
     }
-    $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, location, starts_at, ends_at, duration_seconds, priority, color, active, source, api_key_id, external_id, author)
+    $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, locations, starts_at, ends_at, duration_seconds, priority, color, active, source, api_key_id, external_id, author)
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)")
-       ->execute([$title, $body, $image, $location, $starts, $ends, $duration, $priority, $color, $source, $keyRow['id'], $externalId, $author]);
+       ->execute([$title, $body, $image, $locations, $starts, $ends, $duration, $priority, $color, $source, $keyRow['id'], $externalId, $author]);
     return ['id' => (int)$db->lastInsertId(), 'ends_at' => $ends, 'updated' => false];
 }
 
@@ -210,10 +217,10 @@ function pd_is_api_delete_message(PDO $db, array $keyRow, ?int $id, ?string $ext
 /** Messages of this connection that are not expired yet. */
 function pd_is_api_list_messages(PDO $db, array $keyRow): array
 {
-    $stmt = $db->prepare("SELECT id, external_id, title, location, starts_at, ends_at, priority, active FROM infoscreen_messages
+    $stmt = $db->prepare("SELECT id, external_id, title, locations, starts_at, ends_at, priority, active FROM infoscreen_messages
                           WHERE api_key_id = ? AND (ends_at IS NULL OR ends_at >= NOW()) ORDER BY id DESC LIMIT 100");
     $stmt->execute([$keyRow['id']]);
-    return array_map(fn($r) => ['id' => (int)$r['id'], 'external_id' => $r['external_id'], 'title' => $r['title'], 'location' => $r['location'],
+    return array_map(fn($r) => ['id' => (int)$r['id'], 'external_id' => $r['external_id'], 'title' => $r['title'], 'locations' => pd_infoscreen_locs($r['locations']),
         'starts_at' => $r['starts_at'], 'ends_at' => $r['ends_at'], 'priority' => (bool)$r['priority'], 'active' => (bool)$r['active']], $stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 
@@ -302,7 +309,7 @@ function pd_is_teams_handle(PDO $db, array $keyRow, array $activity, string $app
         if (in_array($l, ['belangrijk', '!belangrijk', '#belangrijk'], true)) { $in['priority'] = true; continue; }
         if (preg_match('/^tot\s+(.+)$/u', $l, $m) && ($until = pd_is_teams_until($m[1])) !== null) { $in['ends_at'] = $until; continue; }
         if (preg_match('/^kleur\s+(\w+)$/u', $l, $m) && in_array($m[1], PD_IS_COLORS, true)) { $in['color'] = $m[1]; continue; }
-        if (preg_match('/^locatie\s+(.+)$/iu', $line, $m)) { $in['location'] = trim($m[1]); continue; }
+        if (preg_match('/^locaties?\s+(.+)$/iu', $line, $m)) { $in['locations'] = trim($m[1]); continue; }
         if (str_contains($l, '#belangrijk')) { $in['priority'] = true; $line = trim(str_ireplace('#belangrijk', '', $line)); }
         $rest[] = $line;
     }

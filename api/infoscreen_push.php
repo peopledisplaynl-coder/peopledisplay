@@ -14,7 +14,7 @@
  * of a connection made under Infoscherm → Koppelingen ("Authorization: Bearer pdis_…" or
  * "X-Api-Key: pdis_…"). JSON or form fields.
  *
- *   POST {"title": "…", "body": "…", "image_url"|"image_base64": "…", "location": "…",
+ *   POST {"title": "…", "body": "…", "image_url"|"image_base64": "…", "locations": ["…"],
  *         "starts_at": "…", "ends_at": "…", "priority": true, "color": "rood",
  *         "duration_seconds": 15, "external_id": "…", "author": "…"}   → create or update
  *   POST {"action": "delete", "external_id": "…"} or {"action": "delete", "id": 12}

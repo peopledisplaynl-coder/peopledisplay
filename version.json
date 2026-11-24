@@ -1,12 +1,23 @@
 {
-    "version": "2.5.1",
+    "version": "2.6.0",
     "critical": false,
-    "message": "Opgelost: grote agenda's (bijv. Google Agenda) koppelen op het infoscherm. Update aanbevolen als u een agenda gebruikt.",
+    "message": "Nieuw: infoscherm-berichten voor meer locaties tegelijk en een redacteur (receptie\/conciërge) per locatie. Beveiliging: elke installatie heeft nu een eigen cron-sleutel; zie Beheer > Automatische taken en pas uw cronjobs binnen 30 dagen aan.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
     "release_date": "2026-11-24",
     "changelog": [
+        {
+            "version": "2.6.0",
+            "date": "2026-11-24",
+            "changes": [
+                "Nieuw: berichten, nieuwsbronnen, weerplaatsen, agenda's en koppelingen op het infoscherm gelden voor één, meer of alle locaties (vinkjes in plaats van één keuze). Bestaande instellingen worden automatisch overgenomen; een nieuwe locatienaam gaat automatisch mee",
+                "Nieuw: berichtenredacteur voor het infoscherm — bijvoorbeeld receptie of conciërge plaatst en wijzigt berichten alleen voor de eigen locaties, via de knop 'Infoscherm-berichten' op het welkomstscherm. Aanzetten bij Gebruikers > Features. Berichten voor alle locaties blijven bij de beheerder en zijn voor de redacteur alleen te lezen",
+                "Nieuw: Teams en de Berichten-API kunnen meer locaties meegeven ('locaties A, B' in Teams, \"locations\": [...] in de API)",
+                "Beveiliging: elke installatie heeft een eigen geheime sleutel voor cronjobs (cron-job.org) in plaats van één gedeelde sleutel. De nieuwe pagina Beheer > Automatische taken toont alle cronjobs met de juiste links. De oude sleutel werkt na de update nog 30 dagen; het dashboard waarschuwt zolang een cronjob hem gebruikt",
+                "Beveiliging: cron_reset_expired_sub_status.php controleert nu ook de sleutel bij een aanroep via internet; het logbestand van cron_endpoint.php staat in logs\/"
+            ]
+        },
         {
             "version": "2.5.1",
             "date": "2026-11-24",
@@ -18,9 +29,9 @@
             "version": "2.5.0",
             "date": "2026-11-24",
             "changes": [
-                "Nieuw: Agenda op het infoscherm — koppel een agenda uit Outlook/Microsoft 365 of Google Agenda via een iCal-link (.ics). Afspraken staan in de zijbalk en één keer per ronde als agendadia; terugkerende, verplaatste en geannuleerde afspraken worden goed getoond, privé-afspraken niet",
+                "Nieuw: Agenda op het infoscherm — koppel een agenda uit Outlook\/Microsoft 365 of Google Agenda via een iCal-link (.ics). Afspraken staan in de zijbalk en één keer per ronde als agendadia; terugkerende, verplaatste en geannuleerde afspraken worden goed getoond, privé-afspraken niet",
                 "Nieuw: Teams-koppeling — collega's zetten een bericht op het infoscherm door in een Teams-kanaal '@Infoscherm Titel' te typen (met 'tot vrijdag', 'belangrijk', 'lijst', 'stop 12', 'help'). Gratis, zonder Power Automate; werkt via een uitgaande webhook van Teams",
-                "Nieuw: Berichten-API — eigen systemen en scripts plaatsen, wijzigen en verwijderen berichten met een eigen sleutel per koppeling (api/infoscreen_push.php)",
+                "Nieuw: Berichten-API — eigen systemen en scripts plaatsen, wijzigen en verwijderen berichten met een eigen sleutel per koppeling (api\/infoscreen_push.php)",
                 "Nieuw: tabbladen Agenda en Koppelingen bij Infoscherm; bij Berichten staat of een bericht via Teams of de API kwam en van wie",
                 "Beveiliging: van een API-sleutel wordt alleen een hash bewaard, het Teams-beveiligingstoken staat versleuteld, Teams-berichten worden op hun handtekening gecontroleerd en elke koppeling mag maximaal 120 berichten per uur plaatsen"
             ]
@@ -32,7 +43,7 @@
                 "Nieuw: Infoscherm — toon eigen berichten (met afbeelding, kleur, periode en locatie), nieuws uit RSS-feeds en het weer (Buienradar of Open-Meteo) op uw schermen, met datum, tijd en een nieuwsbalk. Beschikbaar in alle pakketten, ook Starter. Beheer via Dashboard → Infoscherm",
                 "Nieuw: per scherm kiezen wat er bij inactiviteit verschijnt: Google Slides, het Infoscherm, of Google Slides met weer, mededelingen en nieuwsbalk eromheen. Een aanraking sluit het infoscherm weer",
                 "Nieuw: een scherm dat alleen het infoscherm toont, via infoscherm.php of kiosk_login.php?token=…&page=infoscherm",
-                "Nieuw: cronjob cron/cron_infoscreen.php (of cron_endpoint.php?action=infoscreen_refresh) om nieuws en weer elke 15 minuten bij te werken; zonder cronjob gebeurt dat zodra een scherm gegevens opvraagt",
+                "Nieuw: cronjob cron\/cron_infoscreen.php (of cron_endpoint.php?action=infoscreen_refresh) om nieuws en weer elke 15 minuten bij te werken; zonder cronjob gebeurt dat zodra een scherm gegevens opvraagt",
                 "Opgelost: de wachttijd voordat de presentatie start gebruikt nu de ingestelde seconden bij de gebruiker (stond vast op 60 seconden)",
                 "Opgelost: de installatiewizard kon een nieuwe installatie niet afronden door commentaar in install.sql",
                 "Beveiliging: gebruikersbeheer stuurt de wachtwoord-hash van een gebruiker niet meer naar de browser"
@@ -55,7 +66,7 @@
                 "Nieuw: 'Dit apparaat 30 dagen vertrouwen' bij het invullen van de code: op dat apparaat is dan 30 dagen geen code nodig. Dit staat los van 'Ingelogd blijven' en omzeilt 2FA niet: wie alleen 'ingelogd blijven' kiest, moet na uitloggen weer een code invullen. Vertrouwde apparaten kun je in het 2FA-scherm in één keer afmelden",
                 "Nieuw: beheerders kunnen 2FA van een gebruiker resetten (telefoon kwijt en geen herstelcodes meer). Als noodoplossing werkt het bestand twofa_uit.txt in de hoofdmap op de server (via FTP aan te maken): zolang dat bestand er staat, is voor niemand een code nodig en toont het inlogscherm een waarschuwing",
                 "Nieuw: wie 2FA nog moet instellen krijgt binnen het uitstel hooguit eens per 24 uur een herinnering, en direct na een verplichte wachtwoordwijziging; in Gebruikers beheren staat bij kiosk-accounts 'kiosk: geen 2FA'",
-                "Beveiliging: de geheime sleutel van elke gebruiker staat versleuteld in de database (sleutelbestand data/twofa_key.php, dat bij de server hoort en niet in updates zit), herstelcodes worden alleen als hash bewaard en werken één keer, en een afgekeken code werkt niet nog eens. Foute codes tellen mee voor de automatische blokkade; een wachtwoordwijziging meldt alle vertrouwde apparaten af",
+                "Beveiliging: de geheime sleutel van elke gebruiker staat versleuteld in de database (sleutelbestand data\/twofa_key.php, dat bij de server hoort en niet in updates zit), herstelcodes worden alleen als hash bewaard en werken één keer, en een afgekeken code werkt niet nog eens. Foute codes tellen mee voor de automatische blokkade; een wachtwoordwijziging meldt alle vertrouwde apparaten af",
                 "Fix: onder 'Wachtwoord wijzigen' op de profielpagina stond nog 'minimaal 8 karakters' terwijl het minimum 10 tekens is"
             ]
         },
@@ -102,7 +113,7 @@
                 "Beveiliging: email-proxy.php (BHV-overzicht per e-mail) vereist nu inloggen, alleen POST, een verzoek vanaf de eigen website en maximaal 10 e-mails per 10 minuten; voorheen kon iedereen via dit bestand e-mails laten versturen",
                 "Beveiliging: de API's voor medewerkers, bezoekers, locaties, filters en knopnamen (o.a. employees_api, update_employee_status, get_employee, get_all_employees, get_todays_visitors, get_visitors_inside) geven alleen nog gegevens aan ingelogde gebruikers (gewone inlog of kiosk-inlog)",
                 "Beveiliging: het bezoekersformulier geeft bij het kiezen van een contactpersoon geen e-mailadressen en statussen van medewerkers meer prijs",
-                "Opgeruimd: ongebruikte en onbeveiligde bestanden verwijderd (admin/api/features_update, features, users_list, proxy, get-config en get_button_config, api/send_visitor_notification, de verouderde pagina user_permissions, mobile-status-view.js); oude hulpscripts zoals license_debug.php en db_check.php worden bij de update automatisch opgeruimd als ze nog op de server staan",
+                "Opgeruimd: ongebruikte en onbeveiligde bestanden verwijderd (admin\/api\/features_update, features, users_list, proxy, get-config en get_button_config, api\/send_visitor_notification, de verouderde pagina user_permissions, mobile-status-view.js); oude hulpscripts zoals license_debug.php en db_check.php worden bij de update automatisch opgeruimd als ze nog op de server staan",
                 "Nieuw in de tests: controle dat elke API inlog vraagt en dat er geen tijdelijke of debugscripts in het product komen"
             ]
         },

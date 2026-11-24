@@ -376,6 +376,26 @@ test('infoscreen: API and pages need a login, the cron script only runs from the
   assert.match(read('cron/cron_infoscreen.php'), /php_sapi_name\(\) !== 'cli'/);
 });
 
+test('cron: no shared key in the code, every web cron entry checks the installation key', () => {
+  const files = ['cron_endpoint.php', 'cron/cleanup_tokens_cron.php', 'cron/daily_reset_cron.php',
+    'cron/cron_auto_checkout.php', 'cron/cron_auto_delete.php', 'cron/cron_reset_expired_sub_status.php'];
+  for (const f of files) {
+    assert.match(read(f), /pd_cron_require_key\(/, `${f} must call pd_cron_require_key()`);
+    assert.doesNotMatch(read(f), /INZ8U56BCZ/, `${f} still contains the old shared key`);
+  }
+  assert.match(read('admin/cron_manage.php'), /requireAdmin\(\);\s*requireAdminFeature\('manage_system_config'\)/);
+  assert.match(read('admin/cron_manage.php'), /pd_infoscreen_csrf_ok/);
+});
+
+test('infoscreen editors: the page limits messages to the user\'s own locations', () => {
+  const page = read('infoscherm_berichten.php');
+  assert.match(page, /pd_infoscreen_editor_scope\(/);
+  assert.match(page, /pd_infoscreen_scope_allows\(/);
+  assert.match(page, /pd_infoscreen_csrf_ok/);
+  assert.match(page, /pd_infoscreen_locs_from_post\(\$pickable, \$scope\['all'\]\)/);
+  assert.match(read('admin/users_manage.php'), /'infoscreenEditor' => \$infoscreenEditor/);
+});
+
 // ── PHP syntax ─────────────────────────────────────────────────────────
 test('all PHP files have valid syntax', { skip: hasPhp ? false : 'PHP not installed on this computer' }, () => {
   const r = spawnSync(process.execPath, [join(ROOT, 'scripts', 'lint.mjs')], { encoding: 'utf8' });

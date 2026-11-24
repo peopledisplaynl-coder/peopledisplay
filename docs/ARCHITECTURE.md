@@ -37,6 +37,7 @@ Browser / PWA / kiosk screen
 | `index.php` + `app.js`, `style.css` | the card check-in screen (IN/OUT, sub-status, location pin, filters, sort, zoom, BHV) |
 | `inuitbord.php` | IN/UIT board display mode (two columns, auto-refresh) |
 | `infoscherm.php` | Infoscreen: own messages, news slides, weather, clock and a headline ticker; `?embed=1` inside the idle overlay of `index.php`, combined mode shows Google Slides in the main area |
+| `infoscherm_berichten.php` | infoscreen messages for editors (users with the feature `infoscreenEditor`): only for their own locations; admins with *Infoscherm beheren* may use all |
 | `overzicht.php` + `overzicht.js` | presence overview |
 | `scan.php` | badge/QR scan check-in |
 | `visitor_register.php`, `visitor_checkin.php`, `visitor_checkout.php` | visitor registration |
@@ -44,6 +45,7 @@ Browser / PWA / kiosk screen
 | `user/profile.php` | own profile, photo, password |
 | `admin/dashboard.php` | admin home: tiles, update banner, migrations |
 | `admin/*_manage.php` | employees, users, locations, departments, visitors, kiosk tokens, badges, features, config, infoscreen (`infoscreen_manage.php`: messages, news feeds, weather, display settings, screen mode per user) |
+| `admin/cron_manage.php` | "Automatische taken": cron commands, web links with the installation key, new key, switch off the old shared key |
 | `admin/backup.php`, `restore.php` | backups; full restore to a new domain/host |
 | `activate_license.php`, `admin/license_management.php` | licence and continuity-key activation |
 | `install.php` (+ `install.sql`) | 8-step installer in the root |
@@ -110,7 +112,11 @@ Root endpoints: `email-proxy.php` (BHV overview e-mail), `cron_endpoint.php` (ex
 | `cleanup_tokens_cron.php` | remove expired tokens |
 | `cron_infoscreen.php` | fetch infoscreen news feeds and weather (every 15 min; also `cron_endpoint.php?action=infoscreen_refresh`) |
 
-Run from the hosting panel (CLI) or via `cron_endpoint.php?action=…&key=…` from cron-job.org.
+Run from the hosting panel (CLI) or via `cron_endpoint.php?action=…&key=…` / `cron/<script>.php?key=…` from cron-job.org.
+Since 2.6.0 the key is per installation (`includes/cron_key.php`, stored in `data/cron_key.php`, shown
+in `admin/cron_manage.php`). Every web entry calls `pd_cron_require_key()`. The old shared key from
+2.5 and earlier keeps working for 30 days on installations that existed before the update; each such
+call is recorded in `data/cron_legacy_used.json` and the dashboard warns. CLI calls need no key.
 
 ## Database
 
@@ -197,4 +203,13 @@ fetchers and parsers, and `pd_infoscreen_screen_data()` for the screen.
   stored, shown once) and Teams outgoing webhooks (security token encrypted with the 2FA key file,
   HMAC-SHA256 checked in constant time). 120 requests per hour per connection; a connection only
   changes its own messages. `api/.htaccess` passes the Authorization header on FastCGI hosting.
+- **Locations (2.6.0).** Messages, sources and connections have `locations` (JSON list of
+  `locations.location_name`, NULL = all locations); the old single `location` column is kept but no
+  longer used (backfilled on migration). `pd_infoscreen_locs_match()` filters in PHP for the screen
+  account's `features.locations`. Renaming a location (`admin/locations_manage.php`) calls
+  `pd_infoscreen_rename_location()`.
+- **Editors (2.6.0).** `pd_infoscreen_editor_scope()` gives `all` for SuperAdmin and admins with
+  `manage_infoscreen`, otherwise the user's `features.locations` when `features.infoscreenEditor` is
+  set. An editor may only create, change, switch off or delete messages whose locations are all
+  within that scope (`pd_infoscreen_scope_allows()`); messages for all locations are read-only.
 - **Tests.** `tests/infoscreen_test.php` (fixtures in `tests/fixtures/infoscreen/`), run by `npm test`.

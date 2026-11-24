@@ -146,6 +146,7 @@ With two-step verification a user enters, besides the password, a 6-digit code f
 - **Standaard sorteervolgorde** (default sort order) — always applies, also without the sort button: *first name A→Z, status IN first*, *first name* or *last name*.
 - **Zoomknop tonen** (show zoom buttons) and **Standaard zoomniveau** (default zoom, 50–150%).
 - **IN/UIT Bord weergave** — the user sees the IN/OUT board instead of the cards. Suitable for a large screen.
+- **Infoscherm-berichten plaatsen (redacteur)** (post infoscreen messages, editor) — the user posts infoscreen messages for the ticked visible locations (see [Who may post messages?](#who-may-post-messages)).
 - **Zichtbare Locaties** and **Zichtbare Afdelingen** (visible locations and departments) — which cards this user sees. No department ticked means: all departments.
 
 If the role is **Admin**, this tab also lists the management functions (locations, departments, kiosk tokens, visitors, badges, bulk actions, audit log, system configuration, sub-status dates, users, backup, infoscreen). Only the ticked functions are available to that admin.
@@ -274,14 +275,28 @@ Click **Nieuw bericht** (new message) and fill in:
 
 - **Titel** (title) and a short **Tekst** (text). A message with only an image and no text shows the image large, for example a poster.
 - **Afbeelding** (image: JPG, PNG, GIF or WEBP, at most 5 MB; landscape works best).
-- **Achtergrondkleur** (background colour), **Tonen vanaf** and **Tonen tot en met** (show from / until; empty = now and indefinitely), **Locatie** (a screen shows the messages of the locations set for its user account) and **Tijd in beeld** (time on screen).
+- **Achtergrondkleur** (background colour), **Tonen vanaf** and **Tonen tot en met** (show from / until; empty = now and indefinitely) and **Tijd in beeld** (time on screen).
+- **Locaties** (locations) — tick **🌐 Alle locaties** (all locations) for a message that must be everywhere, or tick one or more locations. A screen shows the messages of the locations set for its user account.
 - **Belangrijk** (important) — the message gets a red label, appears more often and is also shown in the news ticker.
 
-The list shows for each message whether it is **Op het scherm** (on screen), **Gepland** (scheduled), **Verlopen** (expired) or **Uit** (off). **Uitzetten** (switch off) removes a message from the screens without deleting it.
+![A new message for two locations](../images/infoscherm-nieuw-bericht.png)
+
+The list shows for each message its locations and whether it is **Op het scherm** (on screen), **Gepland** (scheduled), **Verlopen** (expired) or **Uit** (off). **Uitzetten** (switch off) removes a message from the screens without deleting it.
+
+News sources, weather places, agendas and connections can also be linked to one, several or all locations. When you rename a location, messages, sources and connections follow automatically.
+
+## Who may post messages?
+
+- **SuperAdmin** and an **Admin** with the permission *Infoscherm beheren* (manage infoscreen) manage everything on this page and post messages for **all locations**, for example an important message that must be everywhere.
+- A **message editor** (for example reception or the caretaker) posts and edits messages **for their own locations only**. On that user's *Features* tab, tick **📝 Infoscherm-berichten plaatsen (redacteur)** and, under **Zichtbare locaties** (visible locations), tick the locations they may post for. No location ticked means: none at all. The role can stay *User*.
+
+The editor gets the button **📝 Infoscherm-berichten** in the menu. The top of that page clearly shows which locations they post for. Messages for all locations, or messages that are also on other locations, are visible to the editor with **🔒 Alleen lezen** (read only) but cannot be changed. News, weather, agenda, connections and display stay with the administrator.
+
+![The page of a message editor with two locations](../images/infoscherm-redacteur.png)
 
 ## News
 
-On the **Nieuws** tab you add RSS or Atom feeds: a name, the address of the feed, the location, the number of items and whether images are shown. The feed is fetched as soon as you save it, so you see right away whether it works. Feeds of your own organisation are handy: a WordPress website has one at `https://yourwebsite.com/feed/`.
+On the **Nieuws** tab you add RSS or Atom feeds: a name, the address of the feed, the locations, the number of items and whether images are shown. The feed is fetched as soon as you save it, so you see right away whether it works. Feeds of your own organisation are handy: a WordPress website has one at `https://yourwebsite.com/feed/`.
 
 > **Mind the terms of a news source** — Many news sites only allow their feed for personal, non-commercial use, sometimes only the headlines, and always with credit to the source. The infoscreen shows the source with every item. Check the terms before you add a source and switch off **Afbeeldingen tonen** (show images) when needed. Images are never copied to your own server.
 
@@ -292,7 +307,7 @@ On the **Weer** tab you add a place. Type its name and click **Zoek plaats** (fi
 - **Buienradar** — current measurements from the nearest KNMI weather station, the five-day forecast and the weather report. The Netherlands only.
 - **Open-Meteo** — works for any place, without a weather report.
 
-Both are free for non-commercial use, with credit to the source (always shown on the screen). You can set one place for all screens, or a place per location.
+Both are free for non-commercial use, with credit to the source (always shown on the screen). You can set one place for all screens, or a place per location (or group of locations).
 
 ## Agenda
 
@@ -301,13 +316,13 @@ On the **Agenda** tab you connect a calendar through an iCal link (.ics). Today'
 - **Outlook / Microsoft 365** — Outlook on the web → **Settings** → **Calendar** → **Shared calendars** → *Publish a calendar*. Choose the calendar and *Can view titles and locations*, click **Publish** and copy the **ICS** link.
 - **Google Calendar** — **Settings** → choose the calendar → *Secret address in iCal format* → copy.
 
-Fill in a name and the link and click **Opslaan en ophalen** (save and fetch): you see right away how many appointments were found. Anyone with the link can read the calendar, so do not pass it on. How many days ahead the screen shows (default 7) is set under **Weergave**. An agenda can also be linked to one location.
+Fill in a name and the link and click **Opslaan en ophalen** (save and fetch): you see right away how many appointments were found. Anyone with the link can read the calendar, so do not pass it on. How many days ahead the screen shows (default 7) is set under **Weergave**. An agenda can also be linked to one or more locations.
 
 ## Connections: Teams and other systems
 
 ![Connections for Teams and the Berichten-API](../images/infoscherm-koppelingen.png)
 
-With a connection, colleagues or other systems put a message on the infoscreen themselves. Such a message gets the connection's default location, colour and duration (default 7 days), and appears under **Berichten** with *Teams* or *API* and the sender's name. You can change, switch off or delete it there. Each connection can post at most 120 messages per hour.
+With a connection, colleagues or other systems put a message on the infoscreen themselves. Such a message gets the connection's default locations, colour and duration (default 7 days), and appears under **Berichten** with *Teams* or *API* and the sender's name. You can change, switch off or delete it there. Each connection can post at most 120 messages per hour.
 
 **Teams (free, no extra licence)**
 
@@ -324,11 +339,11 @@ tot vrijdag
 belangrijk
 ```
 
-The first line becomes the title, the rest the text. `tot …` (e.g. *tot vrijdag*, *tot 12-12*, *tot morgen 16:00*) is the end date, `belangrijk` makes it an important message, and `kleur rood` or `locatie Hoofdgebouw` work too. Teams replies right away with the message number. `@Infoscherm lijst` shows what is on the screen now, `@Infoscherm stop 12` removes message 12 and `@Infoscherm help` shows the instructions. It works in public channels of that team, not in chats or private channels; images from Teams are not taken along.
+The first line becomes the title, the rest the text. `tot …` (e.g. *tot vrijdag*, *tot 12-12*, *tot morgen 16:00*) is the end date, `belangrijk` makes it an important message, and `kleur rood` or `locatie Hoofdgebouw` (or `locaties Hoofdgebouw, BSO De Vlinder`) work too. Teams replies right away with the message number. `@Infoscherm lijst` shows what is on the screen now, `@Infoscherm stop 12` removes message 12 and `@Infoscherm help` shows the instructions. It works in public channels of that team, not in chats or private channels; images from Teams are not taken along.
 
 **Berichten-API (for own systems and scripts)**
 
-Click **➕ API-koppeling**. You see a key once: copy and keep it. A system then sends a POST to `/api/infoscreen_push.php` with the header `Authorization: Bearer <key>` and JSON with at least a `title`. The tab shows a complete example, also for PowerShell. The same `external_id` updates a message, `"action": "delete"` removes it. Power Automate can do this too, but its HTTP action needs a Premium licence.
+Click **➕ API-koppeling**. You see a key once: copy and keep it. A system then sends a POST to `/api/infoscreen_push.php` with the header `Authorization: Bearer <key>` and JSON with at least a `title`, and optionally `"locations": ["Hoofdgebouw"]`. The tab shows a complete example, also for PowerShell. The same `external_id` updates a message, `"action": "delete"` removes it. Power Automate can do this too, but its HTTP action needs a Premium licence.
 
 ## Display
 
@@ -343,7 +358,16 @@ On the **Schermen** tab you choose per user account what its screen shows: **Goo
 
 The infoscreen fetches new data every 5 minutes, keeps showing the last data during a short internet outage and reloads itself after an update.
 
-> **Updating news and weather** — News and weather are updated every 15 minutes, as soon as a screen asks for data. With the cron job `cron/cron_infoscreen.php` (see the Installation guide) a screen never has to wait for it.
+> **Updating news and weather** — News and weather are updated every 15 minutes, as soon as a screen asks for data. With the cron job `cron/cron_infoscreen.php` (see [Scheduled tasks](#scheduled-tasks)) a screen never has to wait for it.
+
+# Scheduled tasks
+
+Some tasks run at fixed times through cron jobs: everybody OUT at 23:00, checking out visitors, deleting old visitor data, resetting expired statuses and updating the infoscreen. Under **Automatische taken** (scheduled tasks) on the dashboard (group *Systeem Configuratie*, only with the permission *System configuration*) you see per task when it should run, the command for the hosting panel and the web link for [cron-job.org](https://cron-job.org).
+
+![Scheduled tasks with the key and the links](../images/automatische-taken.png)
+
+- **Sleutel van deze installatie** (this installation's key) — a web link only works with this secret key. Every installation has its own key; it is not in the code. **Tonen** (show) shows it, **Kopiëren** (copy) copies it. **Nieuwe sleutel maken** (new key) makes a new one (the old links stop working; update them in cron-job.org).
+- **Moving from version 2.5 or older** — up to 2.5 every installation used the same, public key. It keeps working for 30 days after the update, so your cron jobs keep running. As long as a cron job uses the old key, the dashboard shows a warning. Replace the links in cron-job.org with the ones on this page and then click **Oude sleutel nu uitzetten** (switch off the old key now).
 
 # Online users
 
@@ -407,7 +431,7 @@ Check that user's *Features* tab → *Zichtbare Locaties* and *Zichtbare Afdelin
 You have reached your plan's limit. See **Licentiebeheer** for your usage.
 
 **Extra statuses are not reset automatically.**
-That is done by cron jobs. Check that they are set up (see the Installation Guide).
+That is done by cron jobs. Check under **Automatische taken** (scheduled tasks) that they are set up and that the links have the right key.
 
 **How do I reset a user's password?**
 Open the user with ✏️, enter a new password on the *Account* tab and click **Opslaan**.

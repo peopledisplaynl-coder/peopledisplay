@@ -112,6 +112,7 @@ $users = [
     ['admin', 'Demo2026!', 'Beheerder', 'superadmin', $features],
     ['receptie', 'Demo2026!', 'Receptie Hoofdgebouw', 'user', ['locations' => ['Hoofdgebouw']] + $features],
     ['bord', 'Demo2026!', 'Infoscherm hal', 'user', ['inuitBord' => true] + $features],
+    ['concierge', 'Demo2026!', 'Daan Visser', 'user', ['locations' => ['Hoofdgebouw', 'BSO De Vlinder'], 'infoscreenEditor' => true] + $features],
 ];
 $st = $db->prepare('INSERT INTO users (username, password_hash, display_name, email, role, features, active) VALUES (?, ?, ?, ?, ?, ?, 1)');
 foreach ($users as $u) {
@@ -198,15 +199,18 @@ $demoImage('demo-bericht-1.jpg', [255, 196, 120], [235, 120, 80], 'books');
 $demoImage('demo-nieuws-1.jpg', [120, 190, 240], [200, 230, 250], 'park');
 $demoImage('demo-nieuws-2.jpg', [90, 150, 220], [170, 210, 240], 'bike');
 
-$msg = $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, location, starts_at, ends_at, priority, color, active, created_by)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 1)");
-$msg->execute(['Boekenmarkt in de aula', "Woensdag van 14:00 tot 16:00 uur. Alle boeken voor € 1.\nDe opbrengst gaat naar de nieuwe schoolbibliotheek.", PD_IS_UPLOAD_DIR . '/demo-bericht-1.jpg', null, date('Y-m-d 00:00:00', strtotime('-2 days')), date('Y-m-d 23:59:00', strtotime('+5 days')), 0, 'oranje']);
-$msg->execute(['Studiedag vrijdag', 'Vrijdag zijn alle groepen vrij. De BSO is de hele dag open.', null, null, null, date('Y-m-d 18:00:00', strtotime('+4 days')), 1, 'rood']);
-$msg->execute(['Welkom aan onze nieuwe collega’s', 'Gwen en Hidde zijn deze maand gestart. Zeg gerust even hallo!', null, 'Hoofdgebouw', null, null, 0, 'blauw']);
-$msg->execute(['Kerstviering', 'Donderdag 17 december om 17:30 uur in het speellokaal.', null, null, date('Y-m-d 08:00:00', strtotime('+10 days')), null, 0, 'groen']);
+$msg = $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, locations, starts_at, ends_at, priority, color, active, created_by)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)");
+$msg->execute(['Boekenmarkt in de aula', "Woensdag van 14:00 tot 16:00 uur. Alle boeken voor € 1.\nDe opbrengst gaat naar de nieuwe schoolbibliotheek.", PD_IS_UPLOAD_DIR . '/demo-bericht-1.jpg', null, date('Y-m-d 00:00:00', strtotime('-2 days')), date('Y-m-d 23:59:00', strtotime('+5 days')), 0, 'oranje', 1]);
+$msg->execute(['Studiedag vrijdag', 'Vrijdag zijn alle groepen vrij. De BSO is de hele dag open.', null, null, null, date('Y-m-d 18:00:00', strtotime('+4 days')), 1, 'rood', 1]);
+$msg->execute(['Welkom aan onze nieuwe collega’s', 'Gwen en Hidde zijn deze maand gestart. Zeg gerust even hallo!', null, '["Hoofdgebouw","BSO De Vlinder","KDV Het Speelhuis"]', null, null, 0, 'blauw', 1]);
+$msg->execute(['Kerstviering', 'Donderdag 17 december om 17:30 uur in het speellokaal.', null, null, date('Y-m-d 08:00:00', strtotime('+10 days')), null, 0, 'groen', 1]);
+$concierge = (int)$db->query("SELECT id FROM users WHERE username = 'concierge'")->fetchColumn();
+$msg->execute(['Lift buiten gebruik', 'Tot en met donderdag. Gebruik de trap bij de hoofdingang of vraag de conciërge.', null, '["Hoofdgebouw"]', null, date('Y-m-d 17:00:00', strtotime('+3 days')), 0, 'grijs', $concierge]);
+$msg->execute(['Fietsenstalling BSO tijdelijk dicht', 'Zet je fiets deze week bij de hoofdingang.', null, '["BSO De Vlinder"]', null, date('Y-m-d 18:00:00', strtotime('+6 days')), 0, 'groen', $concierge]);
 
 $demoHost = 'http://' . (getenv('PD_DEMO_DOMAIN') ?: 'localhost');
-$db->prepare("INSERT INTO infoscreen_sources (type, name, url, location, max_items, show_images, attribution, active, last_fetch_at, last_ok_at, last_status)
+$db->prepare("INSERT INTO infoscreen_sources (type, name, url, locations, max_items, show_images, attribution, active, last_fetch_at, last_ok_at, last_status)
               VALUES ('rss', 'Nieuws Voorbeeldstad', 'https://www.voorbeeldstad.example/feed/', NULL, 8, 1, 'Gemeente Voorbeeldstad', 1, NOW(), NOW(), 'OK: 5 berichten opgehaald, 2 met afbeelding')")->execute();
 $rssId = (int)$db->lastInsertId();
 $item = $db->prepare("INSERT INTO infoscreen_items (source_id, item_key, title, summary, image_url, link, published_at) VALUES (?, ?, ?, ?, ?, ?, NOW() - INTERVAL ? MINUTE)");
@@ -240,9 +244,9 @@ foreach ([
     $ev->execute([$icalId, sha1('demo-ev' . $i), $e[0], $e[1], $e[2], $e[3], $e[4]]);
 }
 // A Teams connection and a message posted through it
-$db->exec("INSERT INTO infoscreen_api_keys (type, name, location, default_days, color, last_used_at) VALUES ('teams', 'Infoscherm', NULL, 7, 'paars', NOW() - INTERVAL 20 MINUTE)");
+$db->exec("INSERT INTO infoscreen_api_keys (type, name, locations, default_days, color, last_used_at) VALUES ('teams', 'Infoscherm', NULL, 7, 'paars', NOW() - INTERVAL 20 MINUTE)");
 $teamsId = (int)$db->lastInsertId();
-$db->prepare("INSERT INTO infoscreen_messages (title, body, location, ends_at, color, active, source, api_key_id, external_id, author)
+$db->prepare("INSERT INTO infoscreen_messages (title, body, locations, ends_at, color, active, source, api_key_id, external_id, author)
               VALUES ('Gevonden: blauwe muts', 'Ligt bij de conciërge.', NULL, ?, 'paars', 1, 'teams', ?, 'teams:demo-1', 'Daan Visser')")
    ->execute([date('Y-m-d 23:59:00', strtotime('+3 days')), $teamsId]);
 

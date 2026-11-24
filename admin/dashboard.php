@@ -74,6 +74,23 @@ $canManageSubstatus      = hasAdminFeature('manage_substatus_dates');
 $canManageUsers          = hasAdminFeature('manage_users');
 $canCreateBackup         = ($userRole === 'superadmin') || hasAdminFeature('create_backup');
 $canManageInfoscreen     = hasAdminFeature('manage_infoscreen');
+
+// Cronjobs (2.6.0): warn while a cron job still uses the old public key
+$cronLegacyWarning = null;
+if ($canManageConfig && is_file(__DIR__ . '/../includes/cron_key.php')) {
+    require_once __DIR__ . '/../includes/cron_key.php';
+    try {
+        $cronState = pd_cron_state();
+        if ($cronState['key'] === null) {
+            $cronLegacyWarning = 'De map data/ is niet schrijfbaar, daarom kon er geen eigen cron-sleutel worden gemaakt.';
+        } elseif (pd_cron_legacy_allowed() && pd_cron_legacy_usage()) {
+            $cronLegacyWarning = 'Een cronjob gebruikt nog de oude, openbare sleutel. Die werkt nog tot '
+                . date('j-n-Y', $cronState['legacy_until']) . '. Zet de nieuwe links in uw cronjobs.';
+        }
+    } catch (\Throwable $e) {
+        $cronLegacyWarning = null;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -373,6 +390,13 @@ $canManageInfoscreen     = hasAdminFeature('manage_infoscreen');
         </div>
         <?php endif; ?>
 
+        <?php if ($cronLegacyWarning): ?>
+        <div class="alert" style="margin-bottom: 20px; background: #fffbeb; border: 1px solid #fcd34d; padding: 12px 16px; border-radius: 8px; color: #5b4204;">
+            <strong style="display: block; margin-bottom: 6px;">⏱️ Cronjobs: actie nodig</strong>
+            <?= htmlspecialchars($cronLegacyWarning) ?> <a href="cron_manage.php" style="color:#5b4204;font-weight:700">Naar Automatische taken →</a>
+        </div>
+        <?php endif; ?>
+
         <?php if (!empty($updateInfo) && $updateInfo['available']): ?>
         <div class="update-banner" id="updateBanner">
             <span class="ub-icon">🚀</span>
@@ -558,6 +582,14 @@ $canManageInfoscreen     = hasAdminFeature('manage_infoscreen');
                 <div class="menu-icon">📺</div>
                 <h3>Infoscherm</h3>
                 <p>Berichten, nieuws en weer op de schermen</p>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($canManageConfig): ?>
+            <a href="cron_manage.php" class="menu-card config">
+                <div class="menu-icon">⏱️</div>
+                <h3>Automatische taken</h3>
+                <p>Cronjobs en de geheime sleutel voor cron-job.org</p>
             </a>
             <?php endif; ?>
 

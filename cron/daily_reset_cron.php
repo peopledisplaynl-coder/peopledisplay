@@ -24,17 +24,9 @@
  * ============================================================================
  */
 
-// Security: Only allow CLI execution
-if (php_sapi_name() !== 'cli') {
-    // Allow browser access only with secret key
-    $secretKey = $_GET['key'] ?? '';
-    $expectedKey = 'INZ8U56BCZ'; // CHANGE THIS IN PRODUCTION!
-    
-    if ($secretKey !== $expectedKey) {
-        http_response_code(403);
-        die('Access denied. This script can only be run via cron or with valid key.');
-    }
-}
+// Security: CLI, or a web call with the installation's cron key (Beheer > Automatische taken)
+require_once __DIR__ . '/../includes/cron_key.php';
+pd_cron_require_key('daily_reset_cron');
 
 // Include database connection
 require_once __DIR__ . '/../includes/db.php';

@@ -40,6 +40,7 @@ Op het welkomstscherm kies je waar je naartoe wilt.
 | **Aanmeldscherm** | Medewerkers in- en uitchecken (het hoofdscherm) |
 | **Overzicht** | Een lijst van iedereen die aanwezig is, per locatie |
 | **Mijn Profiel** | Je naam, e-mailadres, foto en wachtwoord aanpassen |
+| **Infoscherm-berichten** | Alleen als de beheerder dat voor je heeft aangezet: berichten op het infoscherm plaatsen voor jouw locaties |
 | **Beheer** | Alleen zichtbaar voor beheerders: het admin-dashboard |
 
 Onderaan staat de knop **Uitloggen**.
@@ -188,6 +189,20 @@ Het IN/UIT-bord is een eenvoudige weergave met twee kolommen: links wie er **UIT
 - Het bord ververst zichzelf elke 30 seconden (**Live**).
 
 Heeft de beheerder het IN/UIT-bord voor jouw account aangezet, dan opent het aanmeldscherm voor jou altijd als IN/UIT-bord.
+
+# Infoscherm-berichten
+
+Heeft de beheerder je **redacteur** gemaakt (bijvoorbeeld als receptie of conciërge), dan staat op het welkomstscherm de knop **📝 Infoscherm-berichten**. Daarmee zet je berichten op het infoscherm, alleen voor **jouw locaties**. Welke dat zijn, staat bovenaan in het groene vak.
+
+![Infoscherm-berichten plaatsen voor de eigen locaties](../images/infoscherm-redacteur.png)
+
+1. Klik op **Nieuw bericht**.
+2. Vul een **titel** en een korte **tekst** in, en kies eventueel een afbeelding en een achtergrondkleur.
+3. Vink bij **Op welke locaties?** aan waar het bericht moet verschijnen. Je ziet alleen jouw eigen locaties.
+4. Kies eventueel **Tonen vanaf** en **Tonen tot en met**. Leeg betekent: direct, en blijft staan tot je het uitzet.
+5. Vink **Belangrijk** aan als het bericht vaker in beeld moet en ook in de nieuwsbalk. Klik op **Opslaan**.
+
+Je eigen berichten kun je **bewerken**, **uitzetten** en **verwijderen**. Berichten van de beheerder voor **🌐 Alle locaties**, en berichten die ook op andere locaties staan, zie je met **🔒 Alleen lezen**: die past de beheerder aan. Met **Voorbeeld** bekijk je hoe het scherm eruitziet.
 
 # Mijn profiel
 

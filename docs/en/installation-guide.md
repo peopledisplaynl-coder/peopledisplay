@@ -137,7 +137,9 @@ The free service [cron-job.org](https://cron-job.org) calls the scripts over the
 https://checkin.yourschool.com/cron/daily_reset_cron.php?key=YOUR-KEY
 ```
 
-The key is at the top of the script. Scripts called over the internet refuse a request without the correct key.
+Every installation has its own secret key. The admin dashboard shows the complete links, with the key, under **Automatische taken** (scheduled tasks); copy them from there. Scripts called over the internet refuse a request without the correct key.
+
+> **Updating from version 2.5 or older** — Up to 2.5 every installation used the same, public key. After the update it keeps working for 30 days and the dashboard shows a warning while a cron job still uses it. Replace the links in cron-job.org with the ones under **Automatische taken** and then click **Oude sleutel nu uitzetten** (switch off the old key now).
 
 # Activating a licence
 

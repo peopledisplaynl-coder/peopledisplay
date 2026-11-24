@@ -299,6 +299,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // 📋 IN/UIT Bord weergave feature
     $inuitBord = isset($_POST['can_inuitbord']) ? true : false;
 
+    // 📝 Infoscherm-berichtenredacteur (2.6.0): berichten plaatsen voor de eigen locaties
+    $infoscreenEditor = isset($_POST['infoscreen_editor']);
+
     // 🔐 Admin features (alleen voor admins)
     $adminFeatures = [];
     if ($role === 'admin') {
@@ -323,6 +326,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'zoomFunctie' => $zoomFunctie,
         'zoomStandaard' => $zoomStandaard,
         'inuitBord' => $inuitBord,            // ← IN/UIT Bord weergave
+        'infoscreenEditor' => $infoscreenEditor, // ← Infoscherm-berichten voor de eigen locaties
         'admin_features' => $adminFeatures    // ← NEW: Admin feature permissions
     ]);
     
@@ -2119,6 +2123,17 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                         <strong style="display: block; margin-bottom: 4px;">📋 IN/UIT Bord weergave</strong>
                                         <span style="font-size: 12px; color: #718096; line-height: 1.4;">
                                             Toont een klassiek IN/UIT bord met uitsluitend namen en BHV-indicatie, in plaats van de normale kaartweergave
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="checkbox-item" style="align-items: flex-start; margin-top: 10px;">
+                                    <input type="checkbox" id="infoscreen-editor-${userId}" name="infoscreen_editor" value="1" ${features.infoscreenEditor ? 'checked' : ''}>
+                                    <label for="infoscreen-editor-${userId}" style="flex: 1;">
+                                        <strong style="display: block; margin-bottom: 4px;">📝 Infoscherm-berichten plaatsen (redacteur)</strong>
+                                        <span style="font-size: 12px; color: #718096; line-height: 1.4;">
+                                            Voor bijvoorbeeld receptie of conciërge: de gebruiker krijgt een knop “Infoscherm-berichten” en kan berichten
+                                            plaatsen en aanpassen voor de <strong>Zichtbare Locaties</strong> hieronder (geen locatie aangevinkt = geen enkele).
+                                            Berichten voor alle locaties plaatst alleen een beheerder met het recht “Infoscherm beheren”.
                                         </span>
                                     </label>
                                 </div>
