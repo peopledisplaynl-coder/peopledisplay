@@ -390,5 +390,6 @@ $locBadges = function (array $locs) use ($h): string {
     <?php endif; ?>
 </div>
 <?= pd_infoscreen_location_picker_js() ?>
+<?= pd_infoscreen_text_counter_js() ?>
 </body>
 </html>

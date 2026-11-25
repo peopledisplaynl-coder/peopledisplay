@@ -345,6 +345,37 @@ function pd_infoscreen_location_picker(array $locations, array $selected, bool $
     return $out;
 }
 
+/** Character counter under the message text (2.6.1): advice, the screen makes long text smaller itself. */
+function pd_infoscreen_text_counter_js(): string
+{
+    return <<<'JS'
+<script>
+document.querySelectorAll('textarea[name="body"]').forEach(function (ta) {
+    var out = document.createElement('div');
+    out.className = 'help';
+    ta.insertAdjacentElement('afterend', out);
+    var form = ta.form;
+    function hasImage() {
+        var file = form.querySelector('input[name="image"]');
+        var cur = form.querySelector('.current-img');
+        var rm = form.querySelector('input[name="remove_image"]');
+        return (file && file.files.length > 0) || (cur && !(rm && rm.checked));
+    }
+    function update() {
+        var n = ta.value.length, advice = hasImage() ? 250 : 450;
+        out.textContent = n + ' tekens. Advies: ' + (hasImage() ? 'met afbeelding' : 'zonder afbeelding') + ' tot ongeveer ' + advice +
+            ' tekens. Past het niet, dan maakt het scherm de tekst vanzelf kleiner.';
+        out.style.color = n > advice ? '#b45309' : '';
+        out.style.fontWeight = n > advice ? '600' : '';
+    }
+    ta.addEventListener('input', update);
+    form.addEventListener('change', update);
+    update();
+});
+</script>
+JS;
+}
+
 /** Script for the picker: "Alle locaties" switches the single locations off. Include once per page. */
 function pd_infoscreen_location_picker_js(): string
 {

@@ -100,16 +100,17 @@ body.no-clock #datetime { display: none; }
 .msg.c-grijs  { background: linear-gradient(135deg, #475569, #1e293b); }
 .msg .msg-img { flex: 0 0 52%; background-size: cover; background-position: center; }
 .msg .msg-img.contain { background-size: contain; background-repeat: no-repeat; background-color: rgba(0,0,0,.25); }
-.msg .msg-text { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 5% 5.5%; min-width: 0; }
-.msg h1 { font-size: clamp(24px, 5.2vmin, 90px); line-height: 1.12; font-weight: 800; letter-spacing: -.015em; margin-bottom: .45em; overflow-wrap: anywhere; }
-.msg p { font-size: clamp(16px, 3vmin, 48px); line-height: 1.42; opacity: .94; white-space: pre-line; overflow-wrap: anywhere; }
+.msg .msg-text { flex: 1; display: flex; flex-direction: column; justify-content: center; justify-content: safe center; padding: 5% 5.5%;
+    min-width: 0; min-height: 0; overflow: hidden; --fit: 1; }
+.msg h1 { font-size: calc(clamp(24px, 5.2vmin, 90px) * var(--fit)); line-height: 1.12; font-weight: 800; letter-spacing: -.015em; margin-bottom: .45em; overflow-wrap: anywhere; }
+.msg p { font-size: calc(clamp(16px, 3vmin, 48px) * var(--fit)); line-height: 1.42; opacity: .94; white-space: pre-line; overflow-wrap: anywhere; }
 .msg.no-img .msg-text { align-items: center; text-align: center; padding: 6% 10%; }
-.msg.no-img h1 { font-size: clamp(28px, 7.5vmin, 120px); }
+.msg.no-img h1 { font-size: calc(clamp(28px, 7.5vmin, 120px) * var(--fit)); }
 .msg.only-img .msg-img { flex: 1; }
 .msg.only-img .msg-text { position: absolute; left: 0; right: 0; bottom: 0; padding: 3% 4%; background: linear-gradient(transparent, rgba(0,0,0,.75)); }
 .msg.only-img h1 { margin: 0; }
 .badge { display: inline-flex; align-items: center; gap: .4em; align-self: flex-start; background: #fff; color: #b91c1c; font-weight: 800;
-    text-transform: uppercase; letter-spacing: .06em; font-size: clamp(12px, 1.9vmin, 30px); padding: .35em .8em; border-radius: 99px; margin-bottom: 1em; }
+    text-transform: uppercase; letter-spacing: .06em; font-size: clamp(12px, 1.9vmin, 30px); padding: .35em .8em; border-radius: 99px; margin-bottom: 1em; flex: 0 0 auto; }
 .msg.no-img .badge { align-self: center; }
 
 /* News slide */
@@ -501,6 +502,7 @@ body.no-weather #side-clock { display: block; }
         wrap.innerHTML = item.html;
         const el = wrap.firstElementChild;
         stage.insertBefore(el, $('progress'));
+        fitText(el);
         requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('active')));
         tick();
         // Remove the previous slides after the fade
@@ -516,6 +518,25 @@ body.no-weather #side-clock { display: block; }
     }
 
     // ── Combined mode: Google Slides in the main area, messages in the sidebar ──
+    // Long messages: make the text smaller until title, badge and text fit the slide (2.6.1)
+    function fitText(slide) {
+        slide.querySelectorAll('.msg-text').forEach((box) => {
+            if (box.closest('.only-img')) return;
+            let fit = 1;
+            box.style.setProperty('--fit', '1');
+            while (box.scrollHeight > box.clientHeight + 1 && fit > 0.4) {
+                fit = Math.round((fit - 0.05) * 100) / 100;
+                box.style.setProperty('--fit', String(fit));
+            }
+        });
+    }
+    let fitTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(fitTimer);
+        fitTimer = setTimeout(() => document.querySelectorAll('#stage .slide').forEach(fitText), 200);
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => document.querySelectorAll('#stage .slide').forEach(fitText));
+
     function showSlidesFrame(presentationId, seconds) {
         let frame = $('slides-frame');
         const src = `https://docs.google.com/presentation/d/${encodeURIComponent(presentationId)}/embed?start=true&loop=true&delayms=${Math.max(3, seconds) * 1000}&rm=minimal`;

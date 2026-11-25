@@ -1,12 +1,20 @@
 {
-    "version": "2.6.0",
+    "version": "2.6.1",
     "critical": false,
-    "message": "Nieuw: infoscherm-berichten voor meer locaties tegelijk en een redacteur (receptie\/conciërge) per locatie. Beveiliging: elke installatie heeft nu een eigen cron-sleutel; zie Beheer > Automatische taken en pas uw cronjobs binnen 30 dagen aan.",
+    "message": "Verbeterd: lange berichten op het infoscherm passen nu altijd in beeld (de tekst wordt vanzelf kleiner), met een tekenteller bij het schrijven.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
-    "release_date": "2026-11-24",
+    "release_date": "2026-11-25",
     "changelog": [
+        {
+            "version": "2.6.1",
+            "date": "2026-11-25",
+            "changes": [
+                "Verbeterd: een lang bericht op het infoscherm past nu altijd in beeld. Is de tekst te lang voor het scherm, dan wordt hij vanzelf kleiner, zodat de titel en 'Belangrijk' altijd zichtbaar blijven, ook op kleinere of staande schermen",
+                "Nieuw: onder de tekst van een bericht staat een tekenteller met advies (met afbeelding ongeveer 250 tekens, zonder ongeveer 450), bij Beheer > Infoscherm en op de pagina Infoscherm-berichten"
+            ]
+        },
         {
             "version": "2.6.0",
             "date": "2026-11-24",

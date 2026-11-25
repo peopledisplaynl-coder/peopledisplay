@@ -1090,5 +1090,6 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
 <?php endif; ?>
 </div>
 <?= pd_infoscreen_location_picker_js() ?>
+<?= pd_infoscreen_text_counter_js() ?>
 </body>
 </html>

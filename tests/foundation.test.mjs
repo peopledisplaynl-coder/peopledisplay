@@ -376,6 +376,13 @@ test('infoscreen: API and pages need a login, the cron script only runs from the
   assert.match(read('cron/cron_infoscreen.php'), /php_sapi_name\(\) !== 'cli'/);
 });
 
+test('infoscreen: long messages are made smaller to fit, the forms show a character counter', () => {
+  assert.match(read('infoscherm.php'), /function fitText\(/);
+  assert.match(read('infoscherm.php'), /var\(--fit\)/);
+  assert.match(read('admin/infoscreen_manage.php'), /pd_infoscreen_text_counter_js\(\)/);
+  assert.match(read('infoscherm_berichten.php'), /pd_infoscreen_text_counter_js\(\)/);
+});
+
 test('cron: no shared key in the code, every web cron entry checks the installation key', () => {
   const files = ['cron_endpoint.php', 'cron/cleanup_tokens_cron.php', 'cron/daily_reset_cron.php',
     'cron/cron_auto_checkout.php', 'cron/cron_auto_delete.php', 'cron/cron_reset_expired_sub_status.php'];

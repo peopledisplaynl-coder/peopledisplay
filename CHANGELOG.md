@@ -2,6 +2,11 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.6.1 — 2026-11-25
+
+- Verbeterd: een lang bericht op het infoscherm past nu altijd in beeld. Is de tekst te lang voor het scherm, dan wordt hij vanzelf kleiner, zodat de titel en 'Belangrijk' altijd zichtbaar blijven, ook op kleinere of staande schermen
+- Nieuw: onder de tekst van een bericht staat een tekenteller met advies (met afbeelding ongeveer 250 tekens, zonder ongeveer 450), bij Beheer > Infoscherm en op de pagina Infoscherm-berichten
+
 ## v2.6.0 — 2026-11-24
 
 - Nieuw: berichten, nieuwsbronnen, weerplaatsen, agenda's en koppelingen op het infoscherm gelden voor één, meer of alle locaties (vinkjes in plaats van één keuze). Bestaande instellingen worden automatisch overgenomen; een nieuwe locatienaam gaat automatisch mee

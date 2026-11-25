@@ -273,7 +273,7 @@ The screen has three parts:
 
 Click **Nieuw bericht** (new message) and fill in:
 
-- **Titel** (title) and a short **Tekst** (text). A message with only an image and no text shows the image large, for example a poster.
+- **Titel** (title) and a short **Tekst** (text). A message with only an image and no text shows the image large, for example a poster. Below the text you see how many characters you used and the advice (about 250 with an image, about 450 without). When a message does not fit the screen, the screen makes the text smaller by itself, so the title and *Belangrijk* always stay visible.
 - **Afbeelding** (image: JPG, PNG, GIF or WEBP, at most 5 MB; landscape works best).
 - **Achtergrondkleur** (background colour), **Tonen vanaf** and **Tonen tot en met** (show from / until; empty = now and indefinitely) and **Tijd in beeld** (time on screen).
 - **Locaties** (locations) — tick **🌐 Alle locaties** (all locations) for a message that must be everywhere, or tick one or more locations. A screen shows the messages of the locations set for its user account.

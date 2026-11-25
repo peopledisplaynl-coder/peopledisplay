@@ -199,7 +199,7 @@ If the administrator made you an **editor** (for example as reception or caretak
 ![Posting infoscreen messages for your own locations](../images/infoscherm-redacteur.png)
 
 1. Click **Nieuw bericht** (new message).
-2. Fill in a **Titel** (title) and a short **Tekst** (text), and optionally choose an image and a background colour.
+2. Fill in a **Titel** (title) and a short **Tekst** (text), and optionally choose an image and a background colour. Below the text you see how many characters you use; keep to the advice and the text stays large and easy to read.
 3. Under **Op welke locaties?** (which locations?) tick where the message must appear. You only see your own locations.
 4. Optionally choose **Tonen vanaf** and **Tonen tot en met** (show from / until). Empty means: now, and it stays until you switch it off.
 5. Tick **Belangrijk** (important) if the message must appear more often and also in the news ticker. Click **Opslaan** (save).

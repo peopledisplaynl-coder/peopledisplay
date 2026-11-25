@@ -197,7 +197,7 @@ Heeft de beheerder je **redacteur** gemaakt (bijvoorbeeld als receptie of conci√
 ![Infoscherm-berichten plaatsen voor de eigen locaties](../images/infoscherm-redacteur.png)
 
 1. Klik op **Nieuw bericht**.
-2. Vul een **titel** en een korte **tekst** in, en kies eventueel een afbeelding en een achtergrondkleur.
+2. Vul een **titel** en een korte **tekst** in, en kies eventueel een afbeelding en een achtergrondkleur. Onder de tekst staat hoeveel tekens je gebruikt; houd je aan het advies, dan blijft de tekst groot en goed leesbaar.
 3. Vink bij **Op welke locaties?** aan waar het bericht moet verschijnen. Je ziet alleen jouw eigen locaties.
 4. Kies eventueel **Tonen vanaf** en **Tonen tot en met**. Leeg betekent: direct, en blijft staan tot je het uitzet.
 5. Vink **Belangrijk** aan als het bericht vaker in beeld moet en ook in de nieuwsbalk. Klik op **Opslaan**.

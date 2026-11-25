@@ -271,7 +271,7 @@ Het scherm bestaat uit:
 
 Klik op **Nieuw bericht** en vul in:
 
-- **Titel** en (korte) **tekst**. Een bericht met alleen een afbeelding en geen tekst toont de afbeelding groot, bijvoorbeeld een poster.
+- **Titel** en (korte) **tekst**. Een bericht met alleen een afbeelding en geen tekst toont de afbeelding groot, bijvoorbeeld een poster. Onder de tekst zie je hoeveel tekens je hebt gebruikt en wat het advies is (met afbeelding ongeveer 250, zonder ongeveer 450). Past een bericht niet op het scherm, dan maakt het scherm de tekst vanzelf kleiner, zodat titel en *Belangrijk* altijd in beeld blijven.
 - **Afbeelding** (JPG, PNG, GIF of WEBP, maximaal 5 MB; liggend werkt het best).
 - **Achtergrondkleur**, **Tonen vanaf** en **Tonen tot en met** (leeg = direct en blijvend) en de **Tijd in beeld**.
 - **Locaties** — vink **🌐 Alle locaties** aan voor een bericht dat overal moet staan, of vink één of meer locaties aan. Een scherm toont de berichten van de locaties die bij zijn gebruikersaccount zijn ingesteld.
