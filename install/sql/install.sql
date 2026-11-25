@@ -796,7 +796,7 @@ CREATE TABLE IF NOT EXISTS `infoscreen_sources` (
   `attribution`   varchar(200)  DEFAULT NULL,
   `active`        tinyint(1)    NOT NULL DEFAULT 1,
   `sort_order`    int(11)       NOT NULL DEFAULT 0,
-  `data_json`     mediumtext    DEFAULT NULL COMMENT 'Laatste weerdata (genormaliseerd)',
+  `data_json`     mediumtext    DEFAULT NULL COMMENT 'Weer: laatste weerdata. Website (provider web): instellingen',
   `last_fetch_at` datetime      DEFAULT NULL,
   `last_ok_at`    datetime      DEFAULT NULL,
   `last_status`   varchar(255)  DEFAULT NULL,

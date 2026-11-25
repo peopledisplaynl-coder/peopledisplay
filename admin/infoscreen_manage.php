@@ -139,7 +139,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $url = $provider = $lat = $lon = $attribution = null;
                 $maxItems = 8;
                 $showImages = 1;
-                if ($type === 'rss') {
+                $webCfg = null;
+                if ($type === 'rss' && ($_POST['source_kind'] ?? '') === 'web') {
+                    // Website without a feed (2.7.0)
+                    $editQs = $id ? '&edit=' . $id : '&new=web';
+                    $url = pd_infoscreen_clean_url($_POST['url'] ?? '');
+                    if (!$url) pd_is_redirect($tabFor, 'Vul een geldig webadres van de nieuwspagina in (begint met https://).', false, $editQs);
+                    $provider = 'web';
+                    $mode = in_array($_POST['web_mode'] ?? '', ['auto', 'feed', 'list', 'css'], true) ? $_POST['web_mode'] : 'auto';
+                    $webCfg = ['mode' => $mode, 'css' => []];
+                    foreach (['item', 'title', 'link', 'image', 'date'] as $f) {
+                        $v = mb_substr(trim((string)($_POST['css'][$f] ?? '')), 0, 200);
+                        if ($v !== '') $webCfg['css'][$f] = $v;
+                    }
+                    if ($mode === 'feed') {
+                        $webCfg['feed'] = pd_infoscreen_clean_url($_POST['web_feed'] ?? '');
+                        if (!$webCfg['feed']) pd_is_redirect($tabFor, 'Kies eerst via "Zoek berichten" welke berichten u wilt tonen.', false, $editQs);
+                    } elseif ($mode === 'list') {
+                        $webCfg['xpath'] = mb_substr(trim((string)($_POST['web_xpath'] ?? '')), 0, 1000);
+                        if ($webCfg['xpath'] === '' || !str_starts_with($webCfg['xpath'], '//')) pd_is_redirect($tabFor, 'Kies eerst via "Zoek berichten" welke berichten u wilt tonen.', false, $editQs);
+                    } elseif ($mode === 'css') {
+                        require_once __DIR__ . '/../includes/infoscreen_web.php';
+                        if (empty($webCfg['css']['item']) || !pd_is_web_css_to_xpath($webCfg['css']['item'])) {
+                            pd_is_redirect($tabFor, 'Vul een geldige CSS-selector in voor één bericht.', false, $editQs);
+                        }
+                        try { pd_is_web_css_sel($webCfg['css']); } catch (RuntimeException $e) { pd_is_redirect($tabFor, $e->getMessage(), false, $editQs); }
+                    }
+                    $maxItems = max(1, min(30, (int)($_POST['max_items'] ?? 8)));
+                    $showImages = !empty($_POST['show_images']) ? 1 : 0;
+                    $attribution = mb_substr(trim((string)($_POST['attribution'] ?? '')), 0, 200) ?: null;
+                } elseif ($type === 'rss') {
                     $url = pd_infoscreen_clean_url($_POST['url'] ?? '');
                     if (!$url) pd_is_redirect($tabFor, 'Vul een geldig webadres van de feed in (begint met https://).', false, $editQs);
                     $maxItems = max(1, min(30, (int)($_POST['max_items'] ?? 8)));
@@ -171,6 +200,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
                        ->execute([$type, $name, $url, $provider, $lat, $lon, $locs, $maxItems, $showImages, $attribution, $active]);
                     $id = (int)$db->lastInsertId();
+                }
+                if ($type === 'rss') {
+                    // Website settings live in data_json; a plain feed has none
+                    $db->prepare("UPDATE infoscreen_sources SET provider = ?, data_json = ? WHERE id = ?")
+                       ->execute([$provider, $webCfg ? json_encode($webCfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null, $id]);
                 }
                 // Fetch right away so the admin sees whether it works
                 $stmt = $db->prepare("SELECT * FROM infoscreen_sources WHERE id = ?");
@@ -422,6 +456,17 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     .current-img { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
     .current-img img { height: 70px; border-radius: 6px; }
     .wx-now { font-size: 13px; }
+    .web-preview { border: 1.5px dashed #d1d5db; border-radius: 8px; padding: 12px; background: #fff; }
+    .web-opt { display: flex; gap: 10px; border: 1.5px solid #e5e7eb; border-radius: 9px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; }
+    .web-opt.on { border-color: #667eea; background: #f5f3ff; }
+    .web-opt input { margin-top: 3px; }
+    .web-opt-body { flex: 1; min-width: 0; }
+    .web-items { list-style: none; margin: 8px 0 0; display: flex; flex-direction: column; gap: 6px; }
+    .web-items li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+    .web-items img, .web-items .noimg { width: 64px; height: 40px; object-fit: cover; border-radius: 5px; background: #e5e7eb; flex: 0 0 auto; }
+    .web-adv { margin-top: 10px; }
+    .web-adv summary { cursor: pointer; font-weight: 600; font-size: 13.5px; color: #4b5563; }
+    .web-adv .grid { margin-top: 10px; }
     .loc-picker { border: 1.5px solid #d1d5db; border-radius: 7px; padding: 10px 12px; background: #fff; }
     .loc-picker .loc-all { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #eef0f3; }
     .loc-picker .loc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 14px; }
@@ -563,12 +608,169 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         Afbeeldingen worden nooit naar deze server gekopieerd, het scherm laadt ze bij de bron.
     </div>
     <div class="info">
-        <strong>Welke feeds?</strong> Elke RSS- of Atom-feed werkt. Handig zijn feeds van uw eigen organisatie: een WordPress-website heeft er standaard één op
+        <strong>Welke bronnen?</strong> Elke RSS- of Atom-feed werkt. Heeft een website geen feed, kies dan <em>Website zonder feed</em>: PeopleDisplay haalt de berichten dan van de nieuwspagina zelf. Handig zijn feeds van uw eigen organisatie: een WordPress-website heeft er standaard één op
         <code>https://uwwebsite.nl/feed/</code>, en veel gemeenten, scholen en verenigingen publiceren hun nieuws ook zo.
         Nieuws met een afbeelding verschijnt als grote dia, alle koppen lopen door de nieuwsbalk onderaan.
     </div>
 
-    <?php if ($showForm): $s = $editSource ?? ['id' => 0, 'name' => '', 'url' => '', 'locations' => null, 'max_items' => 8, 'show_images' => 1, 'attribution' => '', 'active' => 1]; ?>
+    <?php $isWeb = $showForm && ($editSource ? ($editSource['provider'] ?? '') === 'web' : ($_GET['new'] ?? '') === 'web'); ?>
+    <?php if ($isWeb): $s = $editSource ?? ['id' => 0, 'name' => '', 'url' => '', 'locations' => null, 'max_items' => 8, 'show_images' => 1, 'attribution' => '', 'active' => 1, 'data_json' => null];
+        $wc = json_decode((string)($s['data_json'] ?? ''), true) ?: [];
+        $wcMode = $wc['mode'] ?? 'auto'; $wcCss = is_array($wc['css'] ?? null) ? $wc['css'] : []; ?>
+    <div class="panel">
+        <h2><?= $s['id'] ? '✏️ Website bewerken' : '➕ Website zonder RSS-feed toevoegen' ?></h2>
+        <p class="help" style="font-size:14px;color:#374151;margin:-6px 0 14px">PeopleDisplay haalt de nieuwspagina elke <?= PD_IS_FETCH_MINUTES ?> minuten op en neemt van elk bericht de titel,
+            een korte tekst, de afbeelding en de link over. Werkt niet voor pagina's achter een inlog, sociale media en sites die hun inhoud met JavaScript opbouwen.</p>
+        <form method="post" id="web-form">
+            <input type="hidden" name="csrf" value="<?= $h($csrf) ?>">
+            <input type="hidden" name="action" value="save_source">
+            <input type="hidden" name="type" value="rss">
+            <input type="hidden" name="source_kind" value="web">
+            <input type="hidden" name="tab" value="nieuws">
+            <input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
+            <input type="hidden" name="web_mode" id="web_mode" value="<?= $h($wcMode) ?>">
+            <input type="hidden" name="web_feed" id="web_feed" value="<?= $h($wc['feed'] ?? '') ?>">
+            <input type="hidden" name="web_xpath" id="web_xpath" value="<?= $h($wc['xpath'] ?? '') ?>">
+            <div class="grid">
+                <div>
+                    <label class="f" for="name">Naam *</label>
+                    <input type="text" id="name" name="name" maxlength="150" required value="<?= $h($s['name']) ?>" placeholder="Bijv. Nieuws van de gemeente">
+                </div>
+                <div>
+                    <label class="f" for="attribution">Bronvermelding op het scherm</label>
+                    <input type="text" id="attribution" name="attribution" maxlength="200" value="<?= $h($s['attribution']) ?>" placeholder="Leeg = de naam">
+                </div>
+                <div class="full">
+                    <label class="f" for="url">Webadres van de nieuwspagina *</label>
+                    <div style="display:flex;gap:8px">
+                        <input type="url" id="url" name="url" maxlength="500" required value="<?= $h($s['url']) ?>" placeholder="https://www.voorbeeld.nl/nieuws">
+                        <button type="button" class="btn btn-light" id="web-search">🔍 Zoek berichten</button>
+                    </div>
+                    <div class="help">Gebruik de overzichtspagina met alle berichten (bijv. <em>Nieuws</em> of <em>Actueel</em>), niet één los bericht.</div>
+                </div>
+                <div class="full">
+                    <label class="f">Welke berichten?</label>
+                    <div id="web-preview" class="web-preview">
+                        <?php if ($s['id']): ?>
+                            <div class="muted">Huidige keuze: <strong><?= $h(['auto' => 'automatisch de beste lijst', 'feed' => 'de gevonden feed', 'list' => 'een gekozen lijst op de pagina', 'css' => 'eigen CSS-selectors'][$wcMode] ?? $wcMode) ?></strong>.
+                                Klik op <em>Zoek berichten</em> om opnieuw te kiezen.</div>
+                        <?php else: ?>
+                            <div class="muted">Vul het webadres in en klik op <em>Zoek berichten</em>. U ziet dan wat PeopleDisplay op de pagina vindt en kiest zelf.</div>
+                        <?php endif; ?>
+                    </div>
+                    <details class="web-adv" <?= $wcMode === 'css' ? 'open' : '' ?>>
+                        <summary>Geavanceerd: zelf aanwijzen met CSS-selectors</summary>
+                        <p class="help">Alleen nodig als de automatische herkenning niet de goede berichten vindt. Gebruik eenvoudige selectors, zoals <code>.nieuws-item</code>,
+                            <code>ul.news &gt; li</code> of <code>article h2</code>. Titel, link, afbeelding en datum zoeken binnen één bericht; leeg = automatisch.</p>
+                        <div class="grid">
+                            <?php foreach (['item' => 'Eén bericht *', 'title' => 'Titel', 'link' => 'Link', 'image' => 'Afbeelding', 'date' => 'Datum'] as $f => $label): ?>
+                                <div><label class="f" for="css_<?= $f ?>"><?= $label ?></label>
+                                    <input type="text" id="css_<?= $f ?>" name="css[<?= $f ?>]" maxlength="200" value="<?= $h($wcCss[$f] ?? '') ?>" placeholder="<?= $f === 'item' ? 'bijv. .nieuws-item' : '' ?>"></div>
+                            <?php endforeach; ?>
+                            <div style="display:flex;align-items:flex-end"><button type="button" class="btn btn-light" id="web-css-test">🧪 Testen met deze selectors</button></div>
+                        </div>
+                    </details>
+                </div>
+                <div>
+                    <label class="f">Locaties</label>
+                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($s['locations'])) ?>
+                </div>
+                <div>
+                    <label class="f" for="max_items">Aantal berichten</label>
+                    <input type="number" id="max_items" name="max_items" min="1" max="30" value="<?= (int)$s['max_items'] ?>">
+                    <div class="help">De nieuwste of bovenste berichten van de pagina (1–30).</div>
+                </div>
+                <div class="full" style="display:flex;gap:24px;flex-wrap:wrap">
+                    <label class="check"><input type="checkbox" name="show_images" value="1" <?= (int)$s['show_images'] ? 'checked' : '' ?>> Afbeeldingen tonen (alleen als de bron dat toestaat)</label>
+                    <label class="check"><input type="checkbox" name="active" value="1" <?= (int)$s['active'] ? 'checked' : '' ?>> Actief</label>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">💾 Opslaan en ophalen</button>
+                <a class="btn btn-light" href="?tab=nieuws">Annuleren</a>
+            </div>
+        </form>
+    </div>
+    <script>
+    (function () {
+        var form = document.getElementById('web-form'), box = document.getElementById('web-preview');
+        var esc = function (t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; };
+        var current = { mode: form.web_mode.value, feed: form.web_feed.value, xpath: form.web_xpath.value };
+        function pick(mode, feed, xpath) {
+            form.web_mode.value = mode; form.web_feed.value = feed || ''; form.web_xpath.value = xpath || '';
+            box.querySelectorAll('.web-opt').forEach(function (o) { o.classList.toggle('on', o.querySelector('input').checked); });
+        }
+        function itemsHtml(items) {
+            return '<ul class="web-items">' + items.map(function (i) {
+                return '<li>' + (i.image ? '<img src="' + esc(i.image) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '<span class="noimg"></span>') +
+                    '<span><strong>' + esc(i.title) + '</strong>' + (i.date ? ' <span class="muted">· ' + esc(i.date) + '</span>' : '') +
+                    (i.summary ? '<br><span class="muted">' + esc(i.summary) + '</span>' : '') + '</span></li>';
+            }).join('') + '</ul>';
+        }
+        function option(mode, value, title, sub, items, checked) {
+            return '<label class="web-opt' + (checked ? ' on' : '') + '"><input type="radio" name="web_pick" data-mode="' + mode + '" value="' + esc(value) + '"' + (checked ? ' checked' : '') + '>' +
+                '<span class="web-opt-body"><strong>' + title + '</strong> <span class="muted">' + sub + '</span>' + (items ? itemsHtml(items) : '') + '</span></label>';
+        }
+        function run(withCss) {
+            var url = form.url.value.trim();
+            if (!url) { form.url.focus(); return; }
+            box.innerHTML = '<div class="muted">⏳ Pagina ophalen en berichten zoeken…</div>';
+            var fd = new FormData();
+            fd.append('csrf', form.csrf.value); fd.append('url', url);
+            if (withCss) ['item', 'title', 'link', 'image', 'date'].forEach(function (f) { fd.append('css[' + f + ']', form['css[' + f + ']'].value); });
+            fetch('api/infoscreen_web_preview.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d.ok) { box.innerHTML = '<div class="info warn" style="margin:0">' + esc(d.error) + '</div>'; return; }
+                    if (withCss) {
+                        var n = (d.css_items || []).length;
+                        box.innerHTML = n ? option('css', '', '🧪 Eigen selectors', n + ' bericht(en) gevonden', d.css_items, true)
+                                          : '<div class="info warn" style="margin:0">Met deze selectors zijn geen berichten gevonden.</div>';
+                        if (n) pick('css'); return;
+                    }
+                    var html = '', first = true, any = false;
+                    var keep = function (mode, v) { return current.mode === mode && (mode === 'feed' ? current.feed === v : current.xpath === v); };
+                    var hasKeep = d.feeds.some(function (f) { return keep('feed', f.url); }) || d.groups.some(function (g) { return keep('list', g.xpath); });
+                    d.feeds.forEach(function (f) {
+                        var on = hasKeep ? keep('feed', f.url) : first; first = false; any = true;
+                        html += option('feed', f.url, '📡 Feed gevonden (aanbevolen)', esc(f.title), f.items, on);
+                    });
+                    d.groups.forEach(function (g, i) {
+                        var on = hasKeep ? keep('list', g.xpath) : first; first = false; any = true;
+                        html += option('list', g.xpath, '📋 Lijst ' + (i + 1), g.count + ' bericht(en) op de pagina', g.items, on);
+                    });
+                    if (!any) {
+                        html = '<div class="info warn" style="margin:0">' + (d.js_only
+                            ? 'Deze pagina bouwt zijn inhoud op met JavaScript. PeopleDisplay kan daar geen berichten uit halen.'
+                            : 'Geen lijst met berichten gevonden. Controleer of dit de overzichtspagina is, of wijs de berichten zelf aan onder Geavanceerd.') + '</div>';
+                    } else {
+                        html = '<div class="help" style="margin:0 0 8px">Kies wat op het infoscherm moet komen:</div>' + html;
+                    }
+                    box.innerHTML = html;
+                    var sel = box.querySelector('input[name=web_pick]:checked');
+                    if (sel) pick(sel.dataset.mode, sel.dataset.mode === 'feed' ? sel.value : '', sel.dataset.mode === 'list' ? sel.value : '');
+                })
+                .catch(function () { box.innerHTML = '<div class="info warn" style="margin:0">Ophalen is mislukt. Probeer het opnieuw.</div>'; });
+        }
+        // An image the source does not let us show: a grey block instead of a broken icon
+        box.addEventListener('error', function (e) {
+            if (e.target.tagName === 'IMG') { var s = document.createElement('span'); s.className = 'noimg'; e.target.replaceWith(s); }
+        }, true);
+        box.addEventListener('change', function (e) {
+            var r = e.target; if (r.name !== 'web_pick') return;
+            pick(r.dataset.mode, r.dataset.mode === 'feed' ? r.value : '', r.dataset.mode === 'list' ? r.value : '');
+        });
+        document.getElementById('web-search').addEventListener('click', function () { run(false); });
+        document.getElementById('web-css-test').addEventListener('click', function () { run(true); });
+        form.url.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); run(false); } });
+        form.addEventListener('submit', function () {
+            // Selectors filled in without picking anything else: use them
+            if (form['css[item]'].value.trim() !== '' && (form.web_mode.value === 'auto' || form.web_mode.value === 'css')) form.web_mode.value = 'css';
+            if (form['css[item]'].value.trim() === '' && form.web_mode.value === 'css') form.web_mode.value = 'auto';
+        });
+    })();
+    </script>
+    <?php elseif ($showForm): $s = $editSource ?? ['id' => 0, 'name' => '', 'url' => '', 'locations' => null, 'max_items' => 8, 'show_images' => 1, 'attribution' => '', 'active' => 1]; ?>
     <div class="panel">
         <h2><?= $s['id'] ? '✏️ Nieuwsbron bewerken' : '➕ Nieuwsbron toevoegen' ?></h2>
         <form method="post">
@@ -615,7 +817,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
 
     <div class="toolbar">
         <div class="muted"><?= count($rssSources) ?> nieuwsbron(nen) · wordt elke <?= PD_IS_FETCH_MINUTES ?> minuten bijgewerkt</div>
-        <?php if (!$showForm): ?><a class="btn btn-primary" href="?tab=nieuws&amp;new=1">➕ Nieuwsbron toevoegen</a><?php endif; ?>
+        <?php if (!$showForm): ?><div class="actions"><a class="btn btn-primary" href="?tab=nieuws&amp;new=1">➕ RSS-feed</a><a class="btn btn-primary" href="?tab=nieuws&amp;new=web">➕ Website zonder feed</a></div><?php endif; ?>
     </div>
     <?php if (!$rssSources): ?>
         <div class="empty"><div class="big">📰</div>Nog geen nieuwsbronnen.</div>
@@ -625,7 +827,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <tbody>
         <?php foreach ($rssSources as $s): $ok = str_starts_with((string)$s['last_status'], 'OK'); ?>
             <tr>
-                <td><strong><?= $h($s['name']) ?></strong> <?php if (!(int)$s['active']): ?><span class="pill off">Uit</span><?php endif; ?>
+                <td><strong><?= $h($s['name']) ?></strong> <?php if (($s['provider'] ?? '') === 'web'): ?><span class="pill src" title="Website zonder RSS-feed">Website</span><?php endif; ?> <?php if (!(int)$s['active']): ?><span class="pill off">Uit</span><?php endif; ?>
                     <div class="muted"><code><?= $h(mb_strimwidth((string)$s['url'], 0, 70, '…')) ?></code></div></td>
                 <td class="hide-sm"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($s['locations']))) ?></td>
                 <td><?= (int)$s['item_count'] ?> <span class="muted">(<?= (int)$s['image_count'] ?> met afbeelding<?= (int)$s['show_images'] ? '' : ', uitgezet' ?>)</span></td>

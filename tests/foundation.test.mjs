@@ -383,6 +383,14 @@ test('infoscreen: long messages are made smaller to fit, the forms show a charac
   assert.match(read('infoscherm_berichten.php'), /pd_infoscreen_text_counter_js\(\)/);
 });
 
+test('infoscreen website source: the preview needs an admin with the infoscreen right and a CSRF token', () => {
+  const api = read('admin/api/infoscreen_web_preview.php');
+  assert.match(api, /hasAdminFeature\('manage_infoscreen'\)/);
+  assert.match(api, /pd_infoscreen_csrf_ok/);
+  assert.match(read('includes/infoscreen_web.php'), /pd_infoscreen_http_get\(/); // SSRF-guarded fetch only
+  assert.doesNotMatch(read('includes/infoscreen_web.php'), /curl_init|file_get_contents\(\s*\$url/);
+});
+
 test('cron: no shared key in the code, every web cron entry checks the installation key', () => {
   const files = ['cron_endpoint.php', 'cron/cleanup_tokens_cron.php', 'cron/daily_reset_cron.php',
     'cron/cron_auto_checkout.php', 'cron/cron_auto_delete.php', 'cron/cron_reset_expired_sub_status.php'];

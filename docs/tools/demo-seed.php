@@ -112,6 +112,8 @@ $users = [
     ['admin', 'Demo2026!', 'Beheerder', 'superadmin', $features],
     ['receptie', 'Demo2026!', 'Receptie Hoofdgebouw', 'user', ['locations' => ['Hoofdgebouw']] + $features],
     ['bord', 'Demo2026!', 'Infoscherm hal', 'user', ['inuitBord' => true] + $features],
+    ['locatiebeheer', 'Demo2026!', 'Isa de Groot', 'admin', ['admin_features' => ['manage_locations' => true, 'manage_departments' => true, 'manage_visitors' => true,
+        'manage_badges' => true, 'manage_infoscreen' => true, 'view_audit_log' => true]] + $features],
     ['concierge', 'Demo2026!', 'Daan Visser', 'user', ['locations' => ['Hoofdgebouw', 'BSO De Vlinder'], 'infoscreenEditor' => true] + $features],
 ];
 $st = $db->prepare('INSERT INTO users (username, password_hash, display_name, email, role, features, active) VALUES (?, ?, ?, ?, ?, ?, 1)');
@@ -222,6 +224,15 @@ foreach ([
     ['Voorleeswedstrijd: inschrijving geopend', '', null, 600],
 ] as $i => $n) {
     $item->execute([$rssId, sha1('demo' . $i), $n[0], $n[1], $n[2], 'https://www.voorbeeldstad.example/nieuws/' . $i, $n[3]]);
+}
+// Website without a feed (2.7.0): the news page of a school, items read from the fixture
+require_once $root . '/includes/infoscreen_web.php';
+$db->prepare("INSERT INTO infoscreen_sources (type, name, url, provider, data_json, locations, max_items, show_images, attribution, active, last_fetch_at, last_ok_at, last_status)
+              VALUES ('rss', 'Actueel Basisschool De Voorbeeld', 'https://www.voorbeeldschool.test/actueel', 'web', '{\"mode\":\"auto\",\"css\":[]}', '[\"Hoofdgebouw\"]', 8, 1, NULL, 1, NOW(), NOW(), 'OK: 3 berichten opgehaald, 0 met afbeelding')")->execute();
+$webId = (int)$db->lastInsertId();
+foreach (pd_is_web_extract(file_get_contents($root . '/tests/fixtures/infoscreen/web/schoolsite.html'), 'https://www.voorbeeldschool.test/actueel', ['mode' => 'auto', 'css' => []]) as $it) {
+    $db->prepare("INSERT INTO infoscreen_items (source_id, item_key, title, summary, image_url, link, published_at) VALUES (?, ?, ?, ?, NULL, ?, ?)")
+       ->execute([$webId, $it['key'], $it['title'], $it['summary'], $it['link'], $it['published']]);
 }
 $weather = pd_infoscreen_parse_buienradar(file_get_contents($root . '/tests/fixtures/infoscreen/buienradar.json'), 51.5667, 4.9333);
 $weather['fetched_at'] = date('c');

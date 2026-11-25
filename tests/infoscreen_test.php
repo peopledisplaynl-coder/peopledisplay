@@ -288,5 +288,50 @@ eq(pd_cron_legacy_allowed(), false, 'cron: fresh installation never accepts the 
 check($key !== pd_cron_new_key(), 'cron: keys are random');
 @unlink($cronDir . '/cron_key.php'); @unlink($cronDir . '/.htaccess'); @rmdir($cronDir);
 
+// ── Website source (2.7.0) ───────────────────────────────────────────────
+require __DIR__ . '/../includes/infoscreen_web.php';
+$web = fn(string $f) => file_get_contents(__DIR__ . '/fixtures/infoscreen/web/' . $f);
+$detect = function (string $f, string $url) use ($web) {
+    $xp = pd_is_web_dom($web($f));
+    return pd_is_web_detect($xp, pd_is_web_base($xp, $url));
+};
+$g = $detect('schoolsite.html', 'https://www.voorbeeldschool.test/actueel');
+eq(count($g), 1, 'web school: one list (menu, footer, pages and social icons skipped)');
+eq($g[0]['count'], 3, 'web school: three news items');
+eq($g[0]['items'][0]['title'], 'Kunstpodium groot succes', 'web school: title from the heading');
+eq($g[0]['items'][0]['link'], 'https://www.voorbeeldschool.test/actueel/nieuws/kunstpodium-groot-succes', 'web school: absolute link');
+eq($g[0]['items'][0]['published'], '2026-11-12 08:00:00', 'web school: Dutch date');
+eq($g[0]['items'][1]['image'], 'https://www.voorbeeldschool.test/cp/uploads/nieuws/lampion.jpg', 'web school: lazy-loaded image (data-src)');
+eq($g[0]['items'][1]['published'], '2026-11-05 08:00:00', 'web school: abbreviated month');
+eq($g[0]['items'][2]['link'], 'https://www.voorbeeldschool.test/nieuws/herfstvakantie', 'web school: relative link resolved');
+eq($g[0]['items'][2]['published'], '2026-10-28 08:00:00', 'web school: dd-mm-yyyy');
+$g = $detect('webflow.html', 'https://www.stichting.test/vacatures');
+eq(count($g), 1, 'web webflow: one list (navbar, footer skipped)');
+eq($g[0]['count'], 4, 'web webflow: four vacancies');
+eq($g[0]['items'][0]['title'], 'Kom jij onze bovenbouw versterken? | 0,5 – 0,8 fte', 'web webflow: title');
+$g = $detect('articles.html', 'https://gemeente.voorbeeld.test/nieuws');
+eq($g[0]['count'], 3, 'web articles: three articles');
+eq($g[0]['items'][0]['link'], 'https://gemeente.voorbeeld.test/nieuws/bericht-1', 'web articles: <base href>');
+eq($g[0]['items'][0]['image'], 'https://gemeente.voorbeeld.test/img/a-1024.jpg', 'web articles: widest srcset image');
+eq($g[0]['items'][1]['image'], 'https://gemeente.voorbeeld.test/img/b.jpg', 'web articles: background image');
+eq($g[0]['items'][2]['title'], 'Café voor mantelzorgers', 'web articles: windows-1252 page as UTF-8');
+check($g[0]['items'][0]['published'] !== null && str_starts_with($g[0]['items'][0]['published'], '2026-11-20'), 'web articles: <time datetime>');
+eq($detect('jsonly.html', 'https://app.test/'), [], 'web: JavaScript-only page gives nothing');
+$xp = pd_is_web_dom($web('wordpress.html'));
+eq(array_keys(pd_is_web_feed_links($xp, 'https://kc.voorbeeld.test/')), ['https://kc.voorbeeld.test/feed/'], 'web: feed link found, comments feed skipped');
+// Saved list and CSS mode
+$xpath = $detect('schoolsite.html', 'https://www.voorbeeldschool.test/actueel')[0]['xpath'];
+eq(count(pd_is_web_extract($web('schoolsite.html'), 'https://www.voorbeeldschool.test/actueel', ['mode' => 'list', 'xpath' => $xpath, 'css' => []])), 3, 'web: saved list');
+$items = pd_is_web_extract($web('webflow.html'), 'https://www.stichting.test/vacatures',
+    ['mode' => 'css', 'css' => ['item' => '.vacature-list > .vacature-item', 'title' => 'h3.vacature-title', 'date' => '']]);
+eq(count($items), 4, 'web css: items');
+eq($items[3]['title'], 'Leerkracht vervangingspool', 'web css: title selector');
+eq(pd_is_web_css_to_xpath('ul.news > li a[href]'), "//ul[contains(concat(' ',normalize-space(@class),' '),' news ')]/li//a[@href]", 'css to xpath');
+eq(pd_is_web_css_to_xpath('h3', true), './/h3', 'css to xpath: relative');
+eq(pd_is_web_css_to_xpath('div:hover'), null, 'css to xpath: pseudo-classes refused');
+eq(pd_is_web_abs('../x.html', 'https://a.test/b/c/d.html'), 'https://a.test/b/x.html', 'web: ../ resolved');
+eq(pd_is_web_abs('javascript:void(0)', 'https://a.test/'), null, 'web: javascript: link refused');
+eq(pd_is_web_date('31 februari 2026'), null, 'web: impossible date');
+
 echo ($failures ? "FAILED: $failures of $count checks\n" : "OK: $count infoscreen checks passed\n");
 exit($failures ? 1 : 0);

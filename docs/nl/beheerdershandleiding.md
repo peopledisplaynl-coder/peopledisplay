@@ -147,7 +147,11 @@ Met tweestapsverificatie vult een gebruiker bij het inloggen, naast het wachtwoo
 - **Infoscherm-berichten plaatsen (redacteur)** — de gebruiker plaatst berichten op het infoscherm voor de aangevinkte zichtbare locaties (zie [Wie mag berichten plaatsen?](#wie-mag-berichten-plaatsen)).
 - **Zichtbare locaties** en **Zichtbare afdelingen** — welke kaarten deze gebruiker ziet. Geen afdelingen aangevinkt betekent: alle afdelingen.
 
-Is de rol **Admin**, dan staat hier ook een lijst met beheerfuncties (locaties, afdelingen, kiosk tokens, bezoekers, badges, bulk acties, audit log, systeemconfiguratie, sub-status datums, gebruikers, back-up, infoscherm). Alleen de aangevinkte functies zijn voor die admin beschikbaar.
+## Rechten van een admin
+
+Heeft de gebruiker de rol **Admin**, dan staat er een extra tabblad **🔐 Rechten**. Daar vink je aan welke beheerfuncties deze admin mag gebruiken: locaties, afdelingen, kiosk tokens, bezoekers, badges, bulk acties, audit log, systeemconfiguratie, sub-status datums, gebruikers, back-up en infoscherm. Met **Alles aan** en **Alles uit** zet je ze in één keer. Een SuperAdmin mag altijd alles. Het tabblad verschijnt pas nadat je de rol Admin hebt opgeslagen.
+
+![Het tabblad Rechten van een admin](../images/gebruiker-rechten.png)
 
 # Locaties
 
@@ -294,7 +298,23 @@ De redacteur krijgt in het menu de knop **📝 Infoscherm-berichten**. Bovenaan 
 
 ## Nieuws
 
-Op het tabblad **Nieuws** voeg je RSS- of Atom-feeds toe: een naam, het webadres van de feed, de locaties, het aantal berichten en of afbeeldingen getoond worden. Na het opslaan wordt de feed meteen opgehaald, zodat je direct ziet of hij werkt. Handig zijn feeds van je eigen organisatie: een WordPress-website heeft er standaard een op `https://jouwwebsite.nl/feed/`.
+Op het tabblad **Nieuws** voeg je RSS- of Atom-feeds toe: een naam, het webadres van de feed, de locaties, het aantal berichten en of afbeeldingen getoond worden. Na het opslaan wordt de feed meteen opgehaald, zodat je direct ziet of hij werkt. Handig zijn feeds van je eigen organisatie: een WordPress-website heeft er standaard een op `https://jouwwebsite.nl/feed/`, ook als die nergens op de site staat.
+
+### Een website zonder RSS-feed
+
+Heeft een website geen feed, klik dan op **➕ Website zonder feed**. PeopleDisplay haalt dan de nieuwspagina zelf op en neemt van elk bericht de titel, een korte tekst, de afbeelding, de datum en de link over.
+
+1. Vul een naam in en het webadres van de **overzichtspagina** met alle berichten, bijvoorbeeld de pagina *Nieuws* of *Actueel*. Gebruik niet het adres van één los bericht.
+2. Klik op **🔍 Zoek berichten**. Je ziet wat PeopleDisplay op de pagina vindt:
+   - **📡 Feed gevonden (aanbevolen)** — de site heeft toch een feed. Die is het betrouwbaarst.
+   - **📋 Lijst 1, Lijst 2 …** — lijsten met berichten op de pagina, met de eerste titels erbij. Kies de lijst met het nieuws.
+3. Kies de locaties en klik op **Opslaan en ophalen**.
+
+![Een website zonder feed toevoegen: PeopleDisplay vindt een lijst met berichten](../images/infoscherm-website.png)
+
+Vindt PeopleDisplay niet de goede berichten? Open dan **Geavanceerd: zelf aanwijzen met CSS-selectors** en vul in wat één bericht is (bijvoorbeeld `.nieuws-item` of `ul.news > li`). Titel, link, afbeelding en datum zoekt PeopleDisplay daarbinnen zelf; je kunt ze ook aanwijzen. Klik op **Testen met deze selectors** om het resultaat te zien. Wie de selectors van een pagina niet kent, kan ze vinden met *Inspecteren* in de browser (rechtsklik op een bericht), of de maker van de website vragen.
+
+Dit werkt niet voor pagina's achter een inlog (zoals Social Schools of Parro), voor Facebook, Instagram, X en LinkedIn, en voor sites die hun berichten pas met JavaScript in de browser opbouwen. Bij dat laatste meldt **Zoek berichten** dat de pagina met JavaScript is opgebouwd. Verandert een website later van opbouw, dan kiest PeopleDisplay zelf de best passende lijst; lukt ook dat niet, dan zie je bij de bron een foutmelding en kies je opnieuw.
 
 > **Let op de voorwaarden van een nieuwsbron** — Veel nieuwssites staan hun feed alleen toe voor persoonlijk, niet-commercieel gebruik, soms alleen de koppen en altijd met bronvermelding. Het infoscherm toont bij elk bericht de bron. Controleer de voorwaarden voordat je een bron toevoegt en zet zo nodig **Afbeeldingen tonen** uit. Afbeeldingen worden nooit naar je eigen server gekopieerd.
 

@@ -33,7 +33,8 @@ PD_DEMO_DOMAIN=demo.peopledisplay.test php docs/tools/demo-seed.php "$WORK/app" 
 php -r '$p=new PDO("mysql:host='"$DB_HOST"';port='"$DB_PORT"'", "'"$DB_USER"'", "'"$DB_PASS"'"); $p->exec("DROP DATABASE IF EXISTS pd_install");'
 
 echo "→ starting PHP servers"
-php -S "127.0.0.1:$DEMO_PORT" -t "$WORK/app" > "$WORK/demo.log" 2>&1 & DEMO_PID=$!
+# Website sources in the demo read tests/fixtures instead of the internet
+php -d auto_prepend_file="$ROOT/docs/tools/http-fixtures.php" -S "127.0.0.1:$DEMO_PORT" -t "$WORK/app" > "$WORK/demo.log" 2>&1 & DEMO_PID=$!
 php -S "127.0.0.1:$INSTALL_PORT" -t "$WORK/install" > "$WORK/install.log" 2>&1 & INSTALL_PID=$!
 trap 'kill $DEMO_PID $INSTALL_PID 2>/dev/null || true' EXIT
 sleep 1

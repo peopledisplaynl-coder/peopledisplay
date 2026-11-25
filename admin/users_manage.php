@@ -1946,6 +1946,9 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                             <button type="button" class="tab-button" onclick="switchTab(event, 'features-${userId}')">
                                 🎨 Features
                             </button>
+                            ${user.role === 'admin' ? `<button type="button" class="tab-button" onclick="switchTab(event, 'rights-${userId}')">
+                                🔐 Rechten
+                            </button>` : ''}
                             <button type="button" class="tab-button" onclick="switchTab(event, 'presentation-${userId}')">
                                 🎬 Presentatie
                             </button>
@@ -2167,28 +2170,33 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                             </p>
                         </div>
 
-                        <!-- Admin Features - Alleen zichtbaar voor admins -->
-                        ${user.role === 'admin' ? `
-                        <div style="margin-top: 24px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
-                            <label style="font-weight: 600; margin-bottom: 8px; display: block;">
-                                🔐 Admin Rechten
-                                <small style="font-weight: 400; color: #718096;">
-                                    — welke beheerfuncties mag deze admin gebruiken?
-                                </small>
-                            </label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                ${adminFeatures.map(f => `
-                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
-                                        <input type="checkbox" name="admin_feature_${f.key}"
-                                               ${getAdminFeature(user, f.key) ? 'checked' : ''}>
-                                        ${f.label}
-                                    </label>
-                                `).join('')}
-                            </div>
-                        </div>
-                        ` : ''}
                     </div>
                     
+                    <!-- TAB: ADMIN RECHTEN (2.7.0, alleen voor de rol Admin) -->
+                    ${user.role === 'admin' ? `
+                    <div id="rights-${userId}" class="tab-content">
+                        <h4>🔐 Admin Rechten</h4>
+                        <p style="font-size: 13px; color: #718096; margin-bottom: 14px;">
+                            Welke beheerfuncties mag deze admin gebruiken? Een SuperAdmin mag altijd alles.
+                        </p>
+                        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                            <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;"
+                                    onclick="this.closest('.tab-content').querySelectorAll('input[type=checkbox]').forEach(c => c.checked = true)">✅ Alles aan</button>
+                            <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;"
+                                    onclick="this.closest('.tab-content').querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false)">⬜ Alles uit</button>
+                        </div>
+                        <div class="checkbox-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">
+                            ${adminFeatures.map(f => `
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="af-${userId}-${f.key}" name="admin_feature_${f.key}"
+                                           ${getAdminFeature(user, f.key) ? 'checked' : ''}>
+                                    <label for="af-${userId}-${f.key}">${f.label}</label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
                     <!-- TAB 3: PRESENTATION -->
                     <div id="presentation-${userId}" class="tab-content">
                         <h4>🎬 Presentatie Instellingen</h4>

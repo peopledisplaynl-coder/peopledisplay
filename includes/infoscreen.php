@@ -118,7 +118,7 @@ function pd_infoscreen_ensure_schema(PDO $db): bool
             `attribution`   varchar(200)  DEFAULT NULL,
             `active`        tinyint(1)    NOT NULL DEFAULT 1,
             `sort_order`    int(11)       NOT NULL DEFAULT 0,
-            `data_json`     mediumtext    DEFAULT NULL COMMENT 'Laatste weerdata (genormaliseerd)',
+            `data_json`     mediumtext    DEFAULT NULL COMMENT 'Weer: laatste weerdata. Website (provider web): instellingen',
             `last_fetch_at` datetime      DEFAULT NULL,
             `last_ok_at`    datetime      DEFAULT NULL,
             `last_status`   varchar(255)  DEFAULT NULL,
@@ -734,14 +734,24 @@ function pd_infoscreen_fetch_rss(PDO $db, array $source): array
     if (!$items) {
         throw new RuntimeException('De feed bevat geen berichten');
     }
+    return pd_infoscreen_store_items($db, $source, $items);
+}
+
+/** Store fetched news items (feed or website) and keep the newest PD_IS_ITEMS_KEEP. */
+function pd_infoscreen_store_items(PDO $db, array $source, array $items): array
+{
     $items = array_slice($items, 0, 50);
+    // Items without a date keep the order of the page/feed: the first is the newest
+    $t = time();
+    foreach ($items as $i => $it) {
+        if (empty($it['published'])) $items[$i]['published'] = date('Y-m-d H:i:s', $t - $i);
+    }
     $ins = $db->prepare("INSERT INTO infoscreen_items (source_id, item_key, title, summary, image_url, link, published_at, fetched_at)
                          VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
                          ON DUPLICATE KEY UPDATE title = VALUES(title), summary = VALUES(summary), image_url = VALUES(image_url),
                                                  link = VALUES(link), published_at = COALESCE(VALUES(published_at), published_at), fetched_at = NOW()");
-    $now = date('Y-m-d H:i:s');
     foreach ($items as $it) {
-        $ins->execute([$source['id'], $it['key'], $it['title'], $it['summary'], $it['image'], $it['link'], $it['published'] ?? $now]);
+        $ins->execute([$source['id'], $it['key'], $it['title'], $it['summary'], $it['image'], $it['link'], $it['published']]);
     }
     // Keep the newest PD_IS_ITEMS_KEEP items
     $ids = $db->prepare("SELECT id FROM infoscreen_items WHERE source_id = ? ORDER BY published_at DESC, id DESC LIMIT " . PD_IS_ITEMS_KEEP);
@@ -1014,6 +1024,9 @@ function pd_infoscreen_fetch_source(PDO $db, array $source): array
             $result = pd_infoscreen_fetch_ical($db, $source);
         } elseif ($source['type'] === 'weather') {
             $result = pd_infoscreen_fetch_weather($db, $source);
+        } elseif (($source['provider'] ?? '') === 'web') {
+            require_once __DIR__ . '/infoscreen_web.php';
+            $result = pd_infoscreen_fetch_web($db, $source);
         } else {
             $result = pd_infoscreen_fetch_rss($db, $source);
         }

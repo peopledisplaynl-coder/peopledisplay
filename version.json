@@ -1,12 +1,22 @@
 {
-    "version": "2.6.1",
+    "version": "2.7.0",
     "critical": false,
-    "message": "Verbeterd: lange berichten op het infoscherm passen nu altijd in beeld (de tekst wordt vanzelf kleiner), met een tekenteller bij het schrijven.",
+    "message": "Nieuw: nieuws van websites zonder RSS-feed op het infoscherm, en een eigen tabblad Rechten voor admins.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
     "release_date": "2026-11-25",
     "changelog": [
+        {
+            "version": "2.7.0",
+            "date": "2026-11-25",
+            "changes": [
+                "Nieuw: Website zonder feed bij Infoscherm > Nieuws. PeopleDisplay haalt de nieuwspagina van een website zelf op en neemt titel, korte tekst, afbeelding, datum en link over. Met 'Zoek berichten' zie je wat er gevonden wordt en kies je de juiste lijst; heeft de site toch een (verborgen) feed, zoals elke WordPress-site, dan wordt die voorgesteld",
+                "Nieuw: voor lastige pagina's kun je de berichten zelf aanwijzen met eenvoudige CSS-selectors, met een testknop",
+                "Nieuw: bij Gebruikers heeft een admin een eigen tabblad Rechten (met Alles aan \/ Alles uit) in plaats van een lijst onderaan Features",
+                "Werkt niet voor pagina's achter een inlog, sociale media en sites die hun inhoud met JavaScript opbouwen; dat wordt bij 'Zoek berichten' gemeld"
+            ]
+        },
         {
             "version": "2.6.1",
             "date": "2026-11-25",

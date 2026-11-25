@@ -149,7 +149,11 @@ With two-step verification a user enters, besides the password, a 6-digit code f
 - **Infoscherm-berichten plaatsen (redacteur)** (post infoscreen messages, editor) — the user posts infoscreen messages for the ticked visible locations (see [Who may post messages?](#who-may-post-messages)).
 - **Zichtbare Locaties** and **Zichtbare Afdelingen** (visible locations and departments) — which cards this user sees. No department ticked means: all departments.
 
-If the role is **Admin**, this tab also lists the management functions (locations, departments, kiosk tokens, visitors, badges, bulk actions, audit log, system configuration, sub-status dates, users, backup, infoscreen). Only the ticked functions are available to that admin.
+## An admin's permissions
+
+When the user has the role **Admin**, there is an extra tab **🔐 Rechten** (permissions). There you tick which management functions this admin may use: locations, departments, kiosk tokens, visitors, badges, bulk actions, audit log, system configuration, sub-status dates, users, backup and infoscreen. **Alles aan** and **Alles uit** (all on / all off) set them in one go. A SuperAdmin may always do everything. The tab appears once you have saved the role Admin.
+
+![The Rechten tab of an admin](../images/gebruiker-rechten.png)
 
 # Locations
 
@@ -296,7 +300,23 @@ The editor gets the button **📝 Infoscherm-berichten** in the menu. The top of
 
 ## News
 
-On the **Nieuws** tab you add RSS or Atom feeds: a name, the address of the feed, the locations, the number of items and whether images are shown. The feed is fetched as soon as you save it, so you see right away whether it works. Feeds of your own organisation are handy: a WordPress website has one at `https://yourwebsite.com/feed/`.
+On the **Nieuws** tab you add RSS or Atom feeds: a name, the address of the feed, the locations, the number of items and whether images are shown. The feed is fetched as soon as you save it, so you see right away whether it works. Feeds of your own organisation are handy: a WordPress website has one at `https://yourwebsite.com/feed/`, even when the site does not show it anywhere.
+
+### A website without an RSS feed
+
+If a website has no feed, click **➕ Website zonder feed** (website without a feed). PeopleDisplay then fetches the news page itself and takes the title, a short text, the image, the date and the link of each item.
+
+1. Fill in a name and the address of the **overview page** with all items, for example the page *Nieuws* or *Actueel*. Do not use the address of a single item.
+2. Click **🔍 Zoek berichten** (find items). You see what PeopleDisplay finds on the page:
+   - **📡 Feed gevonden (aanbevolen)** — the site does have a feed after all. That is the most reliable.
+   - **📋 Lijst 1, Lijst 2 …** — lists of items on the page, with their first titles. Choose the list with the news.
+3. Choose the locations and click **Opslaan en ophalen** (save and fetch).
+
+![Adding a website without a feed: PeopleDisplay finds a list of items](../images/infoscherm-website.png)
+
+Does PeopleDisplay not find the right items? Open **Geavanceerd: zelf aanwijzen met CSS-selectors** (advanced: CSS selectors) and fill in what one item is (for example `.nieuws-item` or `ul.news > li`). PeopleDisplay looks for the title, link, image and date inside it; you can also point them out. Click **Testen met deze selectors** (test) to see the result. If you do not know a page's selectors, find them with *Inspect* in the browser (right-click an item), or ask the website's maker.
+
+This does not work for pages behind a login (such as Social Schools or Parro), for Facebook, Instagram, X and LinkedIn, or for sites that build their items with JavaScript in the browser. In that last case **Zoek berichten** says so. If a website later changes its layout, PeopleDisplay picks the best matching list itself; if that fails too, the source shows an error and you choose again.
 
 > **Mind the terms of a news source** — Many news sites only allow their feed for personal, non-commercial use, sometimes only the headlines, and always with credit to the source. The infoscreen shows the source with every item. Check the terms before you add a source and switch off **Afbeeldingen tonen** (show images) when needed. Images are never copied to your own server.
 

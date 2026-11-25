@@ -244,6 +244,15 @@ adminPage('gebruiker-features', 'admin/users_manage.php', {
   },
   full: true,
 });
+shot('gebruiker-rechten', async () => {
+  const p = await pageFor('admin');
+  await open(p, 'admin/users_manage.php', 1200);
+  await p.locator('tr:has-text("locatiebeheer") button').first().click();
+  await p.waitForTimeout(1200);
+  await p.locator('.tab-button', { hasText: 'Rechten' }).first().click();
+  await p.waitForTimeout(600);
+  await save('gebruiker-rechten', p, { selector: '[id^="edit-content-"]:has(.tab-button)', pad: 0 });
+});
 adminPage('locaties', 'admin/locations_manage.php');
 adminPage('locatie-volgorde', 'admin/locations_order.php');
 adminPage('afdelingen', 'admin/afdelingen_manage.php');
@@ -333,6 +342,16 @@ shot('infoscherm-nieuw-bericht', async () => {
   await p.locator('input[name="locations[]"][value="Hoofdgebouw"]').check();
   await p.locator('input[name="locations[]"][value="BSO De Vlinder"]').check();
   await save('infoscherm-nieuw-bericht', p, { selector: '.panel', pad: 0 });
+});
+shot('infoscherm-website', async () => {
+  const p = await pageFor('admin');
+  await open(p, 'admin/infoscreen_manage.php?tab=nieuws&new=web', 800);
+  await p.fill('#name', 'Actueel Basisschool De Voorbeeld');
+  await p.fill('#url', 'https://www.voorbeeldschool.test/actueel');
+  await p.click('#web-search');
+  await p.waitForSelector('.web-opt', { timeout: 10000 });
+  await p.waitForTimeout(600);
+  await save('infoscherm-website', p, { selector: '.panel', pad: 0 });
 });
 shot('infoscherm-redacteur', async () => {
   const p = await pageFor('concierge');

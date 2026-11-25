@@ -80,6 +80,7 @@ All return JSON and check the session/role themselves.
 | `change_password.php`, `update_profile.php`, `upload_profile_photo.php`, `delete_profile_photo.php` | own profile |
 | `changelog.php`, `dismiss_update.php` | update banner and changelog |
 | `proxy.php` | server-side proxy for external requests |
+| `infoscreen_web_preview.php` | infoscreen website source: fetch a page once and return the feeds it links to and the news lists it recognises (admins with `manage_infoscreen`, CSRF) |
 
 ### `api/` — screens, kiosk, visitors
 
@@ -212,4 +213,11 @@ fetchers and parsers, and `pd_infoscreen_screen_data()` for the screen.
   `manage_infoscreen`, otherwise the user's `features.locations` when `features.infoscreenEditor` is
   set. An editor may only create, change, switch off or delete messages whose locations are all
   within that scope (`pd_infoscreen_scope_allows()`); messages for all locations are read-only.
+- **Website sources (2.7.0).** `includes/infoscreen_web.php`: a news source with `provider = 'web'`
+  (type stays `rss`) and its settings in `data_json` (`mode` auto / feed / list / css). Feed discovery
+  (`<link rel=alternate>`, WordPress `/feed/`), list recognition (repeated siblings around links, `<article>`,
+  menus/headers/footers/social rows skipped, scored on count, title length, images, dates, text), the chosen
+  list stored as an XPath, and simple CSS selectors converted to XPath. Same SSRF-guarded HTTP fetch and item
+  storage (`pd_infoscreen_store_items()`) as feeds. No JavaScript is run: script-built pages give no items.
+  The demo/screenshot server loads `docs/tools/http-fixtures.php` so `*.voorbeeld.test` pages come from fixtures.
 - **Tests.** `tests/infoscreen_test.php` (fixtures in `tests/fixtures/infoscreen/`), run by `npm test`.

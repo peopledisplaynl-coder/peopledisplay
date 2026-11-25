@@ -2,6 +2,13 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.7.0 — 2026-11-25
+
+- Nieuw: Website zonder feed bij Infoscherm > Nieuws. PeopleDisplay haalt de nieuwspagina van een website zelf op en neemt titel, korte tekst, afbeelding, datum en link over. Met 'Zoek berichten' zie je wat er gevonden wordt en kies je de juiste lijst; heeft de site toch een (verborgen) feed, zoals elke WordPress-site, dan wordt die voorgesteld
+- Nieuw: voor lastige pagina's kun je de berichten zelf aanwijzen met eenvoudige CSS-selectors, met een testknop
+- Nieuw: bij Gebruikers heeft een admin een eigen tabblad Rechten (met Alles aan / Alles uit) in plaats van een lijst onderaan Features
+- Werkt niet voor pagina's achter een inlog, sociale media en sites die hun inhoud met JavaScript opbouwen; dat wordt bij 'Zoek berichten' gemeld
+
 ## v2.6.1 — 2026-11-25
 
 - Verbeterd: een lang bericht op het infoscherm past nu altijd in beeld. Is de tekst te lang voor het scherm, dan wordt hij vanzelf kleiner, zodat de titel en 'Belangrijk' altijd zichtbaar blijven, ook op kleinere of staande schermen
