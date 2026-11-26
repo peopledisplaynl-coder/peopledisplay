@@ -317,6 +317,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
     }
 
+    // Per-screen infoscreen choices (Infoscherm › Schermen, 2.8.1) are not on this form: keep them
+    $oldFeatStmt = $db->prepare("SELECT features FROM users WHERE id = ?");
+    $oldFeatStmt->execute([$userId]);
+    $oldFeatures = json_decode((string)$oldFeatStmt->fetchColumn(), true) ?: [];
+
     $features = json_encode([
         'visibleFields' => $visibleFields,
         'extraButtons' => $extraButtons,
@@ -327,8 +332,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'zoomStandaard' => $zoomStandaard,
         'inuitBord' => $inuitBord,            // ← IN/UIT Bord weergave
         'infoscreenEditor' => $infoscreenEditor, // ← Infoscherm-berichten voor de eigen locaties
-        'admin_features' => $adminFeatures    // ← NEW: Admin feature permissions
-    ]);
+        'admin_features' => $adminFeatures,   // ← NEW: Admin feature permissions
+    ] + (isset($oldFeatures['infoscreenParts']) ? ['infoscreenParts' => $oldFeatures['infoscreenParts']] : []));
     
     
     // Validation

@@ -2,6 +2,11 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.8.1 — 2026-11-26
+
+- Nieuw: bij Infoscherm > Schermen kies je per scherm of Vandaag jarig en BHV aanwezig getoond worden: Standaard (volgt Weergave), Aan of Uit. Zo kan het ene scherm de jarigen tonen en het andere niet
+- Een scherm toont altijd alleen de jarigen en BHV'ers van de eigen locaties; dat staat nu ook in de uitleg bij Schermen
+
 ## v2.8.0 — 2026-11-26
 
 - Nieuw: blok 'BHV aanwezig' in de zijbalk van het infoscherm met het aantal ingecheckte BHV'ers op de locatie(s) van het scherm, desgewenst met namen (voornaam en voorletter). Is er niemand, dan kleurt het blok rood. Aan te zetten bij Infoscherm > Weergave

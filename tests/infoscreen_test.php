@@ -353,6 +353,11 @@ foreach (['bhv_card' => '0', 'bhv_names' => '1', 'birthday_slide' => '0'] as $k 
     eq(PD_IS_DEFAULT_SETTINGS[$k] ?? null, $v, "default setting $k");
 }
 
+eq(pd_infoscreen_screen_overrides('{"infoscreenParts":{"birthdays":"off","bhv":"on"}}'), ['birthday_slide' => '0', 'bhv_card' => '1'], 'screen parts: on/off');
+eq(pd_infoscreen_screen_overrides('{"infoscreenParts":{"birthdays":"maybe"}}'), [], 'screen parts: unknown value = default');
+eq(pd_infoscreen_screen_overrides(null), [], 'screen parts: no features');
+eq(pd_infoscreen_screen_parts_clean(['birthdays' => 'on', 'bhv' => 'default', 'x' => 'on']), ['birthdays' => 'on'], 'screen parts: clean form input');
+
 if (in_array('sqlite', PDO::getAvailableDrivers(), true)) {
     $db = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     $db->exec("CREATE TABLE employees (id INTEGER PRIMARY KEY, voornaam TEXT, achternaam TEXT, naam TEXT, status TEXT, sub_status TEXT,

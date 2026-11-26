@@ -286,9 +286,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $modes = $_POST['screen_mode'] ?? [];
                 $enabled = $_POST['can_show'] ?? [];
                 $stmt = $db->prepare("UPDATE users SET screen_mode = ?, can_show_presentation = ? WHERE id = ? AND deleted_at IS NULL");
+                $partsInput = $_POST['parts'] ?? [];
+                $featStmt = $db->prepare("SELECT features FROM users WHERE id = ?");
+                $featSave = $db->prepare("UPDATE users SET features = ? WHERE id = ?");
                 foreach ($modes as $userId => $mode) {
                     if (!in_array($mode, PD_IS_MODES, true)) continue;
                     $stmt->execute([$mode, !empty($enabled[$userId]) ? 1 : 0, (int)$userId]);
+                    // Per-screen choice for birthdays and BHV (2.8.1), stored in users.features
+                    $featStmt->execute([(int)$userId]);
+                    $feat = json_decode((string)$featStmt->fetchColumn(), true) ?: [];
+                    $parts = pd_infoscreen_screen_parts_clean(is_array($partsInput[$userId] ?? null) ? $partsInput[$userId] : []);
+                    if ($parts === ($feat['infoscreenParts'] ?? [])) continue;
+                    if ($parts) $feat['infoscreenParts'] = $parts; else unset($feat['infoscreenParts']);
+                    $featSave->execute([json_encode($feat, JSON_UNESCAPED_UNICODE), (int)$userId]);
                 }
                 pd_is_redirect('schermen', 'Schermen opgeslagen. Een scherm neemt de keuze over na het opnieuw laden van de pagina.');
         }
@@ -1232,7 +1242,8 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                     <label class="check"><input type="checkbox" name="birthday_slide" value="1" <?= $settings['birthday_slide'] === '1' ? 'checked' : '' ?>> Dia “Vandaag jarig” en melding in de nieuwsbalk</label>
                 </div>
                 <div class="help" style="margin-top:6px">BHV: telt de medewerkers met BHV = Ja die op de locatie(s) van het scherm zijn ingecheckt (IN). Wie een extra status heeft (bijv. Pauze, Thuiswerken of Vakantie) telt niet mee: het scherm toont liever te weinig dan te veel. Is er niemand, dan kleurt het blok rood. Het scherm ververst dan elke 2 minuten. Zonder zijbalk komt het in de nieuwsbalk.<br>
-                    Verjaardagen: alleen medewerkers bij wie een verjaardag (dag-maand) is ingevuld bij Medewerkers. Vul dit alleen in met toestemming van de medewerker; het jaar wordt niet bewaard.</div>
+                    Verjaardagen: alleen medewerkers bij wie een verjaardag (dag-maand) is ingevuld bij Medewerkers. Vul dit alleen in met toestemming van de medewerker; het jaar wordt niet bewaard.<br>
+                    Dit is de standaard voor alle schermen. Per scherm zet u het apart aan of uit bij het tabblad Schermen.</div>
             </div>
         </div>
         <div class="form-actions">
@@ -1249,13 +1260,14 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <br>• <strong>Infoscherm</strong> — eigen berichten, nieuws en weer.
         <br>• <strong>Slides + infoscherm</strong> — de Google Slides presentatie groot in beeld, met weer, mededelingen en nieuwsbalk eromheen.
         <br>Op een aanraakscherm met medewerkerskaarten verschijnt dit na de ingestelde inactiviteit (“Automatisch tonen” moet aan staan); aanraken sluit het weer.
+        <br><strong>Vandaag jarig</strong> en <strong>BHV aanwezig</strong>: <em>Standaard</em> volgt de instelling bij Weergave; met <em>Aan</em> of <em>Uit</em> kiest u het voor dit scherm apart. Een scherm toont altijd alleen de jarigen en BHV'ers van de eigen locaties; een account zonder locaties ziet alle locaties.
     </div>
     <form method="post">
         <input type="hidden" name="csrf" value="<?= $h($csrf) ?>">
         <input type="hidden" name="action" value="save_screens">
         <input type="hidden" name="tab" value="schermen">
         <table>
-            <thead><tr><th>Gebruiker</th><th class="hide-sm">Rol</th><th>Automatisch tonen</th><th>Weergave</th><th class="hide-sm">Na inactiviteit</th><th>Voorbeeld</th></tr></thead>
+            <thead><tr><th>Gebruiker</th><th class="hide-sm">Rol</th><th>Automatisch tonen</th><th>Weergave</th><th>Vandaag jarig</th><th>BHV aanwezig</th><th class="hide-sm">Na inactiviteit</th><th>Voorbeeld</th></tr></thead>
             <tbody>
             <?php foreach ($screens as $u): $hasId = trim((string)$u['presentation_id']) !== '' || $globalPresentation !== ''; ?>
                 <tr>
@@ -1263,12 +1275,23 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                     <td class="hide-sm muted"><?= $h($u['role']) ?></td>
                     <td><label class="check"><input type="checkbox" name="can_show[<?= (int)$u['id'] ?>]" value="1" <?= (int)$u['can_show_presentation'] ? 'checked' : '' ?>> Aan</label></td>
                     <td>
-                        <select name="screen_mode[<?= (int)$u['id'] ?>]" style="max-width:230px">
+                        <select name="screen_mode[<?= (int)$u['id'] ?>]" style="max-width:200px">
                             <option value="slides" <?= $u['screen_mode'] === 'slides' ? 'selected' : '' ?>>Google Slides<?= $hasId ? '' : ' (geen ID ingesteld)' ?></option>
                             <option value="infoscreen" <?= $u['screen_mode'] === 'infoscreen' ? 'selected' : '' ?>>Infoscherm</option>
                             <option value="combined" <?= $u['screen_mode'] === 'combined' ? 'selected' : '' ?>>Slides + infoscherm</option>
                         </select>
                     </td>
+                    <?php $parts = (json_decode((string)$u['features'], true) ?: [])['infoscreenParts'] ?? []; ?>
+                    <?php foreach (['birthdays' => 'birthday_slide', 'bhv' => 'bhv_card'] as $pk => $sk):
+                        $cur = $parts[$pk] ?? 'default'; ?>
+                    <td>
+                        <select name="parts[<?= (int)$u['id'] ?>][<?= $pk ?>]" style="width:auto;min-width:0" title="Standaard = de instelling bij Weergave">
+                            <option value="default" <?= $cur === 'default' ? 'selected' : '' ?>>Standaard (<?= $settings[$sk] === '1' ? 'aan' : 'uit' ?>)</option>
+                            <option value="on" <?= $cur === 'on' ? 'selected' : '' ?>>Aan</option>
+                            <option value="off" <?= $cur === 'off' ? 'selected' : '' ?>>Uit</option>
+                        </select>
+                    </td>
+                    <?php endforeach; ?>
                     <td class="hide-sm muted"><?= (int)$u['presentation_idle_seconds'] ?> sec</td>
                     <td>
                         <?php if ($u['screen_mode'] === 'slides'):

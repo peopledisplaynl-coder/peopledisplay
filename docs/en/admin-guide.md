@@ -369,7 +369,7 @@ Click **➕ API-koppeling**. You see a key once: copy and keep it. A system then
 
 On the **Weergave** tab you set the title at the top, the colour scheme (dark or light), the time per slide, the number of news slides per round, the speed of the news ticker, how many days ahead the agenda goes and which parts are shown (sidebar, news ticker, news slides, weather slide, agenda in the sidebar, agenda slide). **Voorbeeld** (preview) opens the result in a new window. Open screens pick up changes within 5 minutes.
 
-Under **BHV en verjaardagen** (emergency response and birthdays) there are two extra parts. Both are off by default.
+Under **BHV en verjaardagen** (emergency response and birthdays) there are two extra parts. Both are off by default. What you choose here is the default for all screens; per screen you switch them on or off under [Screens](#screens).
 
 - **BHV aanwezig** (emergency responders present) — a block in the sidebar with the number of emergency responders (BHV'ers) checked in at the screen's location(s), optionally with their first name and the initial of their last name. It counts staff with BHV = Ja and status IN. Anyone with an extra status (for example Pauze, Thuiswerken or Vakantie) is not counted: the screen would rather show too few than too many. When nobody is there, the block turns red with *Geen BHV'er ingecheckt*. A screen with this block refreshes every 2 minutes. Without a sidebar the notice goes into the news ticker. The block is an aid and does not replace the BHV overview.
 - **Vandaag jarig** (birthdays today) — once per round a festive slide with the names, and a notice in the news ticker (also in *Slides + infoscherm*). Only staff with a birthday filled in take part. For privacy, fill it in only with the staff member's consent; clearing it takes them off again. A screen shows only the birthdays of its own location(s) (the staff member's home location).
@@ -379,6 +379,8 @@ Under **BHV en verjaardagen** (emergency response and birthdays) there are two e
 ## Screens
 
 On the **Schermen** tab you choose per user account what its screen shows: **Google Slides**, **Infoscherm** or **Slides + infoscherm** (the presentation large, with the weather, notices and the news ticker around it). The same choice is also on the user's *Presentatie* tab.
+
+In the columns **Vandaag jarig** (birthdays) and **BHV aanwezig** (emergency responders) you choose per screen **Standaard** (follows the setting under Weergave), **Aan** (on) or **Uit** (off). For example, the screen in the school shows birthdays and the screen of the childcare does not. A screen always shows only the birthdays and emergency responders of its own locations. An account without ticked locations sees all locations, so always tick the location(s) for a screen in a building.
 
 **👁️ Voorbeeld** (preview) next to an account opens, in a new window, exactly what that screen shows: the messages, news, weather and emergency responders of that account's locations. For a screen with Google Slides only, **👁️ Slides** opens the presentation. The preview shows the saved choice, so save first after a change.
 

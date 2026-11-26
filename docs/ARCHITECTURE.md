@@ -204,6 +204,9 @@ fetchers and parsers, and `pd_infoscreen_screen_data()` for the screen.
   `pd_infoscreen_birthdays()` matches today in Europe/Amsterdam (29-02 on 28-02 in other years)
   against the home location (`COALESCE(home_locatie, locatie)`). Settings `bhv_card`, `bhv_names`,
   `birthday_slide` (all in `infoscreen_settings`), off by default.
+  Per screen (2.8.1): `users.features.infoscreenParts` = `{"birthdays": "on"|"off", "bhv": "on"|"off"}`
+  (missing = the global setting), set on the Schermen tab; `users_manage.php` keeps the key when it
+  rebuilds `features`.
 - **Preview per screen (2.8.0).** `infoscherm.php?preview=1&as=<id>` loads the data of that account
   (checked again in the API) and keeps its own `localStorage` cache key, so a preview never
   overwrites the cache of a real screen in the same browser.

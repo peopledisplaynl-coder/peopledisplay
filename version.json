@@ -1,12 +1,20 @@
 {
-    "version": "2.8.0",
+    "version": "2.8.1",
     "critical": false,
-    "message": "Nieuw: BHV aanwezig en Vandaag jarig op het infoscherm, en een voorbeeld per scherm.",
+    "message": "Nieuw: Vandaag jarig en BHV aanwezig per scherm aan of uit te zetten.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
     "release_date": "2026-11-26",
     "changelog": [
+        {
+            "version": "2.8.1",
+            "date": "2026-11-26",
+            "changes": [
+                "Nieuw: bij Infoscherm > Schermen kies je per scherm of Vandaag jarig en BHV aanwezig getoond worden: Standaard (volgt Weergave), Aan of Uit. Zo kan het ene scherm de jarigen tonen en het andere niet",
+                "Een scherm toont altijd alleen de jarigen en BHV'ers van de eigen locaties; dat staat nu ook in de uitleg bij Schermen"
+            ]
+        },
         {
             "version": "2.8.0",
             "date": "2026-11-26",

@@ -367,7 +367,7 @@ Klik op **➕ API-koppeling**. Je krijgt één keer een sleutel te zien: kopieer
 
 Op het tabblad **Weergave** stel je de titel bovenaan in, de kleurstelling (donker of licht), de tijd per dia, het aantal nieuwsdia's per ronde, de snelheid van de nieuwsbalk, hoeveel dagen vooruit de agenda gaat en welke onderdelen zichtbaar zijn (zijbalk, nieuwsbalk, nieuwsdia's, weerdia, agenda in de zijbalk, agendadia). Met **Voorbeeld** bekijk je het resultaat in een nieuw venster. Open schermen nemen wijzigingen binnen 5 minuten over.
 
-Onder **BHV en verjaardagen** staan twee extra onderdelen. Beide staan standaard uit.
+Onder **BHV en verjaardagen** staan twee extra onderdelen. Beide staan standaard uit. Wat je hier kiest, is de standaard voor alle schermen; per scherm zet je ze apart aan of uit bij [Schermen](#schermen).
 
 - **BHV aanwezig** — een blok in de zijbalk met het aantal BHV'ers dat nu is ingecheckt op de locatie(s) van het scherm, met (als je dat aanvinkt) hun voornaam en de eerste letter van de achternaam. Het telt medewerkers met BHV = Ja en status IN. Wie een extra status heeft (bijvoorbeeld Pauze, Thuiswerken of Vakantie), telt niet mee: het scherm toont liever te weinig dan te veel. Is er niemand, dan kleurt het blok rood met *Geen BHV'er ingecheckt*. Een scherm met dit blok ververst elke 2 minuten. Zonder zijbalk komt de melding in de nieuwsbalk. Het blok is een hulpmiddel en vervangt het BHV-overzicht niet.
 - **Vandaag jarig** — één keer per ronde een feestelijke dia met de namen van de jarigen, en een melding in de nieuwsbalk (ook in *Slides + infoscherm*). Alleen medewerkers bij wie een verjaardag is ingevuld, doen mee. Vanwege de privacy vul je die alleen in met toestemming van de medewerker; leeg maken haalt iemand er weer af. Op het scherm staan alleen de jarigen van de locatie(s) van dat scherm (de vaste locatie van de medewerker).
@@ -377,6 +377,8 @@ Onder **BHV en verjaardagen** staan twee extra onderdelen. Beide staan standaard
 ## Schermen
 
 Op het tabblad **Schermen** kies je per gebruikersaccount wat het scherm toont: **Google Slides**, **Infoscherm** of **Slides + infoscherm** (de presentatie groot in beeld, met het weer, de mededelingen en de nieuwsbalk eromheen). Dezelfde keuze staat ook bij de gebruiker op het tabblad *Presentatie*.
+
+In de kolommen **Vandaag jarig** en **BHV aanwezig** kies je per scherm **Standaard** (volgt de instelling bij Weergave), **Aan** of **Uit**. Zo toont bijvoorbeeld het scherm in de school de jarigen wel en het scherm van de opvang niet. Een scherm toont altijd alleen de jarigen en BHV'ers van zijn eigen locaties. Een account zonder aangevinkte locaties ziet alle locaties; vink bij een scherm in een gebouw dus altijd de locatie(s) aan.
 
 Met **👁️ Voorbeeld** achter een account zie je in een nieuw venster precies wat dat scherm toont: de berichten, het nieuws, het weer en de BHV'ers van de locaties van dat account. Bij een scherm met alleen Google Slides opent **👁️ Slides** de presentatie. Het voorbeeld toont de opgeslagen keuze; sla dus eerst op na een wijziging.
 

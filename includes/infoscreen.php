@@ -1105,9 +1105,41 @@ function pd_infoscreen_user_locations(PDO $db, int $userId): array
 }
 
 /** Everything a screen needs, already filtered for its locations. */
-function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = ''): array
+/** Parts a screen can switch on or off itself (Infoscherm › Schermen): settings key => features key */
+const PD_IS_SCREEN_PARTS = ['birthday_slide' => 'birthdays', 'bhv_card' => 'bhv'];
+
+/**
+ * Per-screen choices from users.features.infoscreenParts: ['birthday_slide' => '1'|'0', ...].
+ * Missing or "default" = follow the setting under Weergave.
+ */
+function pd_infoscreen_screen_overrides(?string $featuresJson): array
+{
+    $parts = (json_decode((string)$featuresJson, true) ?: [])['infoscreenParts'] ?? [];
+    $out = [];
+    foreach (PD_IS_SCREEN_PARTS as $setting => $key) {
+        $v = is_array($parts) ? ($parts[$key] ?? null) : null;
+        if ($v === 'on' || $v === 'off') $out[$setting] = $v === 'on' ? '1' : '0';
+    }
+    return $out;
+}
+
+/** Value for users.features.infoscreenParts from form input ('default' | 'on' | 'off' per part). */
+function pd_infoscreen_screen_parts_clean(array $input): array
+{
+    $out = [];
+    foreach (PD_IS_SCREEN_PARTS as $key) {
+        $v = $input[$key] ?? 'default';
+        if ($v === 'on' || $v === 'off') $out[$key] = $v;
+    }
+    return $out;
+}
+
+function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = '', array $overrides = []): array
 {
     $settings = pd_infoscreen_settings($db);
+    foreach ($overrides as $k => $v) {
+        if (isset(PD_IS_SCREEN_PARTS[$k])) $settings[$k] = $v === '1' ? '1' : '0';
+    }
 
     // Messages within their time window, for this screen's locations
     $stmt = $db->query("SELECT id, title, body, image_path, locations, starts_at, ends_at, duration_seconds, priority, color

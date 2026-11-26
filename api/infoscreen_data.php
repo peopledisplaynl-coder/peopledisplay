@@ -52,13 +52,14 @@ try {
         $due = false;
     }
 
-    $stmt = $db->prepare("SELECT u.screen_mode, u.presentation_id, c.presentationID AS global_presentation
+    $stmt = $db->prepare("SELECT u.screen_mode, u.presentation_id, u.features, c.presentationID AS global_presentation
                           FROM users u LEFT JOIN config c ON c.id = 1 WHERE u.id = ?");
     $stmt->execute([$userId]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
     $base = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/api/x.php'))), '/');
-    $data = pd_infoscreen_screen_data($db, pd_infoscreen_user_locations($db, $userId), $base);
+    $data = pd_infoscreen_screen_data($db, pd_infoscreen_user_locations($db, $userId), $base,
+        pd_infoscreen_screen_overrides($user['features'] ?? null));
 
     $presentationId = trim((string)($user['presentation_id'] ?? ''));
     if ($presentationId === '') {
