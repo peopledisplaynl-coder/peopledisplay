@@ -2,6 +2,13 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.8.0 — 2026-11-26
+
+- Nieuw: blok 'BHV aanwezig' in de zijbalk van het infoscherm met het aantal ingecheckte BHV'ers op de locatie(s) van het scherm, desgewenst met namen (voornaam en voorletter). Is er niemand, dan kleurt het blok rood. Aan te zetten bij Infoscherm > Weergave
+- Nieuw: dia 'Vandaag jarig' en een melding in de nieuwsbalk. Alleen voor medewerkers bij wie een verjaardag (dag en maand, zonder jaar) is ingevuld bij Medewerkers; vanwege de privacy alleen met hun toestemming. Ook in de CSV-import en -export
+- Nieuw: knop Voorbeeld per scherm bij Infoscherm > Schermen: zie precies wat een schermaccount toont, met de berichten, het nieuws, het weer en de BHV'ers van zijn locaties
+- Verbeterd: de CSV-export werkt zonder waarschuwing op PHP 8.4
+
 ## v2.7.0 — 2026-11-25
 
 - Nieuw: Website zonder feed bij Infoscherm > Nieuws. PeopleDisplay haalt de nieuwspagina van een website zelf op en neemt titel, korte tekst, afbeelding, datum en link over. Met 'Zoek berichten' zie je wat er gevonden wordt en kies je de juiste lijst; heeft de site toch een (verborgen) feed, zoals elke WordPress-site, dan wordt die voorgesteld

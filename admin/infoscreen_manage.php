@@ -1224,6 +1224,16 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 <label class="check"><input type="checkbox" name="agenda_sidebar" value="1" <?= $settings['agenda_sidebar'] === '1' ? 'checked' : '' ?>> Agenda in de zijbalk</label>
                 <label class="check"><input type="checkbox" name="agenda_slide" value="1" <?= $settings['agenda_slide'] === '1' ? 'checked' : '' ?>> Agendadia (één keer per ronde)</label>
             </div>
+            <div class="full">
+                <h3 style="margin:8px 0 6px;font-size:16px">🚑 BHV en 🎂 verjaardagen</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <label class="check"><input type="checkbox" name="bhv_card" value="1" <?= $settings['bhv_card'] === '1' ? 'checked' : '' ?>> Blok “BHV aanwezig” in de zijbalk</label>
+                    <label class="check"><input type="checkbox" name="bhv_names" value="1" <?= $settings['bhv_names'] === '1' ? 'checked' : '' ?>> Met namen (voornaam + voorletter achternaam)</label>
+                    <label class="check"><input type="checkbox" name="birthday_slide" value="1" <?= $settings['birthday_slide'] === '1' ? 'checked' : '' ?>> Dia “Vandaag jarig” en melding in de nieuwsbalk</label>
+                </div>
+                <div class="help" style="margin-top:6px">BHV: telt de medewerkers met BHV = Ja die op de locatie(s) van het scherm zijn ingecheckt (IN). Wie een extra status heeft (bijv. Pauze, Thuiswerken of Vakantie) telt niet mee: het scherm toont liever te weinig dan te veel. Is er niemand, dan kleurt het blok rood. Het scherm ververst dan elke 2 minuten. Zonder zijbalk komt het in de nieuwsbalk.<br>
+                    Verjaardagen: alleen medewerkers bij wie een verjaardag (dag-maand) is ingevuld bij Medewerkers. Vul dit alleen in met toestemming van de medewerker; het jaar wordt niet bewaard.</div>
+            </div>
         </div>
         <div class="form-actions">
             <button class="btn btn-primary" type="submit">💾 Opslaan</button>
@@ -1245,7 +1255,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <input type="hidden" name="action" value="save_screens">
         <input type="hidden" name="tab" value="schermen">
         <table>
-            <thead><tr><th>Gebruiker</th><th class="hide-sm">Rol</th><th>Automatisch tonen</th><th>Weergave</th><th class="hide-sm">Na inactiviteit</th></tr></thead>
+            <thead><tr><th>Gebruiker</th><th class="hide-sm">Rol</th><th>Automatisch tonen</th><th>Weergave</th><th class="hide-sm">Na inactiviteit</th><th>Voorbeeld</th></tr></thead>
             <tbody>
             <?php foreach ($screens as $u): $hasId = trim((string)$u['presentation_id']) !== '' || $globalPresentation !== ''; ?>
                 <tr>
@@ -1260,11 +1270,24 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                         </select>
                     </td>
                     <td class="hide-sm muted"><?= (int)$u['presentation_idle_seconds'] ?> sec</td>
+                    <td>
+                        <?php if ($u['screen_mode'] === 'slides'):
+                            $pid = trim((string)$u['presentation_id']) !== '' ? trim((string)$u['presentation_id']) : $globalPresentation; ?>
+                            <?php if ($pid !== ''): ?>
+                                <a class="btn btn-light btn-sm" target="_blank" rel="noopener" title="Toont de Google Slides presentatie van dit scherm"
+                                   href="https://docs.google.com/presentation/d/<?= $h(rawurlencode($pid)) ?>/embed?start=true&amp;loop=true&amp;delayms=<?= max(5, (int)$settings['slide_seconds']) * 1000 ?>">👁️ Slides</a>
+                            <?php else: ?><span class="muted">geen presentatie</span><?php endif; ?>
+                        <?php else: ?>
+                            <a class="btn btn-light btn-sm" target="_blank" title="Toont wat dit scherm laat zien: berichten, nieuws en weer van de locaties van dit account"
+                               href="../infoscherm.php?preview=1&amp;as=<?= (int)$u['id'] ?>">👁️ Voorbeeld</a>
+                        <?php endif; ?>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
         </table>
-        <div class="form-actions"><button class="btn btn-primary" type="submit">💾 Opslaan</button></div>
+        <div class="form-actions"><button class="btn btn-primary" type="submit">💾 Opslaan</button>
+            <span class="help" style="margin-left:8px">Het voorbeeld toont de opgeslagen keuze; sla eerst op na een wijziging.</span></div>
     </form>
 
     <div class="panel" style="margin-top:26px">

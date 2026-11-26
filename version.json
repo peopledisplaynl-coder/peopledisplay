@@ -1,12 +1,22 @@
 {
-    "version": "2.7.0",
+    "version": "2.8.0",
     "critical": false,
-    "message": "Nieuw: nieuws van websites zonder RSS-feed op het infoscherm, en een eigen tabblad Rechten voor admins.",
+    "message": "Nieuw: BHV aanwezig en Vandaag jarig op het infoscherm, en een voorbeeld per scherm.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
-    "release_date": "2026-11-25",
+    "release_date": "2026-11-26",
     "changelog": [
+        {
+            "version": "2.8.0",
+            "date": "2026-11-26",
+            "changes": [
+                "Nieuw: blok 'BHV aanwezig' in de zijbalk van het infoscherm met het aantal ingecheckte BHV'ers op de locatie(s) van het scherm, desgewenst met namen (voornaam en voorletter). Is er niemand, dan kleurt het blok rood. Aan te zetten bij Infoscherm > Weergave",
+                "Nieuw: dia 'Vandaag jarig' en een melding in de nieuwsbalk. Alleen voor medewerkers bij wie een verjaardag (dag en maand, zonder jaar) is ingevuld bij Medewerkers; vanwege de privacy alleen met hun toestemming. Ook in de CSV-import en -export",
+                "Nieuw: knop Voorbeeld per scherm bij Infoscherm > Schermen: zie precies wat een schermaccount toont, met de berichten, het nieuws, het weer en de BHV'ers van zijn locaties",
+                "Verbeterd: de CSV-export werkt zonder waarschuwing op PHP 8.4"
+            ]
+        },
         {
             "version": "2.7.0",
             "date": "2026-11-25",
@@ -426,4 +436,4 @@
         }
     ],
     "delta_download_url": ""
-}
+}

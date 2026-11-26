@@ -65,7 +65,7 @@ Click **Nieuwe Medewerker Toevoegen** (add new staff member). The form is laid o
 
 ![Adding a staff member](../images/medewerker-nieuw.png)
 
-1. Under **Basisgegevens** (basic details) enter **first name** and **last name** (required), and optionally email, phone and job title. The email address is used for visitor notifications. Tick **BHV'er** for staff with an emergency-response role.
+1. Under **Basisgegevens** (basic details) enter **first name** and **last name** (required), and optionally email, phone, **birthday** (*Verjaardag*) and job title. The birthday (day and month only, for example *14-03*; the year is not stored) is only filled in when the staff member wants to appear under *Vandaag jarig* (birthdays today) on the infoscreen. The email address is used for visitor notifications. Tick **BHV'er** for staff with an emergency-response role.
 2. Under **Organisatie** (organisation) choose **department** and **location** (required).
 3. Under **Foto** (photo) add a photo with **Foto kiezen** (choose photo) — PeopleDisplay compresses it automatically — or paste a photo URL.
 4. Under **Zichtbaarheid op locaties** (visibility at locations) decide where the card appears. With **Zichtbaar op ALLE locaties** (visible at ALL locations) the card appears everywhere, regardless of the current location; also tick **Mag handmatig locatie kiezen bij check-in** (may choose location manually at check-in) if this staff member should be able to use the "Pion" (📍) to check in at another location themselves.
@@ -86,7 +86,7 @@ This is also where you change the photo — upload a new one (compressed automat
 ## Import and export (CSV)
 
 - **Export CSV** downloads all staff members as a CSV file (opens in Excel).
-- **Import CSV** adds staff members in one go. The file needs at least the columns `voornaam` (first name) and `achternaam` (last name); the columns `functie`, `afdeling`, `locatie`, `bhv` (Ja/Nee), `foto_url`, `notities` and `status` are used when present. Choose the file below the list and click **Importeren**.
+- **Import CSV** adds staff members in one go. The file needs at least the columns `voornaam` (first name) and `achternaam` (last name); the columns `functie`, `afdeling`, `locatie`, `bhv` (Ja/Nee), `foto_url`, `notities`, `status` and `verjaardag` (day-month) are used when present. Choose the file below the list and click **Importeren**.
 
 > **Tip** — Export the existing staff first. That gives you an example file with the right columns.
 
@@ -369,9 +369,20 @@ Click **➕ API-koppeling**. You see a key once: copy and keep it. A system then
 
 On the **Weergave** tab you set the title at the top, the colour scheme (dark or light), the time per slide, the number of news slides per round, the speed of the news ticker, how many days ahead the agenda goes and which parts are shown (sidebar, news ticker, news slides, weather slide, agenda in the sidebar, agenda slide). **Voorbeeld** (preview) opens the result in a new window. Open screens pick up changes within 5 minutes.
 
+Under **BHV en verjaardagen** (emergency response and birthdays) there are two extra parts. Both are off by default.
+
+- **BHV aanwezig** (emergency responders present) — a block in the sidebar with the number of emergency responders (BHV'ers) checked in at the screen's location(s), optionally with their first name and the initial of their last name. It counts staff with BHV = Ja and status IN. Anyone with an extra status (for example Pauze, Thuiswerken or Vakantie) is not counted: the screen would rather show too few than too many. When nobody is there, the block turns red with *Geen BHV'er ingecheckt*. A screen with this block refreshes every 2 minutes. Without a sidebar the notice goes into the news ticker. The block is an aid and does not replace the BHV overview.
+- **Vandaag jarig** (birthdays today) — once per round a festive slide with the names, and a notice in the news ticker (also in *Slides + infoscherm*). Only staff with a birthday filled in take part. For privacy, fill it in only with the staff member's consent; clearing it takes them off again. A screen shows only the birthdays of its own location(s) (the staff member's home location).
+
+![Birthdays today on the infoscreen](../images/infoscherm-jarig.png)
+
 ## Screens
 
 On the **Schermen** tab you choose per user account what its screen shows: **Google Slides**, **Infoscherm** or **Slides + infoscherm** (the presentation large, with the weather, notices and the news ticker around it). The same choice is also on the user's *Presentatie* tab.
+
+**👁️ Voorbeeld** (preview) next to an account opens, in a new window, exactly what that screen shows: the messages, news, weather and emergency responders of that account's locations. For a screen with Google Slides only, **👁️ Slides** opens the presentation. The preview shows the saved choice, so save first after a change.
+
+![The Schermen tab with a preview button per screen](../images/infoscherm-schermen.png)
 
 - **On a touch screen with staff cards** the infoscreen appears after the set time without touches (checkbox *Automatisch tonen*). A touch closes it.
 - **A screen that only shows the infoscreen** (a TV in the hall): log in on that screen with the screen account, tick *Blijf ingelogd* (stay logged in) and open `infoscherm.php`. With a kiosk token the screen opens by itself, also after a restart: add `&page=infoscherm` to the token URL. The tab shows the full addresses.

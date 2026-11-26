@@ -63,7 +63,7 @@ Klik op **Nieuwe Medewerker Toevoegen**. Het formulier staat in overzichtelijke 
 
 ![Een nieuwe medewerker toevoegen](../images/medewerker-nieuw.png)
 
-1. Vul bij **Basisgegevens** de **voornaam** en **achternaam** in (verplicht), en eventueel e-mailadres, telefoon en functie. Het e-mailadres wordt gebruikt voor bezoekersmeldingen. Vink **BHV'er** aan voor medewerkers met een BHV-taak.
+1. Vul bij **Basisgegevens** de **voornaam** en **achternaam** in (verplicht), en eventueel e-mailadres, telefoon, **verjaardag** en functie. De verjaardag (alleen dag en maand, bijvoorbeeld *14-03*; het jaar wordt niet bewaard) vul je alleen in als de medewerker op het infoscherm bij *Vandaag jarig* wil staan. Het e-mailadres wordt gebruikt voor bezoekersmeldingen. Vink **BHV'er** aan voor medewerkers met een BHV-taak.
 2. Kies bij **Organisatie** de **afdeling** en **locatie** (verplicht).
 3. Voeg bij **Foto** een foto toe met **Foto kiezen** — PeopleDisplay comprimeert de foto automatisch — of plak een foto-URL.
 4. Bepaal bij **Zichtbaarheid op locaties** waar de kaart verschijnt. Met **Zichtbaar op ALLE locaties** staat de kaart overal, ongeacht de huidige locatie; vink daarbij ook **Mag handmatig locatie kiezen bij check-in** aan als deze medewerker zelf met de Pion (📍) op een andere locatie moet kunnen inchecken.
@@ -84,7 +84,7 @@ Hier pas je ook de foto aan — upload een nieuwe (automatisch gecomprimeerd) of
 ## Importeren en exporteren (CSV)
 
 - **Export CSV** downloadt alle medewerkers als CSV-bestand (te openen in Excel).
-- **Import CSV** voegt medewerkers in één keer toe. Het bestand moet minimaal de kolommen `voornaam` en `achternaam` hebben; de kolommen `functie`, `afdeling`, `locatie`, `bhv` (Ja/Nee), `foto_url`, `notities` en `status` worden meegenomen als ze er zijn. Kies het bestand onder de lijst en klik op **Importeren**.
+- **Import CSV** voegt medewerkers in één keer toe. Het bestand moet minimaal de kolommen `voornaam` en `achternaam` hebben; de kolommen `functie`, `afdeling`, `locatie`, `bhv` (Ja/Nee), `foto_url`, `notities`, `status` en `verjaardag` (dag-maand) worden meegenomen als ze er zijn. Kies het bestand onder de lijst en klik op **Importeren**.
 
 > **Tip** — Exporteer eerst de bestaande medewerkers. Zo heb je meteen een voorbeeld met de juiste kolommen.
 
@@ -367,9 +367,20 @@ Klik op **➕ API-koppeling**. Je krijgt één keer een sleutel te zien: kopieer
 
 Op het tabblad **Weergave** stel je de titel bovenaan in, de kleurstelling (donker of licht), de tijd per dia, het aantal nieuwsdia's per ronde, de snelheid van de nieuwsbalk, hoeveel dagen vooruit de agenda gaat en welke onderdelen zichtbaar zijn (zijbalk, nieuwsbalk, nieuwsdia's, weerdia, agenda in de zijbalk, agendadia). Met **Voorbeeld** bekijk je het resultaat in een nieuw venster. Open schermen nemen wijzigingen binnen 5 minuten over.
 
+Onder **BHV en verjaardagen** staan twee extra onderdelen. Beide staan standaard uit.
+
+- **BHV aanwezig** — een blok in de zijbalk met het aantal BHV'ers dat nu is ingecheckt op de locatie(s) van het scherm, met (als je dat aanvinkt) hun voornaam en de eerste letter van de achternaam. Het telt medewerkers met BHV = Ja en status IN. Wie een extra status heeft (bijvoorbeeld Pauze, Thuiswerken of Vakantie), telt niet mee: het scherm toont liever te weinig dan te veel. Is er niemand, dan kleurt het blok rood met *Geen BHV'er ingecheckt*. Een scherm met dit blok ververst elke 2 minuten. Zonder zijbalk komt de melding in de nieuwsbalk. Het blok is een hulpmiddel en vervangt het BHV-overzicht niet.
+- **Vandaag jarig** — één keer per ronde een feestelijke dia met de namen van de jarigen, en een melding in de nieuwsbalk (ook in *Slides + infoscherm*). Alleen medewerkers bij wie een verjaardag is ingevuld, doen mee. Vanwege de privacy vul je die alleen in met toestemming van de medewerker; leeg maken haalt iemand er weer af. Op het scherm staan alleen de jarigen van de locatie(s) van dat scherm (de vaste locatie van de medewerker).
+
+![Vandaag jarig op het infoscherm](../images/infoscherm-jarig.png)
+
 ## Schermen
 
 Op het tabblad **Schermen** kies je per gebruikersaccount wat het scherm toont: **Google Slides**, **Infoscherm** of **Slides + infoscherm** (de presentatie groot in beeld, met het weer, de mededelingen en de nieuwsbalk eromheen). Dezelfde keuze staat ook bij de gebruiker op het tabblad *Presentatie*.
+
+Met **👁️ Voorbeeld** achter een account zie je in een nieuw venster precies wat dat scherm toont: de berichten, het nieuws, het weer en de BHV'ers van de locaties van dat account. Bij een scherm met alleen Google Slides opent **👁️ Slides** de presentatie. Het voorbeeld toont de opgeslagen keuze; sla dus eerst op na een wijziging.
+
+![Het tabblad Schermen met een voorbeeldknop per scherm](../images/infoscherm-schermen.png)
 
 - **Op een aanraakscherm met medewerkerskaarten** verschijnt het infoscherm na de ingestelde tijd zonder aanraking (vinkje *Automatisch tonen*). Aanraken sluit het weer.
 - **Een scherm dat alleen het infoscherm toont** (een tv in de hal): log op dat scherm in met het schermaccount, vink *Blijf ingelogd* aan en open `infoscherm.php`. Met een kiosk token opent het scherm zichzelf, ook na een herstart: voeg dan `&page=infoscherm` toe aan de token-URL. Het tabblad toont de volledige adressen.

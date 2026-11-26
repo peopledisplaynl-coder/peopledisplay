@@ -34,6 +34,22 @@ pd_infoscreen_ensure_schema($db);
 $embed = !empty($_GET['embed']);
 $forceMode = in_array($_GET['mode'] ?? '', ['infoscreen', 'combined'], true) ? $_GET['mode'] : '';
 $preview = !empty($_GET['preview']);
+
+// Preview of a specific screen account (Infoscherm › Schermen › Voorbeeld), only for managers
+$asUser = null;
+if ($preview && isset($_GET['as'])) {
+    require_once __DIR__ . '/admin/auth_helper.php';
+    if (hasAdminFeature('manage_infoscreen')) {
+        $st = $db->prepare("SELECT id, username, display_name FROM users WHERE id = ?");
+        $st->execute([(int)$_GET['as']]);
+        $asUser = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+}
+$dataUrl = 'api/infoscreen_data.php' . ($asUser ? '?as=' . (int)$asUser['id'] : '');
+$cacheKey = $preview ? 'pd_infoscreen_preview_' . ($asUser ? (int)$asUser['id'] : 'self') : 'pd_infoscreen_cache_v1';
+$previewLabel = $asUser
+    ? 'Voorbeeld — scherm „' . ($asUser['display_name'] ?: $asUser['username']) . '"'
+    : 'Voorbeeld — zo ziet het infoscherm eruit';
 ?><!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -209,6 +225,31 @@ body.mode-combined #notes-card.has-notes { display: flex; }
 #notes-card .note p { font-size: clamp(12px, 2vmin, 30px); line-height: 1.45; color: var(--muted); white-space: pre-line;
     display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
 #notes-card .note .badge { font-size: clamp(10px, 1.5vmin, 22px); }
+/* BHV aanwezig (2.8.0) */
+#bhv-card { display: none; flex: 0 0 auto; }
+body.has-bhv #bhv-card { display: block; }
+#bhv-card .bhv-row { display: flex; align-items: center; gap: 1.2vw; }
+#bhv-card .bhv-count { font-size: clamp(26px, 6.5vmin, 110px); font-weight: 800; line-height: 1; color: #22c55e; font-variant-numeric: tabular-nums; }
+#bhv-card .bhv-names { font-size: clamp(12px, 2vmin, 30px); line-height: 1.35; font-weight: 600; min-width: 0;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+#bhv-card .nw { white-space: nowrap; }
+#bhv-card.none { background: rgba(220,38,38,.18); border-color: rgba(220,38,38,.6); }
+#bhv-card.none .bhv-count { color: #ef4444; }
+body.theme-licht #bhv-card.none { background: #fdecec; }
+body.mode-combined #bhv-card .bhv-count { font-size: clamp(22px, 5vmin, 80px); }
+body.mode-combined #bhv-card .bhv-names { -webkit-line-clamp: 2; }
+/* Vandaag jarig (2.8.0) */
+.bday { flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4% 6%; color: #fff;
+    background: radial-gradient(circle at 20% 15%, rgba(255,255,255,.18), transparent 40%), linear-gradient(150deg, #db2777, #7c3aed); }
+.bday .conf { font-size: clamp(40px, 12vmin, 200px); line-height: 1; margin-bottom: 2vmin; }
+.bday h1 { font-size: clamp(28px, 7vmin, 120px); font-weight: 800; letter-spacing: -.01em; margin-bottom: 3vmin; }
+.bday .names { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.6vmin 3vw; max-width: 90%;
+    font-size: calc(clamp(22px, 6vmin, 100px) * var(--n, 1)); font-weight: 700; }
+.bday .names span { white-space: nowrap; }
+.bday .sub { margin-top: 3.5vmin; font-size: clamp(14px, 3vmin, 48px); opacity: .9; }
+#ticker .item.bday-item .src { color: #f9a8d4; }
+#ticker .item.bhv-item .src { color: #86efac; }
+#ticker .item.bhv-item.none .src { color: #ff8a8a; }
 #side-clock { display: none; text-align: center; }
 body.no-weather #wx-card { display: none; }
 body.no-weather #side-clock { display: block; }
@@ -253,7 +294,7 @@ body.no-weather #side-clock { display: block; }
 </style>
 </head>
 <body class="theme-donker<?= $embed ? ' embed' : '' ?>">
-<?php if ($preview): ?><div id="preview-bar">Voorbeeld — zo ziet het infoscherm eruit</div><?php endif; ?>
+<?php if ($preview): ?><div id="preview-bar"><?= htmlspecialchars($previewLabel) ?></div><?php endif; ?>
 <div id="screen">
     <header id="topbar">
         <div id="title"></div>
@@ -263,6 +304,7 @@ body.no-weather #side-clock { display: block; }
     <aside id="sidebar">
         <div class="card" id="wx-card"></div>
         <div class="card" id="side-clock"><div class="big" id="side-time"></div><div class="sub" id="side-date"></div></div>
+        <div class="card" id="bhv-card"></div>
         <div class="card" id="agenda-card"><div class="card-title">Agenda</div><div class="ag-list" id="agenda-list"></div></div>
         <div class="card" id="notes-card"><div class="card-title">Mededelingen</div><div id="note-holder" style="flex:1;display:flex;min-height:0"></div></div>
     </aside>
@@ -277,9 +319,10 @@ body.no-weather #side-clock { display: block; }
     const VERSION = <?= json_encode(PD_CURRENT_VERSION) ?>;
     const EMBED = <?= json_encode($embed) ?>;
     const FORCE_MODE = <?= json_encode($forceMode) ?>;
-    const DATA_URL = 'api/infoscreen_data.php';
-    const CACHE_KEY = 'pd_infoscreen_cache_v1';
+    const DATA_URL = <?= json_encode($dataUrl) ?>;
+    const CACHE_KEY = <?= json_encode($cacheKey) ?>;
     const REFRESH_MS = 5 * 60 * 1000;
+    const REFRESH_BHV_MS = 2 * 60 * 1000;   // BHV presence changes more often
     const PAGE_STARTED = Date.now();
 
     let data = null;            // last good answer
@@ -405,6 +448,17 @@ body.no-weather #side-clock { display: block; }
             + `<div class="wx-src">${esc(w.attribution)}</div></div>`;
     }
 
+    function nameList(names) {
+        return names.length < 2 ? (names[0] || '') : names.slice(0, -1).join(', ') + ' en ' + names[names.length - 1];
+    }
+
+    function birthdaySlide(names) {
+        const scale = names.length <= 2 ? 1.25 : names.length <= 4 ? 1 : names.length <= 8 ? .75 : .55;
+        return `<div class="slide bday" style="--n:${scale}"><div class="conf">🎉</div><h1>Vandaag jarig</h1>`
+            + `<div class="names">${names.map((n) => `<span>🎂 ${esc(n)}</span>`).join('')}</div>`
+            + `<div class="sub">Van harte gefeliciteerd!</div></div>`;
+    }
+
     function welcomeSlide() {
         return '<div class="slide welcome"><div class="big"></div><div class="sub"></div>'
             + '<div class="hint">Er zijn op dit moment geen berichten.</div></div>';
@@ -440,6 +494,10 @@ body.no-weather #side-clock { display: block; }
         // Agenda once per round, after the first quarter
         if (s.agenda_slide && (d.agenda || []).length) {
             list.splice(Math.ceil(list.length / 4), 0, { type: 'agenda', html: agendaSlide(d.agenda), seconds: Math.max(s.slide_seconds, 15) });
+        }
+        // Birthdays: right at the start of every round
+        if (s.birthday_slide && (d.birthdays || []).length) {
+            list.splice(Math.min(1, list.length), 0, { type: 'bday', html: birthdaySlide(d.birthdays), seconds: Math.max(s.slide_seconds, 12) });
         }
         // Important messages come back halfway through a long round
         if (important.length && list.length > 5) {
@@ -623,10 +681,37 @@ body.no-weather #side-clock { display: block; }
             + `<div class="extra">${esc(weatherExtra(c).join(' · '))}</div><div class="days">${days}</div><div class="src">${esc(w.attribution)}</div>`;
     }
 
+    function bhvText(b) {
+        if (!b.count) return 'Geen BHV\'er ingecheckt';
+        return b.names && b.names.length ? b.names.join(', ') + (b.count > b.names.length ? ' …' : '') : (b.count === 1 ? 'BHV\'er ingecheckt' : 'BHV\'ers ingecheckt');
+    }
+    function bhvHtml(b) {
+        if (!b.count || !(b.names && b.names.length)) return esc(bhvText(b));
+        return b.names.map((n) => `<span class="nw">${esc(n)}</span>`).join(', ') + (b.count > b.names.length ? ' …' : '');
+    }
+    function renderBhvCard(d) {
+        const b = d.bhv;
+        const show = !!(d.settings.bhv_card && b);
+        document.body.classList.toggle('has-bhv', show);
+        if (!show) return;
+        const card = $('bhv-card');
+        card.classList.toggle('none', !b.count);
+        card.innerHTML = '<div class="card-title">BHV aanwezig</div>'
+            + `<div class="bhv-row"><div class="bhv-count">${b.count}</div><div class="bhv-names">${bhvHtml(b)}</div></div>`;
+    }
+
     let tickerAnim = null;
     function renderTicker(d) {
         const items = [];
         (d.messages || []).filter((m) => m.priority).forEach((m) => items.push(`<span class="item important"><span class="src">Belangrijk</span>${esc(m.title)}</span>`));
+        if (d.settings.birthday_slide && (d.birthdays || []).length) {
+            items.push(`<span class="item bday-item"><span class="src">🎂 Vandaag jarig</span>${esc(nameList(d.birthdays))}</span>`);
+        }
+        // Without a sidebar the BHV block is not visible: show it in the ticker instead
+        const sidebarHidden = currentMode !== 'combined' && !d.settings.sidebar;
+        if (d.settings.bhv_card && d.bhv && sidebarHidden) {
+            items.push(`<span class="item bhv-item${d.bhv.count ? '' : ' none'}"><span class="src">BHV aanwezig: ${d.bhv.count}</span>${esc(bhvText(d.bhv))}</span>`);
+        }
         mixSources(d.news || []).slice(0, 30).forEach((n) => items.push(`<span class="item"><span class="src">${esc(n.source)}</span>${esc(n.title)}</span>`));
         const show = d.settings.ticker && items.length > 0;
         document.body.classList.toggle('no-ticker', !show);
@@ -660,6 +745,7 @@ body.no-weather #side-clock { display: block; }
         $('title').textContent = s.title || '';
         renderWeatherCard(d.weather);
         renderAgendaCard(d);
+        renderBhvCard(d);
         renderTicker(d);
 
         if (mode === 'combined') {
@@ -735,9 +821,12 @@ body.no-weather #side-clock { display: block; }
     setInterval(tick, 1000);
     setInterval(() => { if (currentMode === 'combined') rotateNote(); }, 15000);
     setInterval(() => { if (data) renderAgendaCard(data); }, 60000); // "Nu" and passing appointments
-    setInterval(load, REFRESH_MS);
+    // Refresh: every 5 minutes, every 2 minutes when the BHV block is on
+    function scheduleLoad() {
+        setTimeout(async () => { await load(); scheduleLoad(); }, data && data.bhv ? REFRESH_BHV_MS : REFRESH_MS);
+    }
     wakeLock();
-    load();
+    load().then(scheduleLoad);
 })();
 </script>
 </body>

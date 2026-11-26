@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../includes/infoscreen.php';
+require __DIR__ . '/../includes/birthday.php';
 
 $failures = 0;
 $count = 0;
@@ -332,6 +333,58 @@ eq(pd_is_web_css_to_xpath('div:hover'), null, 'css to xpath: pseudo-classes refu
 eq(pd_is_web_abs('../x.html', 'https://a.test/b/c/d.html'), 'https://a.test/b/x.html', 'web: ../ resolved');
 eq(pd_is_web_abs('javascript:void(0)', 'https://a.test/'), null, 'web: javascript: link refused');
 eq(pd_is_web_date('31 februari 2026'), null, 'web: impossible date');
+
+// ── BHV and birthdays (2.8.0) ────────────────────────────────────────────
+eq(pd_birthday_normalize('14-03'), '03-14', 'birthday: dd-mm');
+eq(pd_birthday_normalize('4/3'), '03-04', 'birthday: d/m');
+eq(pd_birthday_normalize('14-03-1985'), '03-14', 'birthday: year dropped');
+eq(pd_birthday_normalize('1985-03-14'), '03-14', 'birthday: ISO date');
+eq(pd_birthday_normalize('29-02'), '02-29', 'birthday: 29 February allowed');
+eq(pd_birthday_normalize('31-04'), null, 'birthday: impossible date');
+eq(pd_birthday_normalize('morgen'), null, 'birthday: text refused');
+eq(pd_birthday_normalize('  '), '', 'birthday: empty clears');
+eq(pd_birthday_display('03-14'), '14-03', 'birthday: display');
+eq(pd_birthday_display(null), '', 'birthday: display empty');
+eq(pd_infoscreen_short_name(['voornaam' => 'Eva', 'achternaam' => 'van der Berg']), 'Eva B.', 'short name: prefix skipped');
+eq(pd_infoscreen_short_name(['voornaam' => 'Jan', 'achternaam' => 'Smit']), 'Jan S.', 'short name');
+eq(pd_infoscreen_short_name(['voornaam' => '', 'achternaam' => '', 'naam' => 'Piet de Vries']), 'Piet V.', 'short name: from naam');
+eq(pd_infoscreen_short_name(['voornaam' => 'Noor', 'achternaam' => '']), 'Noor', 'short name: no surname');
+foreach (['bhv_card' => '0', 'bhv_names' => '1', 'birthday_slide' => '0'] as $k => $v) {
+    eq(PD_IS_DEFAULT_SETTINGS[$k] ?? null, $v, "default setting $k");
+}
+
+if (in_array('sqlite', PDO::getAvailableDrivers(), true)) {
+    $db = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $db->exec("CREATE TABLE employees (id INTEGER PRIMARY KEY, voornaam TEXT, achternaam TEXT, naam TEXT, status TEXT, sub_status TEXT,
+               locatie TEXT, home_locatie TEXT, bhv TEXT, actief INT, verjaardag TEXT)");
+    $ins = $db->prepare("INSERT INTO employees (voornaam, achternaam, naam, status, locatie, home_locatie, bhv, actief, verjaardag) VALUES (?,?,?,?,?,?,?,?,?)");
+    foreach ([
+        ['Eva', 'Smit', 'Eva Smit', 'IN', 'Hoofdgebouw', 'Hoofdgebouw', 'Ja', 1, '03-14'],
+        ['Jan', 'Bakker', 'Jan Bakker', 'IN', 'Dependance', 'Hoofdgebouw', 'Ja', 1, '02-29'],
+        ['Piet', 'Jansen', 'Piet Jansen', 'OUT', 'Hoofdgebouw', 'Hoofdgebouw', 'Ja', 1, '03-14'],
+        ['Noor', 'Visser', 'Noor Visser', 'IN', 'Hoofdgebouw', '', 'Nee', 1, null],
+        ['Oud', 'Lid', 'Oud Lid', 'IN', 'Hoofdgebouw', 'Hoofdgebouw', 'Ja', 0, '03-14'],
+        ['Sam', 'de Wit', 'Sam de Wit', 'OVERLEG', 'Hoofdgebouw', 'Hoofdgebouw', 'Ja', 1, null],
+        ['Tim', 'Kok', 'Tim Kok', 'IN', 'Hoofdgebouw', 'Hoofdgebouw', 'Ja', 1, null],
+    ] as $r) $ins->execute($r);
+    $db->exec("UPDATE employees SET sub_status = 'THUISWERKEN' WHERE voornaam = 'Tim'");
+    eq(pd_infoscreen_bhv_present($db, [], true), ['count' => 2, 'names' => ['Eva S.', 'Jan B.']], 'bhv: all locations, status IN without extra status');
+    eq(pd_infoscreen_bhv_present($db, ['Hoofdgebouw'], true), ['count' => 1, 'names' => ['Eva S.']], 'bhv: current location counts');
+    eq(pd_infoscreen_bhv_present($db, ['Gymzaal'], false), ['count' => 0, 'names' => []], 'bhv: nobody');
+    eq(pd_infoscreen_bhv_present($db, [], false)['names'], [], 'bhv: names hidden');
+    $tz = new DateTimeZone('Europe/Amsterdam');
+    eq(pd_infoscreen_birthdays($db, [], new DateTimeImmutable('2026-03-14', $tz)), ['Eva S.', 'Piet J.'], 'birthdays: today, inactive skipped');
+    eq(pd_infoscreen_birthdays($db, ['Hoofdgebouw'], new DateTimeImmutable('2027-02-28', $tz)), ['Jan B.'], 'birthdays: 29-02 on 28-02, home location');
+    eq(pd_infoscreen_birthdays($db, [], new DateTimeImmutable('2028-02-28', $tz)), [], 'birthdays: leap year waits for 29-02');
+    eq(pd_infoscreen_birthdays($db, ['Dependance'], new DateTimeImmutable('2026-03-14', $tz)), [], 'birthdays: other location');
+    pd_birthday_save($db, 4, '1-1');
+    eq($db->query("SELECT verjaardag FROM employees WHERE id = 4")->fetchColumn(), '01-01', 'birthday: saved');
+    check(pd_birthday_save($db, 4, '32-1') === false, 'birthday: invalid not saved');
+    pd_birthday_save($db, 4, '');
+    eq($db->query("SELECT verjaardag FROM employees WHERE id = 4")->fetchColumn(), null, 'birthday: cleared');
+} else {
+    echo "(sqlite not available: BHV/birthday queries tested in db_smoke)\n";
+}
 
 echo ($failures ? "FAILED: $failures of $count checks\n" : "OK: $count infoscreen checks passed\n");
 exit($failures ? 1 : 0);

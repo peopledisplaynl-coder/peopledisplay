@@ -16,6 +16,7 @@
 
 session_start();
 require_once __DIR__ . '/../../includes/db.php';
+require_once __DIR__ . '/../../includes/birthday.php';
 
 // Iedere rol die ook de medewerkersbeheerpagina mag gebruiken (zelfde set als
 // requireAdmin() in admin/auth_helper.php) mag ook medewerkers exporteren.
@@ -24,6 +25,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? 'user', ['adm
 }
 
 try {
+    // Birthday column exists once the migrations have run
+    $hasBirthday = (bool)$db->query("SHOW COLUMNS FROM employees LIKE 'verjaardag'")->fetch();
+
     // Get all active employees
     $stmt = $db->query("
         SELECT 
@@ -37,7 +41,7 @@ try {
             bhv,
             foto_url,
             notities,
-            status
+            status" . ($hasBirthday ? ", verjaardag" : "") . "
         FROM employees
         WHERE actief = 1
         ORDER BY achternaam, voornaam
@@ -67,8 +71,9 @@ try {
         'bhv',
         'foto_url',
         'notities',
-        'status'
-    ]);
+        'status',
+        'verjaardag'
+    ], ',', '"', '\\');
     
     // Write data
     foreach ($employees as $emp) {
@@ -83,8 +88,9 @@ try {
             $emp['bhv'],
             $emp['foto_url'],
             $emp['notities'],
-            $emp['status']
-        ]);
+            $emp['status'],
+            pd_birthday_display($emp['verjaardag'] ?? null)
+        ], ',', '"', '\\');
     }
     
     fclose($output);

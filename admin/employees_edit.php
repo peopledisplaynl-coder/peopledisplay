@@ -18,6 +18,7 @@ require_once __DIR__ . '/auth_helper.php';
 requireAdmin();
 
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/birthday.php';
 
 $id = $_GET['id'] ?? null;
 $error = '';
@@ -88,6 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             
             $success = 'Medewerker succesvol bijgewerkt!';
+            if (!pd_birthday_save($db, (int)$id, $_POST['verjaardag'] ?? '')) {
+                $success .= ' Verjaardag niet opgeslagen: gebruik dag-maand, bijvoorbeeld 14-03.';
+            }
             
             // Reload employee data
             $stmt = $db->prepare("SELECT * FROM employees WHERE id = ?");
@@ -296,6 +300,12 @@ $afdelingen = $stmt->fetchAll(PDO::FETCH_COLUMN);
                         <label>Telefoon</label>
                         <input type="text" name="telefoon" value="<?= htmlspecialchars($employee['telefoon'] ?? '') ?>">
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Verjaardag (dag-maand, optioneel)</label>
+                    <input type="text" name="verjaardag" maxlength="10" placeholder="14-03" value="<?= htmlspecialchars(pd_birthday_display($employee['verjaardag'] ?? null)) ?>">
+                    <small style="color:#718096;">Alleen invullen als de medewerker op het infoscherm bij "Vandaag jarig" wil staan. Het jaar wordt niet bewaard.</small>
                 </div>
                 
                 <div class="form-row">

@@ -323,6 +323,19 @@ shot('infoscherm-scherm', async () => {
   await p.evaluate(() => document.getAnimations().forEach((a) => { if (a.effect && a.effect.target && a.effect.target.id === 'ticker-track') a.pause(); }));
   await save('infoscherm-scherm', p);
 });
+shot('infoscherm-jarig', async () => {
+  const p = await pageFor('admin', SCREEN);
+  await open(p, 'infoscherm.php?mode=infoscreen', 1500);
+  await p.waitForSelector('#stage .slide.bday', { timeout: 30000 }); // second slide of the round
+  await p.waitForTimeout(1500);
+  await p.evaluate(() => document.getAnimations().forEach((a) => { if (a.effect && a.effect.target && a.effect.target.id === 'ticker-track') a.pause(); }));
+  await save('infoscherm-jarig', p);
+});
+shot('infoscherm-schermen', async () => {
+  const p = await pageFor('admin');
+  await open(p, 'admin/infoscreen_manage.php?tab=schermen', 800);
+  await save('infoscherm-schermen', p, { selector: 'form table', pad: 12 });
+});
 shot('infoscherm-koppelingen', async () => {
   const p = await pageFor('admin');
   await open(p, 'admin/infoscreen_manage.php?tab=koppelingen', 800);

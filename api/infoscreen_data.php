@@ -12,7 +12,8 @@
  *
  * Everything the infoscreen (infoscherm.php) shows, filtered for the locations of the
  * signed-in screen account: messages, news, weather, display settings and the Google
- * Slides ID for the combined mode. When sources are due, they are fetched after the
+ * Slides ID for the combined mode. Managers may pass ?as=<user id> to preview the
+ * screen of another account. When sources are due, they are fetched after the
  * response has been sent (or, without PHP-FPM, briefly before it).
  */
 
@@ -29,6 +30,16 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 $userId = (int)$_SESSION['user_id'];
+// ?as=<id>: preview of another screen account (Infoscherm › Schermen), only for managers
+if (isset($_GET['as']) && (int)$_GET['as'] !== $userId) {
+    require_once __DIR__ . '/../admin/auth_helper.php';
+    if (!hasAdminFeature('manage_infoscreen')) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Geen toegang']);
+        exit;
+    }
+    $userId = (int)$_GET['as'];
+}
 session_write_close(); // don't block other requests of this screen
 
 try {

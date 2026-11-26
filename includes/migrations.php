@@ -131,6 +131,7 @@ try {
         'sub_status_type' => "VARCHAR(100) DEFAULT NULL",
         'sub_status_until' => "DATETIME DEFAULT NULL",
         'home_locatie' => "VARCHAR(100) DEFAULT NULL COMMENT 'Vaste thuislocatie — locatie wordt hiernaar teruggezet bij uitchecken'",
+        'verjaardag' => "CHAR(5) DEFAULT NULL COMMENT 'MM-DD, alleen dag en maand (opt-in Vandaag jarig)'",
     ];
 
     foreach ($empCols as $colName => $definition) {

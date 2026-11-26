@@ -63,6 +63,9 @@ const PD_IS_DEFAULT_SETTINGS = [
     'agenda_sidebar' => '1',     // upcoming appointments in the sidebar
     'agenda_slide'   => '1',     // an agenda slide once per round
     'agenda_days'    => '7',     // how many days ahead
+    'bhv_card'       => '0',     // "BHV aanwezig" block with the checked-in BHV'ers
+    'bhv_names'      => '1',     // show their names (first name + initial), not only the number
+    'birthday_slide' => '0',     // "Vandaag jarig" slide + ticker item (opt-in, privacy)
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -263,6 +266,9 @@ function pd_infoscreen_save_settings(PDO $db, array $input): array
     $clean['agenda_sidebar'] = !empty($input['agenda_sidebar']) ? '1' : '0';
     $clean['agenda_slide']   = !empty($input['agenda_slide']) ? '1' : '0';
     $clean['agenda_days']    = (string)max(1, min(31, (int)($input['agenda_days'] ?? 7)));
+    $clean['bhv_card']       = !empty($input['bhv_card']) ? '1' : '0';
+    $clean['bhv_names']      = !empty($input['bhv_names']) ? '1' : '0';
+    $clean['birthday_slide'] = !empty($input['birthday_slide']) ? '1' : '0';
 
     $stmt = $db->prepare("INSERT INTO infoscreen_settings (setting_key, setting_value) VALUES (?, ?)
                           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
@@ -1206,12 +1212,91 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
             'agenda_sidebar' => $settings['agenda_sidebar'] === '1',
             'agenda_slide'   => $settings['agenda_slide'] === '1',
             'agenda_days'    => (int)$settings['agenda_days'],
+            'bhv_card'       => $settings['bhv_card'] === '1',
+            'bhv_names'      => $settings['bhv_names'] === '1',
+            'birthday_slide' => $settings['birthday_slide'] === '1',
         ],
-        'messages' => $messages,
-        'agenda'   => $agenda,
-        'news'     => $news,
-        'weather'  => $weather,
+        'messages'  => $messages,
+        'agenda'    => $agenda,
+        'news'      => $news,
+        'weather'   => $weather,
+        'bhv'       => $settings['bhv_card'] === '1'
+            ? pd_infoscreen_bhv_present($db, $locations, $settings['bhv_names'] === '1')
+            : null,
+        'birthdays' => $settings['birthday_slide'] === '1' ? pd_infoscreen_birthdays($db, $locations) : [],
     ];
+}
+
+/** Short display name: first name + initial of the surname ("Eva S."). */
+function pd_infoscreen_short_name(array $emp): string
+{
+    $first = trim((string)($emp['voornaam'] ?? ''));
+    $last  = trim((string)($emp['achternaam'] ?? ''));
+    if ($first === '') {
+        $parts = preg_split('/\s+/', trim((string)($emp['naam'] ?? '')));
+        $first = (string)array_shift($parts);
+        $last  = (string)end($parts);
+    }
+    if ($first === '') return '';
+    // surname may start with a prefix ("van der Berg"): use the first capital
+    $initial = preg_match('/\p{Lu}/u', $last, $m) ? $m[0] : mb_strtoupper(mb_substr($last, 0, 1));
+    return $initial !== '' ? $first . ' ' . $initial . '.' : $first;
+}
+
+/**
+ * BHV'ers who are checked in at the screen's locations: status IN without an extra status
+ * (the extra buttons such as "Thuiswerken" or "Vakantie" also set IN, but the person is
+ * not in the building — when in doubt the screen rather shows too few than too many). Returns ['count' => n, 'names' => [...]] (names empty when hidden).
+ */
+function pd_infoscreen_bhv_present(PDO $db, array $locations, bool $withNames): array
+{
+    $sql = "SELECT voornaam, achternaam, naam FROM employees
+            WHERE actief = 1 AND bhv = 'Ja' AND status = 'IN' AND (sub_status IS NULL OR sub_status = '')";
+    $params = [];
+    if ($locations) {
+        $sql .= " AND locatie IN (" . implode(',', array_fill(0, count($locations), '?')) . ")";
+        $params = array_values($locations);
+    }
+    $sql .= " ORDER BY voornaam, achternaam";
+    try {
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (\Throwable $e) {
+        return ['count' => 0, 'names' => []];
+    }
+    $names = $withNames ? array_values(array_filter(array_map('pd_infoscreen_short_name', $rows))) : [];
+    return ['count' => count($rows), 'names' => array_slice($names, 0, 12)];
+}
+
+/**
+ * Employees whose birthday (MM-DD, opt-in per employee) is today in Amsterdam, for the
+ * screen's locations (home location, otherwise current location). 29 February is
+ * celebrated on 28 February in other years.
+ */
+function pd_infoscreen_birthdays(PDO $db, array $locations, ?DateTimeImmutable $today = null): array
+{
+    $today = $today ?? new DateTimeImmutable('now', new DateTimeZone('Europe/Amsterdam'));
+    $days = [$today->format('m-d')];
+    if ($today->format('m-d') === '02-28' && !$today->format('L')) {
+        $days[] = '02-29';
+    }
+    $sql = "SELECT voornaam, achternaam, naam FROM employees
+            WHERE actief = 1 AND verjaardag IN (" . implode(',', array_fill(0, count($days), '?')) . ")";
+    $params = $days;
+    if ($locations) {
+        $sql .= " AND COALESCE(NULLIF(home_locatie, ''), locatie) IN ("
+              . implode(',', array_fill(0, count($locations), '?')) . ")";
+        $params = array_merge($params, array_values($locations));
+    }
+    $sql .= " ORDER BY voornaam, achternaam LIMIT 20";
+    try {
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return array_values(array_filter(array_map('pd_infoscreen_short_name', $stmt->fetchAll(PDO::FETCH_ASSOC))));
+    } catch (\Throwable $e) {
+        return []; // column not migrated yet
+    }
 }
 
 /** Store an uploaded message image. Returns the relative path. Throws RuntimeException. */

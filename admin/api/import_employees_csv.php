@@ -16,6 +16,7 @@
 
 session_start();
 require_once __DIR__ . '/../../includes/db.php';
+require_once __DIR__ . '/../../includes/birthday.php';
 
 header('Content-Type: application/json');
 
@@ -114,7 +115,8 @@ try {
             $checkStmt = $db->prepare("SELECT id FROM employees WHERE naam = ? AND actief = 1");
             $checkStmt->execute([$naam]);
             
-            if ($checkStmt->fetch()) {
+            $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+            if ($existing) {
                 // Update existing
                 $stmt = $db->prepare("
                     UPDATE employees 
@@ -128,6 +130,7 @@ try {
                     $locatie, $bhv, $foto_url, $notities, $status,
                     $naam
                 ]);
+                $savedId = (int)$existing['id'];
                 
                 $imported++;
             } else {
@@ -144,8 +147,15 @@ try {
                     $employee_id, $naam, $voornaam, $achternaam, $functie, 
                     $afdeling, $locatie, $bhv, $foto_url, $notities, $status
                 ]);
+                $savedId = (int)$db->lastInsertId();
                 
                 $imported++;
+            }
+
+            // Birthday (dag-maand): only when the file has the column; invalid values are reported
+            if (isset($colMap['verjaardag'])
+                && !pd_birthday_save($db, $savedId, (string)($row[$colMap['verjaardag']] ?? ''))) {
+                $errors[] = "Rij $rowNum: verjaardag \"" . trim((string)$row[$colMap['verjaardag']]) . "\" niet herkend (gebruik dag-maand, bijv. 14-03)";
             }
             
             // Small delay to ensure unique employee_id

@@ -19,6 +19,7 @@ if (function_exists('opcache_invalidate')) {
 session_start();
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/license_check.php';
+require_once __DIR__ . '/../includes/birthday.php';
 require_once 'auth_helper.php';
 requireAdmin();
 
@@ -88,8 +89,10 @@ $stmt->execute([
     $email, $telefoon, $functie, $bhv, $afdeling, $locatie, $locatie,
     $foto_url, $notities, $visible_locations_json, $allow_manual_location_change
 ]);
-                
-                $_SESSION['pd_flash'] = "Medewerker succesvol toegevoegd!";
+                $bdayOk = pd_birthday_save($db, (int)$db->lastInsertId(), $_POST['verjaardag'] ?? '');
+
+                $_SESSION['pd_flash'] = "Medewerker succesvol toegevoegd!"
+                    . ($bdayOk ? '' : ' (Verjaardag niet opgeslagen: gebruik dag-maand, bijv. 14-03.)');
                 header('Location: employees_manage.php?t=' . time());
                 exit;
             } catch (PDOException $e) {
@@ -146,8 +149,10 @@ $stmt->execute([
     $bhv, $afdeling, $locatie, $locatie,
     $foto_url, $notities, $visible_locations_json, $allow_manual_location_change, $id
 ]);
-                
-                $_SESSION['pd_flash'] = "Medewerker bijgewerkt!";
+                $bdayOk = pd_birthday_save($db, (int)$id, $_POST['verjaardag'] ?? '');
+
+                $_SESSION['pd_flash'] = "Medewerker bijgewerkt!"
+                    . ($bdayOk ? '' : ' (Verjaardag niet opgeslagen: gebruik dag-maand, bijv. 14-03.)');
                 header('Location: employees_manage.php?t=' . time());
                 exit;
             } catch (PDOException $e) {
@@ -733,6 +738,10 @@ $afdelingen = $db->query("
                                     <input type="tel" name="telefoon" placeholder="+31 6 12345678">
                                 </div>
                                 <div class="form-field">
+                                    <label>Verjaardag <small style="font-weight:normal;color:#718096;">(dag-maand, optioneel)</small></label>
+                                    <input type="text" name="verjaardag" placeholder="14-03" maxlength="10" title="Dag en maand, bijvoorbeeld 14-03. Alleen invullen als de medewerker op het infoscherm 'Vandaag jarig' wil staan.">
+                                </div>
+                                <div class="form-field">
                                     <label>Functie</label>
                                     <input type="text" name="functie" placeholder="Pedagogisch medewerker">
                                 </div>
@@ -996,6 +1005,10 @@ $afdelingen = $db->query("
                                                 <div class="form-field">
                                                     <label>Telefoon</label>
                                                     <input type="tel" name="telefoon" value="<?= htmlspecialchars($emp['telefoon'] ?? '') ?>">
+                                                </div>
+                                                <div class="form-field">
+                                                    <label>Verjaardag <small style="font-weight:normal;color:#718096;">(dag-maand, optioneel)</small></label>
+                                                    <input type="text" name="verjaardag" value="<?= htmlspecialchars(pd_birthday_display($emp['verjaardag'] ?? null)) ?>" placeholder="14-03" maxlength="10" title="Dag en maand, bijvoorbeeld 14-03. Leeg laten = niet tonen op het infoscherm.">
                                                 </div>
                                                 <div class="form-field">
                                                     <label>Functie</label>

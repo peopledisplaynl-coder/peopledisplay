@@ -95,7 +95,7 @@ All return JSON and check the session/role themselves.
 | `process_scan.php` | badge scans |
 | `generate_badges.php`, `generate_badge_png.php` | badge PDF/PNG |
 | `get_user_presentation.php` | presentation mode settings (Slides ID, idle seconds, `screen_mode`) |
-| `infoscreen_data.php` | everything the infoscreen shows, filtered for the screen account's locations; fetches due sources after the response |
+| `infoscreen_data.php` | everything the infoscreen shows, filtered for the screen account's locations; fetches due sources after the response. `?as=<user id>` (2.8.0): preview of another screen account, only with the admin feature `manage_infoscreen` |
 | `infoscreen_push.php` | Berichten-API: other systems post, update, list or delete messages with a connection key (Bearer / X-Api-Key), no session |
 | `infoscreen_teams.php` | Teams outgoing webhook (`?k=<id>`): HMAC-signed channel messages become infoscreen messages; replies in the channel |
 | `get_todays_visitors.php`, `get_visitors_inside.php`, `visitor_checkin.php`, `visitor_checkout.php` | visitors |
@@ -197,6 +197,16 @@ fetchers and parsers, and `pd_infoscreen_screen_data()` for the screen.
 - **Screen.** `infoscherm.php` polls `api/infoscreen_data.php` every 5 minutes, keeps the last
   answer in `localStorage` for outages, reloads itself after a version change or after 24 hours,
   and reports touches to the parent page (`postMessage`) when shown in the idle overlay.
+- **BHV and birthdays (2.8.0).** `pd_infoscreen_bhv_present()` counts `employees` with `bhv = 'Ja'`,
+  `status = 'IN'` and no `sub_status` (the extra buttons also set IN) at the screen's locations
+  (`locatie`); with the block on, the screen polls every 2 minutes. `employees.verjaardag` is
+  `CHAR(5)` "MM-DD" (no year; filling it in is the opt-in), helpers in `includes/birthday.php`;
+  `pd_infoscreen_birthdays()` matches today in Europe/Amsterdam (29-02 on 28-02 in other years)
+  against the home location (`COALESCE(home_locatie, locatie)`). Settings `bhv_card`, `bhv_names`,
+  `birthday_slide` (all in `infoscreen_settings`), off by default.
+- **Preview per screen (2.8.0).** `infoscherm.php?preview=1&as=<id>` loads the data of that account
+  (checked again in the API) and keeps its own `localStorage` cache key, so a preview never
+  overwrites the cache of a real screen in the same browser.
 - **Agenda (2.5.0).** `includes/infoscreen_ical.php` reads an .ics (Outlook published calendar, Google
   secret address), expands repeating appointments (RRULE subset, EXDATE, RECURRENCE-ID, Windows
   time zone names) and stores 60 days ahead in `infoscreen_events`; private appointments are skipped.

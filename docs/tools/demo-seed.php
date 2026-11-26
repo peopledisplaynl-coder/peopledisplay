@@ -263,7 +263,11 @@ $db->prepare("INSERT INTO infoscreen_messages (title, body, locations, ends_at, 
 
 pd_infoscreen_save_settings($db, ['title' => 'Welkom op OBS De Voorbeeldschool', 'slide_seconds' => 12, 'news_slides' => 1, 'news_slide_max' => 4,
     'weather_slide' => 1, 'ticker' => 1, 'ticker_speed' => 60, 'sidebar' => 1, 'theme' => 'donker', 'show_clock' => 1,
-    'agenda_sidebar' => 1, 'agenda_slide' => 1, 'agenda_days' => 7]);
+    'agenda_sidebar' => 1, 'agenda_slide' => 1, 'agenda_days' => 7,
+    'bhv_card' => 1, 'bhv_names' => 1, 'birthday_slide' => 1]);
+// Birthdays (opt-in): two colleagues have their birthday today, a few others another day
+$db->prepare("UPDATE employees SET verjaardag = ? WHERE voornaam IN ('Bram', 'Lotte')")->execute([date('m-d')]);
+$db->prepare("UPDATE employees SET verjaardag = ? WHERE voornaam IN ('Anna', 'Isa')")->execute([date('m-d', strtotime('+40 days'))]);
 $db->exec("UPDATE users SET screen_mode = 'infoscreen', can_show_presentation = 1 WHERE username = 'receptie'");
 
 // ── Organisation settings and demo licence (local only) ───────────────

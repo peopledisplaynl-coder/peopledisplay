@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS `employees` (
   `bhv`                         enum('Ja','Nee')             NOT NULL DEFAULT 'Nee',
   `email`                       varchar(255)                 DEFAULT NULL,
   `telefoon`                    varchar(50)                  DEFAULT NULL,
+  `verjaardag`                  char(5)                      DEFAULT NULL COMMENT 'MM-DD, alleen dag en maand (opt-in Vandaag jarig)',
   `notities`                    text                         DEFAULT NULL,
   `tijdstip`                    datetime                     DEFAULT current_timestamp(),
   `actief`                      tinyint(1)                   DEFAULT 1,
