@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <h2>Database Installatie</h2>
 <p style="color: #666; margin-bottom: 30px;">
-    De database wordt aangemaakt met alle benodigde tabellen voor PeopleDisplay v2.1.
+    De database wordt aangemaakt met alle benodigde tabellen voor PeopleDisplay.
 </p>
 
 <?php if ($error): ?>

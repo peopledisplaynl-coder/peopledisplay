@@ -17,7 +17,7 @@
  * Voeg hier nooit een map of een patroon toe.
  */
 
-const PD_OBSOLETE_FILES_VERSION = '2.2.0';
+const PD_OBSOLETE_FILES_VERSION = '2.8.2';
 
 /** @return string[] */
 function pd_obsolete_files_list(): array
@@ -38,6 +38,9 @@ function pd_obsolete_files_list(): array
         'admin/api/get-config.php',
         'admin/api/get_button_config.php',
         'admin/user_permissions.php',
+        // Oude losse featurespagina (2.8.2): nergens gelinkt, maar opslaan wiste bijna alle
+        // instellingen van een gebruiker, ook de beheerrechten
+        'admin/features_manage.php',
         'admin/js/user_permissions_save.js',
         'api/send_visitor_notification.php',
         'mobile-status-view.js',

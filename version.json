@@ -1,12 +1,22 @@
 {
-    "version": "2.8.1",
+    "version": "2.8.2",
     "critical": false,
-    "message": "Nieuw: Vandaag jarig en BHV aanwezig per scherm aan of uit te zetten.",
+    "message": "Het versienummer staat nu ook op het inlogscherm en in het gebruikersmenu.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
     "release_date": "2026-11-26",
     "changelog": [
+        {
+            "version": "2.8.2",
+            "date": "2026-11-26",
+            "changes": [
+                "Verbeterd: het inlogscherm toont het echte versienummer (was altijd v2.0) en werkt dat bij elke update vanzelf bij",
+                "Nieuw: onderaan het gebruikersmenu (klik op je foto of initialen) staat het versienummer, zodat ook gebruikers zonder beheerrechten zien welke versie draait",
+                "Verbeterd: na een update laadt het aanmeldscherm altijd de nieuwe app.js en style.css (geen oude versie meer uit de browsercache)",
+                "Beveiliging: het oude, nergens gelinkte bestand admin\/features_manage.php wordt na de update automatisch verwijderd; opslaan op die pagina wiste bijna alle instellingen van een gebruiker"
+            ]
+        },
         {
             "version": "2.8.1",
             "date": "2026-11-26",

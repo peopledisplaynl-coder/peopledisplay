@@ -16,6 +16,7 @@
 
 // Include db.php first (this already starts session!)
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/version.php';
 require_once __DIR__ . '/includes/security.php';
 require_once __DIR__ . '/includes/twofa.php';
 
@@ -368,7 +369,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
         
         <div class="login-footer">
-            PeopleDisplay v2.0 © <?php echo date('Y'); ?>
+            PeopleDisplay v<?= htmlspecialchars(PD_CURRENT_VERSION) ?> © <?php echo date('Y'); ?>
         </div>
     </div>
     

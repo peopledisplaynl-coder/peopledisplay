@@ -43,7 +43,7 @@ Op het welkomstscherm kies je waar je naartoe wilt.
 | **Infoscherm-berichten** | Alleen als de beheerder dat voor je heeft aangezet: berichten op het infoscherm plaatsen voor jouw locaties |
 | **Beheer** | Alleen zichtbaar voor beheerders: het admin-dashboard |
 
-Onderaan staat de knop **Uitloggen**.
+Onderaan staat de knop **Uitloggen**, met daaronder het versienummer van PeopleDisplay.
 
 # Het aanmeldscherm
 
@@ -66,7 +66,7 @@ Heeft de beheerder jouw account gekoppeld aan je eigen medewerkerskaart? Dan zie
 - **− en +** — maak de kaarten kleiner of groter (zoomen). Handig op een groot scherm of juist op een kleine tablet. Ook dit wordt per apparaat onthouden.
 - **Overzicht** — opent de overzichtspagina.
 - **Fullscreen** — toont het aanmeldscherm over het hele scherm. Druk op **Esc** om terug te gaan.
-- **Je initiaal** (linksboven) — opent een menu met **Menu** (welkomstscherm), **Mijn Profiel** en **Uitloggen**.
+- **Je initiaal** (linksboven) — opent een menu met **Menu** (welkomstscherm), **Mijn Profiel** en **Uitloggen**. Onderaan het menu staat het versienummer; handig als de beheerder of helpdesk vraagt welke versie je hebt.
 
 ## Locaties kiezen
 

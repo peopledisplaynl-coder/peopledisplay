@@ -2,6 +2,13 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.8.2 — 2026-11-26
+
+- Verbeterd: het inlogscherm toont het echte versienummer (was altijd v2.0) en werkt dat bij elke update vanzelf bij
+- Nieuw: onderaan het gebruikersmenu (klik op je foto of initialen) staat het versienummer, zodat ook gebruikers zonder beheerrechten zien welke versie draait
+- Verbeterd: na een update laadt het aanmeldscherm altijd de nieuwe app.js en style.css (geen oude versie meer uit de browsercache)
+- Beveiliging: het oude, nergens gelinkte bestand admin/features_manage.php wordt na de update automatisch verwijderd; opslaan op die pagina wiste bijna alle instellingen van een gebruiker
+
 ## v2.8.1 — 2026-11-26
 
 - Nieuw: bij Infoscherm > Schermen kies je per scherm of Vandaag jarig en BHV aanwezig getoond worden: Standaard (volgt Weergave), Aan of Uit. Zo kan het ene scherm de jarigen tonen en het andere niet

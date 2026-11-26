@@ -93,7 +93,7 @@ $user_id = $_SESSION['user_id'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PeopleDisplay - Aanmeldscherm</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?= urlencode(PD_CURRENT_VERSION) ?>">
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
@@ -582,7 +582,7 @@ $user_id = $_SESSION['user_id'];
         // Versienummer bij laden — app.js vergelijkt dit met de server
         window.PD_LOADED_VERSION = '<?= defined("PD_CURRENT_VERSION") ? PD_CURRENT_VERSION : "0.0.0" ?>';
     </script>
-    <script src="app.js"></script>
+    <script src="app.js?v=<?= urlencode(PD_CURRENT_VERSION) ?>"></script>
     <script src="index-refresh.js"></script>
     
     <!-- 🎬 Presentation Controller (idle auto-show) -->

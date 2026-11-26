@@ -22,6 +22,7 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 
 session_start();
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/version.php';
 
 // Check login
 if (!isset($_SESSION['user_id'])) {
@@ -250,6 +251,7 @@ $isInfoscreenEditor = is_array($userFeatures) && !empty($userFeatures['infoscree
         
         <div class="footer">
             <a href="logout.php" class="logout-btn">🚪 Uitloggen</a>
+            <div style="margin-top:12px;font-size:12px;color:rgba(255,255,255,.75);">PeopleDisplay v<?= htmlspecialchars(PD_CURRENT_VERSION) ?></div>
         </div>
     </div>
     

@@ -19,6 +19,7 @@ header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
 header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/version.php';
 require_once __DIR__ . '/auth_helper.php';
 requireAdmin();
 requireAdminFeature('manage_system_config');
@@ -101,7 +102,7 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
         
         <div class="header">
             <h1>⚙️ Systeem Configuratie</h1>
-            <p>PeopleDisplay v2.0 - MySQL Database</p>
+            <p>PeopleDisplay v<?= htmlspecialchars(defined('PD_CURRENT_VERSION') ? PD_CURRENT_VERSION : '') ?></p>
         </div>
         
         <?php if ($message): ?>

@@ -45,7 +45,7 @@ On the welcome screen you choose where to go.
 | **Infoscherm-berichten** (infoscreen messages) | Only when the administrator switched it on for you: posting messages on the infoscreen for your locations |
 | **Beheer** (management) | Administrators only: the admin dashboard |
 
-At the bottom is the **Uitloggen** (log out) button.
+At the bottom is the **Uitloggen** (log out) button, with the PeopleDisplay version number below it.
 
 # The check-in screen
 
@@ -68,7 +68,7 @@ Has your administrator linked your account to your own staff card? Then instead 
 - **− and +** — make the cards smaller or larger (zoom). Useful on a big screen or a small tablet. Also remembered per device.
 - **Overzicht** — opens the overview page.
 - **Fullscreen** — shows the check-in screen full screen. Press **Esc** to go back.
-- **Your initial** (top left) — opens a menu with **Menu** (welcome screen), **Mijn Profiel** and **Uitloggen**.
+- **Your initial** (top left) — opens a menu with **Menu** (welcome screen), **Mijn Profiel** and **Uitloggen**. The version number is at the bottom of the menu; useful when your administrator or helpdesk asks which version you have.
 
 ## Choosing locations
 

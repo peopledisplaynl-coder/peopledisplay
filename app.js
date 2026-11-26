@@ -288,6 +288,7 @@ console.log('BASE_PATH detected:', BASE_PATH);
           <button class="user-dropdown-item logout" id="logout-btn">
             🚪 Uitloggen
           </button>
+          ${window.PD_LOADED_VERSION ? `<div class="user-dropdown-version">PeopleDisplay v${window.PD_LOADED_VERSION}</div>` : ''}
         </div>
       `;
       
