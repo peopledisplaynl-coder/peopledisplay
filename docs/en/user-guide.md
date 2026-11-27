@@ -42,7 +42,7 @@ On the welcome screen you choose where to go.
 | **Aanmeldscherm** (check-in screen) | Checking staff in and out — the main screen |
 | **Overzicht** (overview) | A list of everyone who is in, per location |
 | **Mijn Profiel** (my profile) | Changing your name, email address, photo and password |
-| **Infoscherm-berichten** (infoscreen messages) | Only when the administrator switched it on for you: posting messages on the infoscreen for your locations |
+| **Infoscherm** (infoscreen) | Only when the administrator switched it on for you: posting messages on the infoscreen and/or changing its house style, for your locations |
 | **Beheer** (management) | Administrators only: the admin dashboard |
 
 At the bottom is the **Uitloggen** (log out) button, with the PeopleDisplay version number below it.
@@ -192,19 +192,21 @@ The IN/OUT board is a simple two-column view: on the left who is **UIT** (out), 
 
 If your administrator enabled the IN/OUT board for your account, the check-in screen always opens as the IN/OUT board for you.
 
-# Infoscreen messages
+# Infoscreen
 
-If the administrator made you an **editor** (for example as reception or caretaker), the welcome screen shows the button **📝 Infoscherm-berichten** (infoscreen messages). With it you put messages on the infoscreen, for **your locations** only. Which ones those are is shown at the top, in the green box.
+If the administrator gave you infoscreen permissions (for example as head teacher, reception or caretaker), the welcome screen shows the button **📝 Infoscherm** (infoscreen). With it you put messages on the infoscreen and/or change its house style, for **your locations** only. Which ones those are is shown at the top, in the green box.
 
 ![Posting infoscreen messages for your own locations](../images/infoscherm-redacteur.png)
 
 1. Click **Nieuw bericht** (new message).
-2. Fill in a **Titel** (title) and a short **Tekst** (text), and optionally choose an image and a background colour. Below the text you see how many characters you use; keep to the advice and the text stays large and easy to read.
+2. Fill in a **Titel** (title) and a short **Tekst** (text), and optionally choose an image and a background colour. Below the text you see how many characters you use; keep to the advice and the text stays large and easy to read. With an image, choose where it goes (left, right, top or across the whole slide), whether it must be shown completely and how large it is; the sketch next to it shows the result. The colour **Huisstijl** or **Accent** shows the message in the colours of your school.
 3. Under **Op welke locaties?** (which locations?) tick where the message must appear. You only see your own locations.
 4. Optionally choose **Tonen vanaf** and **Tonen tot en met** (show from / until). Empty means: now, and it stays until you switch it off.
 5. Tick **Belangrijk** (important) if the message must appear more often and also in the news ticker. Click **Opslaan** (save).
 
 You can **edit** (Bewerken), **switch off** (Uitzetten) and **delete** (Verwijderen) your own messages. Messages from the administrator for **🌐 Alle locaties** (all locations), and messages that are also on other locations, show **🔒 Alleen lezen** (read only): the administrator changes those. **Voorbeeld** (preview) shows what the screen looks like.
+
+**Huisstijl (house style).** If you may change the house style, there is a tab **🖌️ Huisstijl**. Choose the location (if you have more than one) and set the title, logo, font and colours. A preview on the right updates right away, and below the colours you see whether the text stays easy to read. Empty fields take over the house style of the organisation. **Bekijk op het scherm** (view on screen) shows the real screen of that location.
 
 # My profile
 

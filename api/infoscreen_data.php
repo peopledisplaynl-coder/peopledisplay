@@ -13,7 +13,8 @@
  * Everything the infoscreen (infoscherm.php) shows, filtered for the locations of the
  * signed-in screen account: messages, news, weather, display settings and the Google
  * Slides ID for the combined mode. Managers may pass ?as=<user id> to preview the
- * screen of another account. When sources are due, they are fetched after the
+ * screen of another account; ?loc=<name> previews one location (managers, and editors
+ * for their own locations). When sources are due, they are fetched after the
  * response has been sent (or, without PHP-FPM, briefly before it).
  */
 
@@ -40,6 +41,20 @@ if (isset($_GET['as']) && (int)$_GET['as'] !== $userId) {
     }
     $userId = (int)$_GET['as'];
 }
+// ?loc=<name>: preview of one location (2.9.0), for managers and for editors of that location
+$previewLoc = null;
+if (isset($_GET['loc']) && (string)$_GET['loc'] !== '') {
+    require_once __DIR__ . '/../admin/auth_helper.php';
+    $scope = pd_infoscreen_editor_scope($db, $userId, hasAdminFeature('manage_infoscreen'));
+    $loc = (string)$_GET['loc'];
+    $known = in_array($loc, $db->query("SELECT location_name FROM locations")->fetchAll(PDO::FETCH_COLUMN), true);
+    if (!$scope || !$known || (!$scope['all'] && !in_array($loc, $scope['locations'], true))) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Geen toegang']);
+        exit;
+    }
+    $previewLoc = $loc;
+}
 session_write_close(); // don't block other requests of this screen
 
 try {
@@ -58,8 +73,10 @@ try {
     $user = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
     $base = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/api/x.php'))), '/');
-    $data = pd_infoscreen_screen_data($db, pd_infoscreen_user_locations($db, $userId), $base,
-        pd_infoscreen_screen_overrides($user['features'] ?? null));
+    $data = $previewLoc !== null
+        ? pd_infoscreen_screen_data($db, [$previewLoc], $base)
+        : pd_infoscreen_screen_data($db, pd_infoscreen_user_locations($db, $userId), $base,
+            pd_infoscreen_screen_overrides($user['features'] ?? null), pd_infoscreen_screen_brand($user['features'] ?? null));
 
     $presentationId = trim((string)($user['presentation_id'] ?? ''));
     if ($presentationId === '') {

@@ -10,10 +10,11 @@
  * infoscherm_berichten.php
  * Upload naar: /infoscherm_berichten.php
  *
- * Infoscreen messages for editors (2.6.0), e.g. reception or caretaker. A user with the
- * feature "infoscreenEditor" places and edits messages for the locations set for that user
- * only. Messages for all locations (or for other locations) are shown read-only.
- * SuperAdmin and admins with "Infoscherm beheren" may post for every location here as well.
+ * Infoscreen for editors (2.6.0), e.g. reception or caretaker. A user with the right
+ * "infoscreenEditor" places and edits messages, a user with "infoscreenBranding" (2.9.0) sets
+ * the huisstijl, both only for the infoscreen locations of that user. Messages for all
+ * locations (or for other locations) are shown read-only. SuperAdmin and admins with
+ * "Infoscherm beheren" may do everything here as well.
  */
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -40,7 +41,7 @@ if ($scope === null) {
 }
 
 $appRoot = __DIR__;
-$colors = ['blauw' => '#1d4ed8', 'groen' => '#15803d', 'oranje' => '#ea7a12', 'rood' => '#dc2626', 'paars' => '#7c3aed', 'grijs' => '#475569'];
+$tab = ($_GET['tab'] ?? '') === 'huisstijl' && $scope['branding'] ? 'huisstijl' : ($scope['messages'] ? 'berichten' : 'huisstijl');
 if ($scope['all']) {
     try {
         $pickable = $db->query("SELECT location_name FROM locations WHERE active = 1 ORDER BY sort_order, location_name")->fetchAll(PDO::FETCH_COLUMN);
@@ -56,6 +57,14 @@ function pd_isb_redirect(string $flash, bool $ok = true, string $qs = ''): void
     $_SESSION['pd_flash'] = ($ok ? '✅ ' : '❌ ') . $flash;
     header('Location: infoscherm_berichten.php' . $qs);
     exit;
+}
+
+/** May this scope change the huisstijl of $loc ('' = organisation, only with all locations)? */
+function pd_isb_brand_allowed(array $scope, string $loc, array $pickable): bool
+{
+    if (!$scope['branding']) return false;
+    if ($loc === '') return $scope['all'];
+    return in_array($loc, $pickable, true);
 }
 
 function pd_isb_dt(?string $value): ?string
@@ -83,6 +92,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $id = (int)($_POST['id'] ?? 0);
     try {
+        if ($action === 'save_brand' || $action === 'reset_brand') {
+            $loc = (string)($_POST['loc'] ?? '');
+            $qs = '?tab=huisstijl&loc=' . rawurlencode($loc);
+            if (!pd_isb_brand_allowed($scope, $loc, $pickable)) pd_isb_redirect('De huisstijl van deze locatie mag u niet aanpassen.', false, '?tab=huisstijl');
+            if ($action === 'reset_brand') {
+                pd_branding_reset($db, $loc, $appRoot);
+                pd_isb_redirect('Eigen huisstijl verwijderd: de locatie volgt weer de organisatie.', true, $qs);
+            }
+            pd_branding_save($db, $loc, $_POST, $_FILES, $appRoot, $userId);
+            pd_isb_redirect('Huisstijl opgeslagen. Open schermen nemen dit binnen 5 minuten over.', true, $qs);
+        }
+        if (!$scope['messages'] && in_array($action, ['save', 'toggle', 'delete'], true)) {
+            pd_isb_redirect('U mag geen berichten plaatsen.', false, '?tab=huisstijl');
+        }
         if ($action === 'save') {
             $back = $id ? '?edit=' . $id : '?new=1';
             $old = null;
@@ -95,7 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $locs = pd_infoscreen_locs_from_post($pickable, $scope['all']);
             if ($locs === false) pd_isb_redirect('Kies minimaal één locatie.', false, $back);
             $body = mb_substr(trim((string)($_POST['body'] ?? '')), 0, 2000);
-            $color = isset($colors[$_POST['color'] ?? '']) ? $_POST['color'] : 'blauw';
+            $color = pd_infoscreen_color_from_post($_POST);
+            [$imgLayout, $imgFit, $imgSize] = pd_infoscreen_image_options_from_post($_POST);
             $starts = pd_isb_dt($_POST['starts_at'] ?? '');
             $ends = pd_isb_dt($_POST['ends_at'] ?? '');
             if ($starts && $ends && $ends <= $starts) pd_isb_redirect('De einddatum moet na de begindatum liggen.', false, $back);
@@ -108,15 +132,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $image = pd_infoscreen_store_upload($_FILES['image'], $appRoot);
             }
             if ($id) {
-                $db->prepare("UPDATE infoscreen_messages SET title = ?, body = ?, image_path = ?, locations = ?, starts_at = ?, ends_at = ?,
-                              priority = ?, color = ?, active = ? WHERE id = ?")
-                   ->execute([$title, $body, $image, $locs, $starts, $ends, $priority, $color, $active, $id]);
+                $db->prepare("UPDATE infoscreen_messages SET title = ?, body = ?, image_path = ?, image_layout = ?, image_fit = ?, image_size = ?,
+                              locations = ?, starts_at = ?, ends_at = ?, priority = ?, color = ?, active = ? WHERE id = ?")
+                   ->execute([$title, $body, $image, $imgLayout, $imgFit, $imgSize, $locs, $starts, $ends, $priority, $color, $active, $id]);
                 if (($old['image_path'] ?? null) && $old['image_path'] !== $image) pd_infoscreen_delete_image($db, $old['image_path'], $appRoot);
                 pd_isb_redirect('Bericht opgeslagen.');
             }
-            $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, locations, starts_at, ends_at, priority, color, active, created_by)
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-               ->execute([$title, $body, $image, $locs, $starts, $ends, $priority, $color, $active, $userId]);
+            $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, image_layout, image_fit, image_size, locations, starts_at, ends_at, priority, color, active, created_by)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+               ->execute([$title, $body, $image, $imgLayout, $imgFit, $imgSize, $locs, $starts, $ends, $priority, $color, $active, $userId]);
             pd_isb_redirect('Bericht toegevoegd.');
         }
         if ($action === 'toggle' || $action === 'delete') {
@@ -157,8 +181,17 @@ foreach ($rows as $m) {
 
 $editId = (int)($_GET['edit'] ?? 0);
 $edit = $editId ? pd_isb_editable($db, $scope, $editId) : null;
-$showForm = $edit || isset($_GET['new']);
+$showForm = $tab === 'berichten' && ($edit || isset($_GET['new']));
 if ($showForm && !$scope['all'] && !$pickable) $showForm = false;
+
+// Huisstijl (2.9.0)
+$brandRows = pd_branding_rows($db);
+$orgBrand = pd_branding_resolve($brandRows, [], 'donker', '.');
+$brandLocs = $scope['all'] ? array_merge([''], $pickable) : $pickable;
+$brandLoc = (string)($_GET['loc'] ?? ($brandLocs[0] ?? ''));
+if (!in_array($brandLoc, $brandLocs, true)) $brandLoc = $brandLocs[0] ?? '';
+// Message colours shown as they look on the first own location
+$msgBrand = pd_branding_resolve($brandRows, $scope['all'] ? [] : $pickable, 'donker', '.');
 
 $stmt = $db->prepare("SELECT COALESCE(NULLIF(display_name, ''), username) FROM users WHERE id = ?");
 $stmt->execute([$userId]);
@@ -258,8 +291,17 @@ $locBadges = function (array $locs) use ($h): string {
     .loc-picker .loc-all { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #eef0f3; }
     .loc-picker .loc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 14px; }
     .loc-picker label:has(input:disabled) { color: #9ca3af; }
+    .tabs { display: flex; gap: 4px; border-bottom: 2px solid #e5e7eb; margin-bottom: 18px; }
+    .tabs a { padding: 10px 16px; text-decoration: none; color: #4b5563; font-weight: 600; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .tabs a.active { color: #4338ca; border-color: #667eea; }
+    .loc-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .loc-tabs a { padding: 6px 12px; border-radius: 99px; border: 1.5px solid #d1d5db; text-decoration: none; color: #374151; font-size: 13.5px; font-weight: 600; background: #fff; }
+    .loc-tabs a.active { background: #312e81; border-color: #312e81; color: #fff; }
+    select, input[type=file] { width: 100%; padding: 8px 10px; border: 1.5px solid #d1d5db; border-radius: 7px; font-size: 14px; font-family: inherit; background: #fff; }
     @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } .container { padding: 20px 16px; } .card { grid-template-columns: 1fr; } .thumb { width: 100%; height: 120px; } .actions { justify-content: flex-start; } }
 </style>
+<?= pd_infoscreen_message_style_css() ?>
+<?= pd_branding_form_css() ?>
 </head>
 <body>
 <a href="frontpage.php" class="back-link">← Terug</a>
@@ -270,16 +312,16 @@ $locBadges = function (array $locs) use ($h): string {
             <div class="subtitle">Berichten op het infoscherm plaatsen en aanpassen<?= $userName !== '' ? ' — ' . $h($userName) : '' ?></div>
         </div>
         <div class="actions">
-            <a class="btn btn-light" href="infoscherm.php?preview=1&amp;mode=infoscreen" target="_blank">👁️ Voorbeeld</a>
+            <a class="btn btn-light" href="infoscherm.php?preview=1&amp;mode=infoscreen<?= !$scope['all'] && $pickable ? '&amp;loc=' . rawurlencode($pickable[0]) : '' ?>" target="_blank">👁️ Voorbeeld</a>
             <?php if ($canManage): ?><a class="btn btn-light" href="admin/infoscreen_manage.php">⚙️ Volledig beheer</a><?php endif; ?>
         </div>
     </div>
 
     <?php if ($scope['all']): ?>
-        <div class="scope all"><span class="label">🌐 U plaatst berichten voor alle locaties</span>
+        <div class="scope all"><span class="label">🌐 U werkt voor alle locaties</span>
             Als beheerder kiest u per bericht één of meer locaties, of “Alle locaties” voor belangrijke berichten die overal moeten staan.</div>
     <?php elseif ($scope['locations']): ?>
-        <div class="scope own"><span class="label">U plaatst berichten voor:</span>
+        <div class="scope own"><span class="label"><?= $scope['messages'] ? 'U plaatst berichten' : 'U past de huisstijl aan' ?> voor:</span>
             <?= $locBadges($scope['locations']) ?>
             <div class="help" style="color:inherit;margin-top:8px">Berichten van de beheerder voor alle locaties ziet u hier ook, maar die kunt u niet aanpassen.</div></div>
     <?php else: ?>
@@ -287,11 +329,41 @@ $locBadges = function (array $locs) use ($h): string {
             Vraag de beheerder om bij uw gebruiker de locaties aan te vinken waarvoor u berichten mag plaatsen.</div>
     <?php endif; ?>
 
+    <?php if ($scope['messages'] && $scope['branding']): ?>
+    <div class="tabs">
+        <a href="infoscherm_berichten.php" class="<?= $tab === 'berichten' ? 'active' : '' ?>">📝 Berichten</a>
+        <a href="?tab=huisstijl" class="<?= $tab === 'huisstijl' ? 'active' : '' ?>">🖌️ Huisstijl</a>
+    </div>
+    <?php endif; ?>
+
     <?php if ($flash): ?>
         <div class="alert <?= str_starts_with($flash, '❌') ? 'err' : 'ok' ?>"><?= $h($flash) ?></div>
     <?php endif; ?>
 
-    <?php if ($showForm): $m = $edit ?? ['id' => 0, 'title' => '', 'body' => '', 'image_path' => null, 'locations' => null, 'starts_at' => null, 'ends_at' => null, 'priority' => 0, 'color' => 'blauw', 'active' => 1];
+    <?php if ($tab === 'huisstijl'): ?>
+    <div class="panel">
+        <h2>🖌️ Huisstijl van het infoscherm</h2>
+        <p class="help" style="margin:-6px 0 14px">Logo, titel, kleuren en lettertype voor de schermen van een locatie. Lege velden volgen de huisstijl van de organisatie.</p>
+        <?php if (count($brandLocs) > 1): ?>
+        <div class="loc-tabs">
+            <?php foreach ($brandLocs as $l): ?>
+                <a href="?tab=huisstijl&amp;loc=<?= $h(rawurlencode($l)) ?>" class="<?= $l === $brandLoc ? 'active' : '' ?>"><?= $l === '' ? '🌐 Hele organisatie' : '📍 ' . $h($l) ?><?= isset($brandRows[$l]) ? ' ✓' : '' ?></a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!$brandLocs): ?>
+            <div class="empty">Er zijn nog geen locaties voor u ingesteld.</div>
+        <?php else:
+            $hidden = '<input type="hidden" name="csrf" value="' . $h($csrf) . '"><input type="hidden" name="action" value="save_brand"><input type="hidden" name="loc" value="' . $h($brandLoc) . '">';
+            $reset = $brandLoc !== '' && isset($brandRows[$brandLoc])
+                ? '<button class="btn btn-light" type="submit" name="action" value="reset_brand" formnovalidate onclick="return confirm(\'Eigen huisstijl van deze locatie verwijderen?\')">↺ Volg de organisatie</button>' : '';
+            echo pd_branding_form($brandRows[$brandLoc] ?? pd_branding_blank($brandLoc), $hidden, '', $orgBrand,
+                'infoscherm.php?preview=1&mode=infoscreen' . ($brandLoc !== '' ? '&loc=' . rawurlencode($brandLoc) : ''), $reset);
+        endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($showForm): $m = $edit ?? ['id' => 0, 'title' => '', 'body' => '', 'image_path' => null, 'image_layout' => 'left', 'image_fit' => 'cover', 'image_size' => 50, 'locations' => null, 'starts_at' => null, 'ends_at' => null, 'priority' => 0, 'color' => 'huisstijl', 'active' => 1];
         $selected = pd_infoscreen_locs($m['locations']);
         if (!$m['id'] && !$scope['all'] && count($pickable) === 1) $selected = $pickable; ?>
     <div class="panel">
@@ -320,16 +392,9 @@ $locBadges = function (array $locs) use ($h): string {
                         <div class="current-img"><img src="<?= $h($m['image_path']) ?>" alt=""><label class="check"><input type="checkbox" name="remove_image" value="1"> Afbeelding verwijderen</label></div>
                     <?php endif; ?>
                     <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/gif,image/webp">
-                    <div class="help">JPG, PNG, GIF of WEBP, maximaal 5 MB. Liggend formaat (16:9) werkt het best.</div>
+                    <div class="help">JPG, PNG, GIF of WEBP, maximaal 5 MB. Kies hieronder waar de afbeelding staat en of hij helemaal zichtbaar moet zijn.</div>
                 </div>
-                <div class="full">
-                    <label class="f">Achtergrondkleur</label>
-                    <div class="colors">
-                        <?php foreach ($colors as $key => $hex): ?>
-                            <label><input type="radio" name="color" value="<?= $key ?>" <?= $m['color'] === $key ? 'checked' : '' ?>><span><i style="background:<?= $hex ?>"></i><?= ucfirst($key) ?></span></label>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
+                <?= pd_infoscreen_message_style_fields($m, $msgBrand) ?>
                 <div>
                     <label class="f" for="starts_at">Tonen vanaf</label>
                     <input type="datetime-local" id="starts_at" name="starts_at" value="<?= $dtValue($m['starts_at']) ?>">
@@ -353,6 +418,7 @@ $locBadges = function (array $locs) use ($h): string {
     </div>
     <?php endif; ?>
 
+    <?php if ($tab === 'berichten'): ?>
     <div class="toolbar">
         <div class="help" style="margin:0"><?= count($messages) ?> bericht(en)</div>
         <?php if (!$showForm && ($scope['all'] || $pickable)): ?><a class="btn btn-primary" href="?new=1">➕ Nieuw bericht</a><?php endif; ?>
@@ -364,7 +430,7 @@ $locBadges = function (array $locs) use ($h): string {
     <div class="cards">
     <?php foreach ($messages as $m): [$statusText, $statusCls] = pd_isb_status($m); ?>
         <div class="card<?= $m['_editable'] ? '' : ' ro' ?>">
-            <div><?php if ($m['image_path']): ?><img class="thumb" src="<?= $h($m['image_path']) ?>" alt=""><?php else: ?><span class="thumb" style="background:<?= $colors[$m['color']] ?? '#1d4ed8' ?>"></span><?php endif; ?></div>
+            <div><?php if ($m['image_path']): ?><img class="thumb" src="<?= $h($m['image_path']) ?>" alt=""><?php else: ?><span class="thumb" style="background:<?= $h(PD_IS_MESSAGE_COLORS[$m['color']][1] ?? ($m['color'] === 'accent' ? $msgBrand['accent']['bg'] : $msgBrand['primary']['bg'])) ?>"></span><?php endif; ?></div>
             <div>
                 <div class="t"><?= $h($m['title']) ?> <?php if ((int)$m['priority']): ?><span class="pill prio">Belangrijk</span><?php endif; ?></div>
                 <div class="meta">
@@ -388,8 +454,11 @@ $locBadges = function (array $locs) use ($h): string {
     <?php endforeach; ?>
     </div>
     <?php endif; ?>
+    <?php endif; /* tab berichten */ ?>
 </div>
 <?= pd_infoscreen_location_picker_js() ?>
 <?= pd_infoscreen_text_counter_js() ?>
+<?= pd_infoscreen_message_style_js() ?>
+<?= pd_branding_form_js() ?>
 </body>
 </html>

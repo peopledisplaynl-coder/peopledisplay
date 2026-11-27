@@ -146,7 +146,6 @@ With two-step verification a user enters, besides the password, a 6-digit code f
 - **Standaard sorteervolgorde** (default sort order) — always applies, also without the sort button: *first name A→Z, status IN first*, *first name* or *last name*.
 - **Zoomknop tonen** (show zoom buttons) and **Standaard zoomniveau** (default zoom, 50–150%).
 - **IN/UIT Bord weergave** — the user sees the IN/OUT board instead of the cards. Suitable for a large screen.
-- **Infoscherm-berichten plaatsen (redacteur)** (post infoscreen messages, editor) — the user posts infoscreen messages for the ticked visible locations (see [Who may post messages?](#who-may-post-messages)).
 - **Zichtbare Locaties** and **Zichtbare Afdelingen** (visible locations and departments) — which cards this user sees. No department ticked means: all departments.
 
 ## An admin's permissions
@@ -278,12 +277,15 @@ The screen has three parts:
 Click **Nieuw bericht** (new message) and fill in:
 
 - **Titel** (title) and a short **Tekst** (text). A message with only an image and no text shows the image large, for example a poster. Below the text you see how many characters you used and the advice (about 250 with an image, about 450 without). When a message does not fit the screen, the screen makes the text smaller by itself, so the title and *Belangrijk* always stay visible.
-- **Afbeelding** (image: JPG, PNG, GIF or WEBP, at most 5 MB; landscape works best).
-- **Achtergrondkleur** (background colour), **Tonen vanaf** and **Tonen tot en met** (show from / until; empty = now and indefinitely) and **Tijd in beeld** (time on screen).
+- **Afbeelding** (image: JPG, PNG, GIF or WEBP, at most 5 MB), with its **place** (left, right, top, or across the whole slide with the text on top), whether it **fills** the space or is shown **completely**, and its **size** (30 to 70% of the slide). A landscape photo that is cut off at the sides: choose *Boven* (top) or *Helemaal tonen* (show completely). A small sketch on the right of the form shows the result right away.
+- **Achtergrondkleur** (background colour) — a fixed colour, or **Huisstijl** or **Accent**: then every screen shows the message in the colours of its own [huisstijl](#huisstijl-house-style). New messages get *Huisstijl* by default.
+- **Tonen vanaf** and **Tonen tot en met** (show from / until; empty = now and indefinitely) and **Tijd in beeld** (time on screen).
 - **Locaties** (locations) — tick **🌐 Alle locaties** (all locations) for a message that must be everywhere, or tick one or more locations. A screen shows the messages of the locations set for its user account.
 - **Belangrijk** (important) — the message gets a red label, appears more often and is also shown in the news ticker.
 
 ![A new message for two locations](../images/infoscherm-nieuw-bericht.png)
+
+![Place, fill and size of the image, with a sketch](../images/infoscherm-afbeelding.png)
 
 The list shows for each message its locations and whether it is **Op het scherm** (on screen), **Gepland** (scheduled), **Verlopen** (expired) or **Uit** (off). **Uitzetten** (switch off) removes a message from the screens without deleting it.
 
@@ -292,9 +294,11 @@ News sources, weather places, agendas and connections can also be linked to one,
 ## Who may post messages?
 
 - **SuperAdmin** and an **Admin** with the permission *Infoscherm beheren* (manage infoscreen) manage everything on this page and post messages for **all locations**, for example an important message that must be everywhere.
-- A **message editor** (for example reception or the caretaker) posts and edits messages **for their own locations only**. On that user's *Features* tab, tick **📝 Infoscherm-berichten plaatsen (redacteur)** and, under **Zichtbare locaties** (visible locations), tick the locations they may post for. No location ticked means: none at all. The role can stay *User*.
+- Other users, for example the head teacher, reception or caretaker of one school, get permissions **for their own locations only**. Open the user under **Gebruikers** (users) and go to the **📺 Infoscherm** tab. Tick what they may do: **📝 Berichten plaatsen** (post messages) and/or **🖌️ Huisstijl aanpassen** (change the house style), and under **Voor welke locaties?** (for which locations?) tick the locations. No location ticked means: none at all. The role can stay *User*. These locations are separate from the *Zichtbare locaties* (which staff cards someone sees); for users from before version 2.9.0 they were copied from there once.
 
-The editor gets the button **📝 Infoscherm-berichten** in the menu. The top of that page clearly shows which locations they post for. Messages for all locations, or messages that are also on other locations, are visible to the editor with **🔒 Alleen lezen** (read only) but cannot be changed. News, weather, agenda, connections and display stay with the administrator.
+![Infoscreen permissions per user](../images/gebruiker-infoscherm.png)
+
+The user gets the button **📝 Infoscherm** in the menu, with the tabs *Berichten* (messages) and *Huisstijl* (house style), depending on what they may do. The top of that page clearly shows which locations. Messages for all locations, or messages that are also on other locations, are visible to the editor with **🔒 Alleen lezen** (read only) but cannot be changed. News, weather, agenda, connections and display stay with the administrator.
 
 ![The page of a message editor with two locations](../images/infoscherm-redacteur.png)
 
@@ -367,7 +371,7 @@ Click **➕ API-koppeling**. You see a key once: copy and keep it. A system then
 
 ## Display
 
-On the **Weergave** tab you set the title at the top, the colour scheme (dark or light), the time per slide, the number of news slides per round, the speed of the news ticker, how many days ahead the agenda goes and which parts are shown (sidebar, news ticker, news slides, weather slide, agenda in the sidebar, agenda slide). **Voorbeeld** (preview) opens the result in a new window. Open screens pick up changes within 5 minutes.
+On the **Weergave** tab you set the colour scheme (dark or light; used when no own colours are set under [Huisstijl](#huisstijl-house-style)), the time per slide, the number of news slides per round, the speed of the news ticker, how many days ahead the agenda goes and which parts are shown (sidebar, news ticker, news slides, weather slide, agenda in the sidebar, agenda slide). **Voorbeeld** (preview) opens the result in a new window. Open screens pick up changes within 5 minutes.
 
 Under **BHV en verjaardagen** (emergency response and birthdays) there are two extra parts. Both are off by default. What you choose here is the default for all screens; per screen you switch them on or off under [Screens](#screens).
 
@@ -376,11 +380,30 @@ Under **BHV en verjaardagen** (emergency response and birthdays) there are two e
 
 ![Birthdays today on the infoscreen](../images/infoscherm-jarig.png)
 
+## Huisstijl (house style)
+
+On the **🖌️ Huisstijl** tab you put the infoscreen in the house style of the organisation, and optionally per location, for example per school within a foundation.
+
+![The house style of a location, with a preview and the readability check](../images/infoscherm-huisstijl.png)
+
+1. At the top, choose **🌐 Hele organisatie** (whole organisation) or a location. A ✓ means: it has its own house style.
+2. **Titel bovenaan** (title at the top) — for example *Welkom op OBS De Linde*.
+3. **Logo** — preferably a PNG with a transparent background, at most 2 MB (save an SVG as PNG first). Under **Bovenbalk** (top bar) choose *Logo en titel* (logo and title), *Alleen logo* (logo only) or *Alleen titel* (title only). **Logo op een wit vlak** (logo on a white panel) keeps a dark logo visible on a dark background.
+4. **Lettertype** (font) — one of the standard fonts (Segoe UI, Arial, Calibri, Verdana, Tahoma, Trebuchet MS or Georgia). Nothing is loaded from the internet; a Chromebook or Android screen shows a similar font.
+5. **Eigen kleuren gebruiken** (use own colours) — the **main colour** (messages in the house style, the news ticker and headings), the **accent colour** (a second message colour, for example for important messages) and two **background colours** (a gradient; the same colour twice is plain). On a light background the text turns dark by itself, on a dark background white.
+6. Below the colours is the **readability check**: ✓ easy to read, ⚠ fair or ✗ hard to read. A **preview** on the right updates right away. Click **Opslaan** (save); **Bekijk op het scherm** (view on screen) shows the real screen of that location.
+
+Empty fields of a location follow the organisation: without its own title or logo it shows those of the organisation, and without *Eigen kleuren* the colours of the organisation. **↺ Volg de organisatie** (follow the organisation) removes the own house style of a location.
+
+Which house style a screen uses: a screen with **one location** gets the house style of that location, a screen with **more locations** that of the organisation. Under [Screens](#screens) you choose another one per screen.
+
+![The infoscreen in the house style of a location, with a message in the house colour](../images/infoscherm-huisstijl-scherm.png)
+
 ## Screens
 
 On the **Schermen** tab you choose per user account what its screen shows: **Google Slides**, **Infoscherm** or **Slides + infoscherm** (the presentation large, with the weather, notices and the news ticker around it). The same choice is also on the user's *Presentatie* tab.
 
-In the columns **Vandaag jarig** (birthdays) and **BHV aanwezig** (emergency responders) you choose per screen **Standaard** (follows the setting under Weergave), **Aan** (on) or **Uit** (off). For example, the screen in the school shows birthdays and the screen of the childcare does not. A screen always shows only the birthdays and emergency responders of its own locations. An account without ticked locations sees all locations, so always tick the location(s) for a screen in a building.
+In the column **Infoscherm** you choose per screen the **Huisstijl** (*Automatisch* (automatic), *Organisatie* (organisation) or a location with its own house style). For **Vandaag jarig** (birthdays) and **BHV aanwezig** (emergency responders) you choose per screen **Standaard** (follows the setting under Weergave), **Aan** (on) or **Uit** (off). For example, the screen in the school shows birthdays and the screen of the childcare does not. A screen always shows only the birthdays and emergency responders of its own locations. An account without ticked locations sees all locations, so always tick the location(s) for a screen in a building.
 
 **👁️ Voorbeeld** (preview) next to an account opens, in a new window, exactly what that screen shows: the messages, news, weather and emergency responders of that account's locations. For a screen with Google Slides only, **👁️ Slides** opens the presentation. The preview shows the saved choice, so save first after a change.
 

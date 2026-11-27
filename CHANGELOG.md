@@ -2,6 +2,15 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.9.0 — 2026-11-27
+
+- Nieuw: tabblad Huisstijl bij Infoscherm. Stel voor de hele organisatie en per locatie (bijvoorbeeld per school) een logo, titel, hoofdkleur, accentkleur, achtergrondkleuren en lettertype in, met een voorbeeld en een controle of de tekst goed leesbaar blijft
+- Nieuw: berichtkleuren Huisstijl en Accent: elk scherm toont het bericht in de kleuren van zijn eigen huisstijl. Nieuwe berichten krijgen standaard Huisstijl
+- Nieuw: bij een bericht kies je waar de afbeelding staat (links, rechts, boven of over de hele dia), of hij de ruimte vult of helemaal zichtbaar is, en hoe groot hij is (30-70%), met een schets in het formulier. Liggende foto's hoeven niet meer afgekapt te worden
+- Nieuw: tabblad Infoscherm bij Gebruikers: kies per gebruiker de rechten Berichten plaatsen en Huisstijl aanpassen, en voor welke locaties. Zo kan bijvoorbeeld een directeur de huisstijl van de eigen school instellen zonder de andere scholen te kunnen wijzigen
+- Nieuw: bij Infoscherm > Schermen kies je per scherm welke huisstijl het gebruikt. Automatisch: een scherm met één locatie krijgt de huisstijl van die locatie, anders die van de organisatie
+- Gewijzigd: de titel bovenaan het infoscherm staat nu bij Huisstijl in plaats van bij Weergave; de bestaande titel wordt automatisch overgenomen
+
 ## v2.8.2 — 2026-11-26
 
 - Verbeterd: het inlogscherm toont het echte versienummer (was altijd v2.0) en werkt dat bij elke update vanzelf bij

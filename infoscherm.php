@@ -45,11 +45,16 @@ if ($preview && isset($_GET['as'])) {
         $asUser = $st->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 }
-$dataUrl = 'api/infoscreen_data.php' . ($asUser ? '?as=' . (int)$asUser['id'] : '');
-$cacheKey = $preview ? 'pd_infoscreen_preview_' . ($asUser ? (int)$asUser['id'] : 'self') : 'pd_infoscreen_cache_v1';
+// Preview of one location (2.9.0, Huisstijl): managers, and editors for their own locations
+$asLoc = null;
+if ($preview && !$asUser && isset($_GET['loc']) && (string)$_GET['loc'] !== '') {
+    $asLoc = (string)$_GET['loc'];
+}
+$dataUrl = 'api/infoscreen_data.php' . ($asUser ? '?as=' . (int)$asUser['id'] : ($asLoc !== null ? '?loc=' . rawurlencode($asLoc) : ''));
+$cacheKey = $preview ? 'pd_infoscreen_preview_' . ($asUser ? (int)$asUser['id'] : ($asLoc !== null ? 'loc_' . md5($asLoc) : 'self')) : 'pd_infoscreen_cache_v1';
 $previewLabel = $asUser
     ? 'Voorbeeld — scherm „' . ($asUser['display_name'] ?: $asUser['username']) . '"'
-    : 'Voorbeeld — zo ziet het infoscherm eruit';
+    : ($asLoc !== null ? 'Voorbeeld — scherm op locatie „' . $asLoc . '"' : 'Voorbeeld — zo ziet het infoscherm eruit');
 ?><!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -63,6 +68,9 @@ $previewLabel = $asUser
     --bg1: #0b1f3a; --bg2: #143a6b; --panel: rgba(255,255,255,.07); --panel-border: rgba(255,255,255,.12);
     --text: #ffffff; --muted: rgba(255,255,255,.72); --accent: #4ea1ff; --ticker-bg: rgba(0,0,0,.35);
     --top-h: 9vh; --ticker-h: 7vh; --gap: 1.6vmin; --radius: 1.6vmin;
+    /* Huisstijl colours for messages (2.9.0), set from the data */
+    --primary: #1d4ed8; --primary-dark: #14369a; --on-primary: #ffffff;
+    --accent2: #dc2626; --accent2-dark: #9a1b1b; --on-accent2: #ffffff;
 }
 body.theme-licht {
     --bg1: #eef2f8; --bg2: #dfe7f3; --panel: #ffffff; --panel-border: rgba(16,33,58,.08);
@@ -91,6 +99,12 @@ body.no-sidebar #sidebar, body.no-ticker #ticker { display: none; }
 
 /* Top bar */
 #topbar { grid-area: top; display: flex; align-items: center; justify-content: space-between; gap: 2vw; padding: 0 1vw; }
+#brand { display: flex; align-items: center; gap: 1.4vw; min-width: 0; height: 100%; }
+#logo { display: none; height: calc(var(--top-h) * .78); max-width: 30vw; object-fit: contain; flex: 0 0 auto; }
+body.has-logo #logo { display: block; }
+#logo.plate { background: #fff; padding: .7vmin 1.2vmin; border-radius: 1vmin; }
+body.logo-only #title { display: none; }
+body.branded #ticker .label { background: var(--primary); color: var(--on-primary); }
 #title { min-width: 0; font-size: calc(var(--top-h) * .42); font-weight: 700; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #datetime { display: flex; align-items: baseline; gap: 1.4vw; white-space: nowrap; margin-left: auto; }
 #date { font-size: calc(var(--top-h) * .3); color: var(--muted); }
@@ -114,7 +128,17 @@ body.no-clock #datetime { display: none; }
 .msg.c-rood   { background: linear-gradient(135deg, #dc2626, #7f1010); }
 .msg.c-paars  { background: linear-gradient(135deg, #7c3aed, #3b1475); }
 .msg.c-grijs  { background: linear-gradient(135deg, #475569, #1e293b); }
-.msg .msg-img { flex: 0 0 52%; background-size: cover; background-position: center; }
+.msg.c-huisstijl { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: var(--on-primary); }
+.msg.c-accent    { background: linear-gradient(135deg, var(--accent2), var(--accent2-dark)); color: var(--on-accent2); }
+.msg .msg-img { flex: 0 0 var(--img, 52%); background-size: cover; background-position: center; }
+/* Image placement (2.9.0) */
+.msg.lay-right { flex-direction: row-reverse; }
+.msg.lay-top { flex-direction: column; }
+.msg.lay-top .msg-text { padding: 3.5% 6%; }
+.msg.lay-full .msg-img { position: absolute; inset: 0; }
+.msg.lay-full .msg-text { position: absolute; left: 0; right: 0; bottom: 0; max-height: 62%; padding: 9% 5% 4%;
+    background: linear-gradient(transparent, rgba(0,0,0,.82) 35%); color: #fff; }
+.msg.fit-contain .msg-img { background-size: contain; background-repeat: no-repeat; background-color: rgba(0,0,0,.25); }
 .msg .msg-img.contain { background-size: contain; background-repeat: no-repeat; background-color: rgba(0,0,0,.25); }
 .msg .msg-text { flex: 1; display: flex; flex-direction: column; justify-content: center; justify-content: safe center; padding: 5% 5.5%;
     min-width: 0; min-height: 0; overflow: hidden; --fit: 1; }
@@ -289,7 +313,8 @@ body.no-weather #side-clock { display: block; }
     #title { font-size: calc(var(--top-h) * .36); }
     :root { --top-h: 7vh; --ticker-h: 6vh; }
     .msg { flex-direction: column; }
-    .msg .msg-img { flex: 0 0 45%; }
+    .msg .msg-img { flex: 0 0 var(--img, 45%); }
+    .msg.lay-right { flex-direction: column; }
 }
 </style>
 </head>
@@ -297,7 +322,7 @@ body.no-weather #side-clock { display: block; }
 <?php if ($preview): ?><div id="preview-bar"><?= htmlspecialchars($previewLabel) ?></div><?php endif; ?>
 <div id="screen">
     <header id="topbar">
-        <div id="title"></div>
+        <div id="brand"><img id="logo" alt=""><div id="title"></div></div>
         <div id="datetime"><span id="date"></span><span id="clock"></span></div>
     </header>
     <main id="stage"><div id="progress"></div></main>
@@ -415,10 +440,12 @@ body.no-weather #side-clock { display: block; }
     // ── Slides ───────────────────────────────────────────────────────────
     function messageSlide(m) {
         const hasText = (m.body || '').trim() !== '';
-        const cls = ['slide', 'msg', 'c-' + (m.color || 'blauw'), m.image ? (hasText ? '' : 'only-img') : 'no-img'].join(' ');
+        const lay = m.image && hasText ? ['lay-' + (m.layout || 'left'), 'fit-' + (m.fit || 'cover')] : [];
+        const cls = ['slide', 'msg', 'c-' + (m.color || 'blauw'), m.image ? (hasText ? '' : 'only-img') : 'no-img', ...lay].join(' ');
         const badge = m.priority ? '<span class="badge">⚠ Belangrijk</span>' : '';
         const img = m.image ? `<div class="msg-img${hasText ? '' : ' contain'}" style="background-image:${esc(cssUrl(m.image))}"></div>` : '';
-        return `<div class="${cls}">${img}<div class="msg-text">${badge}<h1>${esc(m.title)}</h1>${hasText ? `<p>${esc(m.body)}</p>` : ''}</div></div>`;
+        const size = m.image && hasText && m.layout !== 'full' ? ` style="--img:${Math.max(30, Math.min(70, +m.size || 50))}%"` : '';
+        return `<div class="${cls}"${size}>${img}<div class="msg-text">${badge}<h1>${esc(m.title)}</h1>${hasText ? `<p>${esc(m.body)}</p>` : ''}</div></div>`;
     }
 
     function newsSlide(n) {
@@ -735,14 +762,20 @@ body.no-weather #side-clock { display: block; }
         data = d;
         const s = d.settings;
         const mode = FORCE_MODE || (d.screen_mode === 'combined' && d.presentation_id ? 'combined' : 'infoscreen');
+        const b = d.branding || null;
+        const brandColors = b && b.colors;
+        const theme = brandColors ? (brandColors.light ? 'licht' : 'donker') : (s.theme || 'donker');
+        const hasLogo = !!(b && b.logo && b.logo_mode !== 'title');
         document.body.className = [
-            'theme-' + (s.theme || 'donker'), EMBED ? 'embed' : '', 'mode-' + mode,
+            'theme-' + theme, EMBED ? 'embed' : '', 'mode-' + mode, brandColors ? 'branded' : '',
+            hasLogo ? 'has-logo' : '', hasLogo && b.logo_mode === 'logo' ? 'logo-only' : '',
             s.sidebar || mode === 'combined' ? '' : 'no-sidebar', s.show_clock ? '' : 'no-clock',
             document.body.classList.contains('hide-cursor') ? 'hide-cursor' : '',
         ].filter(Boolean).join(' ');
         const modeChanged = mode !== currentMode;
         currentMode = mode;
         $('title').textContent = s.title || '';
+        applyBranding(b, hasLogo);
         renderWeatherCard(d.weather);
         renderAgendaCard(d);
         renderBhvCard(d);
@@ -763,6 +796,27 @@ body.no-weather #side-clock { display: block; }
         if (!fromCache && (d.version !== VERSION || Date.now() - PAGE_STARTED > 24 * 3600 * 1000)) {
             pendingReload = true;
             if (mode === 'combined') location.reload();
+        }
+    }
+
+    // Huisstijl (2.9.0): colours, font and logo
+    function applyBranding(b, hasLogo) {
+        const st = document.body.style;
+        const vars = {};
+        if (b) {
+            vars['--primary'] = b.primary.bg; vars['--primary-dark'] = b.primary.dark; vars['--on-primary'] = b.primary.text;
+            vars['--accent2'] = b.accent.bg; vars['--accent2-dark'] = b.accent.dark; vars['--on-accent2'] = b.accent.text;
+            if (b.colors) { vars['--bg1'] = b.colors.bg1; vars['--bg2'] = b.colors.bg2; vars['--accent'] = b.colors.link; }
+        }
+        ['--primary', '--primary-dark', '--on-primary', '--accent2', '--accent2-dark', '--on-accent2', '--bg1', '--bg2', '--accent']
+            .forEach((k) => { if (vars[k]) st.setProperty(k, vars[k]); else st.removeProperty(k); });
+        st.fontFamily = b && b.font ? b.font : '';
+        const logo = $('logo');
+        if (hasLogo) {
+            if (logo.getAttribute('src') !== b.logo) logo.src = b.logo;
+            logo.classList.toggle('plate', !!b.logo_plate);
+        } else {
+            logo.removeAttribute('src');
         }
     }
 

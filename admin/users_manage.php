@@ -299,8 +299,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // 📋 IN/UIT Bord weergave feature
     $inuitBord = isset($_POST['can_inuitbord']) ? true : false;
 
-    // 📝 Infoscherm-berichtenredacteur (2.6.0): berichten plaatsen voor de eigen locaties
+    // 📺 Infoscherm-rechten (2.6.0 / 2.9.0): berichten plaatsen en huisstijl aanpassen, alleen
+    // voor de infoscherm-locaties van deze gebruiker
     $infoscreenEditor = isset($_POST['infoscreen_editor']);
+    $infoscreenBranding = isset($_POST['infoscreen_branding']);
+    $infoscreenLocations = isset($_POST['infoscreen_locations_set'])
+        ? array_values(array_map('strval', (array)($_POST['infoscreen_locations'] ?? [])))
+        : null;
 
     // 🔐 Admin features (alleen voor admins)
     $adminFeatures = [];
@@ -332,8 +337,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'zoomStandaard' => $zoomStandaard,
         'inuitBord' => $inuitBord,            // ← IN/UIT Bord weergave
         'infoscreenEditor' => $infoscreenEditor, // ← Infoscherm-berichten voor de eigen locaties
+        'infoscreenBranding' => $infoscreenBranding, // ← Huisstijl van het infoscherm voor de eigen locaties (2.9.0)
         'admin_features' => $adminFeatures,   // ← NEW: Admin feature permissions
-    ] + (isset($oldFeatures['infoscreenParts']) ? ['infoscreenParts' => $oldFeatures['infoscreenParts']] : []));
+    ] + (isset($oldFeatures['infoscreenParts']) ? ['infoscreenParts' => $oldFeatures['infoscreenParts']] : [])
+      + (isset($oldFeatures['infoscreenBrand']) ? ['infoscreenBrand' => $oldFeatures['infoscreenBrand']] : [])
+      + ($infoscreenLocations !== null ? ['infoscreenLocations' => $infoscreenLocations]
+         : (isset($oldFeatures['infoscreenLocations']) ? ['infoscreenLocations' => $oldFeatures['infoscreenLocations']] : [])));
     
     
     // Validation
@@ -1954,6 +1963,9 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                             ${user.role === 'admin' ? `<button type="button" class="tab-button" onclick="switchTab(event, 'rights-${userId}')">
                                 🔐 Rechten
                             </button>` : ''}
+                            <button type="button" class="tab-button" onclick="switchTab(event, 'infoscreen-${userId}')">
+                                📺 Infoscherm
+                            </button>
                             <button type="button" class="tab-button" onclick="switchTab(event, 'presentation-${userId}')">
                                 🎬 Presentatie
                             </button>
@@ -2134,17 +2146,6 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                                         </span>
                                     </label>
                                 </div>
-                                <div class="checkbox-item" style="align-items: flex-start; margin-top: 10px;">
-                                    <input type="checkbox" id="infoscreen-editor-${userId}" name="infoscreen_editor" value="1" ${features.infoscreenEditor ? 'checked' : ''}>
-                                    <label for="infoscreen-editor-${userId}" style="flex: 1;">
-                                        <strong style="display: block; margin-bottom: 4px;">📝 Infoscherm-berichten plaatsen (redacteur)</strong>
-                                        <span style="font-size: 12px; color: #718096; line-height: 1.4;">
-                                            Voor bijvoorbeeld receptie of conciërge: de gebruiker krijgt een knop “Infoscherm-berichten” en kan berichten
-                                            plaatsen en aanpassen voor de <strong>Zichtbare Locaties</strong> hieronder (geen locatie aangevinkt = geen enkele).
-                                            Berichten voor alle locaties plaatst alleen een beheerder met het recht “Infoscherm beheren”.
-                                        </span>
-                                    </label>
-                                </div>
                             </div>
                         </div>
                         
@@ -2201,6 +2202,47 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     </div>
                     ` : ''}
+
+                    <!-- TAB: INFOSCHERM-RECHTEN (2.9.0) -->
+                    <div id="infoscreen-${userId}" class="tab-content">
+                        <h4>📺 Infoscherm</h4>
+                        <p style="font-size: 13px; color: #718096; margin-bottom: 14px;">
+                            Wat mag deze gebruiker op het infoscherm, en voor welke locaties? Bijvoorbeeld de directeur of de receptie van één school.
+                            Een beheerder met het recht “Infoscherm beheren” mag alles, voor alle locaties.
+                        </p>
+                        <div class="checkbox-grid" style="grid-template-columns: 1fr;">
+                            <div class="checkbox-item" style="align-items: flex-start;">
+                                <input type="checkbox" id="infoscreen-editor-${userId}" name="infoscreen_editor" value="1" ${features.infoscreenEditor ? 'checked' : ''}>
+                                <label for="infoscreen-editor-${userId}" style="flex: 1;">
+                                    <strong style="display: block; margin-bottom: 4px;">📝 Berichten plaatsen</strong>
+                                    <span style="font-size: 12px; color: #718096; line-height: 1.4;">Berichten plaatsen en aanpassen voor de locaties hieronder (knop “Infoscherm” in het menu).</span>
+                                </label>
+                            </div>
+                            <div class="checkbox-item" style="align-items: flex-start;">
+                                <input type="checkbox" id="infoscreen-branding-${userId}" name="infoscreen_branding" value="1" ${features.infoscreenBranding ? 'checked' : ''}>
+                                <label for="infoscreen-branding-${userId}" style="flex: 1;">
+                                    <strong style="display: block; margin-bottom: 4px;">🖌️ Huisstijl aanpassen</strong>
+                                    <span style="font-size: 12px; color: #718096; line-height: 1.4;">Logo, titel, kleuren en lettertype van het infoscherm van de locaties hieronder.</span>
+                                </label>
+                            </div>
+                        </div>
+                        <input type="hidden" name="infoscreen_locations_set" value="1">
+                        <strong style="display: block; margin: 18px 0 10px;">Voor welke locaties?</strong>
+                        <div class="checkbox-grid">
+                            ${allLocations.map(loc => {
+                                const isLocs = Array.isArray(features.infoscreenLocations) ? features.infoscreenLocations : locations;
+                                const id = 'isloc-' + userId + '-' + String(loc).replace(/[^a-z0-9]/gi, '-');
+                                const safe = String(loc).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+                                return `<div class="checkbox-item">
+                                    <input type="checkbox" id="${id}" name="infoscreen_locations[]" value="${safe}" ${isLocs.includes(loc) ? 'checked' : ''}>
+                                    <label for="${id}">${safe}</label>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                        <p style="font-size: 12px; color: #718096; margin-top: 8px;">
+                            💡 Geen locatie aangevinkt = geen enkele. Dit staat los van de Zichtbare Locaties (welke medewerkerskaarten de gebruiker ziet).
+                        </p>
+                    </div>
 
                     <!-- TAB 3: PRESENTATION -->
                     <div id="presentation-${userId}" class="tab-content">

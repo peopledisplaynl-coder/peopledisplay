@@ -27,7 +27,18 @@ if (defined('PD_INFOSCREEN_LOADED')) {
 }
 define('PD_INFOSCREEN_LOADED', true);
 
+require_once __DIR__ . '/infoscreen_branding.php';
+
 const PD_IS_MODES = ['slides', 'infoscreen', 'combined'];
+// Message colours: fixed colours plus the two huisstijl colours (2.9.0)
+const PD_IS_MESSAGE_COLORS = [
+    'huisstijl' => ['Huisstijl', null], 'accent' => ['Accent', null],
+    'blauw' => ['Blauw', '#1d4ed8'], 'groen' => ['Groen', '#15803d'], 'oranje' => ['Oranje', '#ea7a12'],
+    'rood' => ['Rood', '#dc2626'], 'paars' => ['Paars', '#7c3aed'], 'grijs' => ['Grijs', '#475569'],
+];
+// Image in a message (2.9.0): where, how and how large
+const PD_IS_IMAGE_LAYOUTS = ['left' => 'Links', 'right' => 'Rechts', 'top' => 'Boven', 'full' => 'Hele dia (tekst eroverheen)'];
+const PD_IS_IMAGE_FITS = ['cover' => 'Vullen (randen kunnen wegvallen)', 'contain' => 'Helemaal tonen (niets wordt afgesneden)'];
 const PD_IS_FETCH_MINUTES = 15;          // minimum minutes between fetches per source
 const PD_IS_ITEMS_KEEP = 40;             // news items kept per source
 const PD_IS_HTTP_TIMEOUT = 8;            // seconds per request
@@ -219,6 +230,18 @@ function pd_infoscreen_ensure_schema(PDO $db): bool
             }
         }
 
+        // 2.9.0: placement of the image in a message, and the huisstijl table
+        foreach ([
+            'image_layout' => "ALTER TABLE `infoscreen_messages` ADD COLUMN `image_layout` varchar(10) NOT NULL DEFAULT 'left' COMMENT 'left, right, top of full' AFTER `image_path`",
+            'image_fit'    => "ALTER TABLE `infoscreen_messages` ADD COLUMN `image_fit` varchar(10) NOT NULL DEFAULT 'cover' COMMENT 'cover of contain' AFTER `image_layout`",
+            'image_size'   => "ALTER TABLE `infoscreen_messages` ADD COLUMN `image_size` tinyint(3) NOT NULL DEFAULT 50 COMMENT 'Deel van de dia in procenten, 30-70' AFTER `image_fit`",
+        ] as $column => $sql) {
+            if (!$db->query("SHOW COLUMNS FROM `infoscreen_messages` LIKE '$column'")->fetch()) {
+                $db->exec($sql);
+            }
+        }
+        pd_branding_schema($db);
+
         $col = $db->query("SHOW COLUMNS FROM `users` LIKE 'screen_mode'")->fetch();
         if (!$col) {
             $db->exec("ALTER TABLE `users` ADD COLUMN `screen_mode` enum('slides','infoscreen','combined') NOT NULL DEFAULT 'slides' COMMENT 'Wat het scherm toont bij inactiviteit: Google Slides, Infoscherm of beide'");
@@ -253,7 +276,10 @@ function pd_infoscreen_settings(PDO $db): array
 function pd_infoscreen_save_settings(PDO $db, array $input): array
 {
     $clean = [];
-    $clean['title']          = mb_substr(trim((string)($input['title'] ?? '')), 0, 80);
+    // The title lives in the huisstijl since 2.9.0; keep the stored one when the form has none
+    $clean['title']          = array_key_exists('title', $input)
+        ? mb_substr(trim((string)$input['title']), 0, 80)
+        : pd_infoscreen_settings($db)['title'];
     $clean['slide_seconds']  = (string)max(5, min(120, (int)($input['slide_seconds'] ?? 12)));
     $clean['news_slides']    = !empty($input['news_slides']) ? '1' : '0';
     $clean['news_slide_max'] = (string)max(0, min(20, (int)($input['news_slide_max'] ?? 4)));
@@ -412,26 +438,30 @@ function pd_infoscreen_locs_from_post(array $allowed, bool $allowAll = true)
 }
 
 /**
- * Who may place messages for which locations (2.6.0).
- * - SuperAdmin, and admins with the right "Infoscherm beheren" ($canManage): all locations.
- * - A user with the feature "infoscreenEditor" (Berichtenredacteur): only the locations set for
- *   that user (features.locations); none set = nothing.
- * Returns ['all' => bool, 'locations' => [...]] or null (no access).
+ * Who may do what on the infoscreen, for which locations (2.6.0, rights since 2.9.0).
+ * - SuperAdmin, and admins with the right "Infoscherm beheren" ($canManage): everything, all locations.
+ * - Other users, per right in users.features: "infoscreenEditor" (berichten plaatsen) and
+ *   "infoscreenBranding" (huisstijl aanpassen), only for their infoscreen locations
+ *   (features.infoscreenLocations; before 2.9.0 the Zichtbare locaties, features.locations).
+ * Returns ['all' => bool, 'locations' => [...], 'messages' => bool, 'branding' => bool], or null (no access).
  */
 function pd_infoscreen_editor_scope(PDO $db, int $userId, bool $canManage): ?array
 {
     if ($canManage) {
-        return ['all' => true, 'locations' => []];
+        return ['all' => true, 'locations' => [], 'messages' => true, 'branding' => true];
     }
     $stmt = $db->prepare("SELECT features FROM users WHERE id = ? AND active = 1");
     $stmt->execute([$userId]);
     $features = json_decode((string)$stmt->fetchColumn(), true);
-    if (!is_array($features) || empty($features['infoscreenEditor'])) {
-        return null;
-    }
-    $locs = is_array($features['locations'] ?? null) ? $features['locations'] : [];
+    if (!is_array($features)) return null;
+    $messages = !empty($features['infoscreenEditor']);
+    $branding = !empty($features['infoscreenBranding']);
+    if (!$messages && !$branding) return null;
+    $locs = is_array($features['infoscreenLocations'] ?? null) ? $features['infoscreenLocations']
+          : (is_array($features['locations'] ?? null) ? $features['locations'] : []);
     $known = $db->query("SELECT location_name FROM locations")->fetchAll(PDO::FETCH_COLUMN);
-    return ['all' => false, 'locations' => array_values(array_intersect(array_map('strval', $locs), $known))];
+    return ['all' => false, 'locations' => array_values(array_intersect(array_map('strval', $locs), $known)),
+            'messages' => $messages, 'branding' => $branding];
 }
 
 /** May this scope change a message for $msgLocs? A redacteur only for messages within the own locations. */
@@ -1123,6 +1153,13 @@ function pd_infoscreen_screen_overrides(?string $featuresJson): array
     return $out;
 }
 
+/** Huisstijl chosen for a screen (users.features.infoscreenBrand): null = automatic, '' = organisation, or a location. */
+function pd_infoscreen_screen_brand(?string $featuresJson): ?string
+{
+    $v = (json_decode((string)$featuresJson, true) ?: [])['infoscreenBrand'] ?? null;
+    return is_string($v) ? $v : null;
+}
+
 /** Value for users.features.infoscreenParts from form input ('default' | 'on' | 'off' per part). */
 function pd_infoscreen_screen_parts_clean(array $input): array
 {
@@ -1134,7 +1171,7 @@ function pd_infoscreen_screen_parts_clean(array $input): array
     return $out;
 }
 
-function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = '', array $overrides = []): array
+function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = '', array $overrides = [], ?string $brandChoice = null): array
 {
     $settings = pd_infoscreen_settings($db);
     foreach ($overrides as $k => $v) {
@@ -1142,8 +1179,7 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
     }
 
     // Messages within their time window, for this screen's locations
-    $stmt = $db->query("SELECT id, title, body, image_path, locations, starts_at, ends_at, duration_seconds, priority, color
-        FROM infoscreen_messages
+    $stmt = $db->query("SELECT * FROM infoscreen_messages
         WHERE active = 1 AND (starts_at IS NULL OR starts_at <= NOW()) AND (ends_at IS NULL OR ends_at >= NOW())
         ORDER BY priority DESC, sort_order, id DESC LIMIT 300");
     $messages = [];
@@ -1155,11 +1191,15 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
             'title'    => $m['title'],
             'body'     => (string)$m['body'],
             'image'    => $m['image_path'] ? $baseUrl . '/' . ltrim($m['image_path'], '/') : null,
+            'layout'   => isset(PD_IS_IMAGE_LAYOUTS[$m['image_layout'] ?? '']) ? $m['image_layout'] : 'left',
+            'fit'      => ($m['image_fit'] ?? '') === 'contain' ? 'contain' : 'cover',
+            'size'     => max(30, min(70, (int)($m['image_size'] ?? 50))),
             'duration' => $m['duration_seconds'] ? (int)$m['duration_seconds'] : null,
             'priority' => (int)$m['priority'] === 1,
-            'color'    => $m['color'],
+            'color'    => isset(PD_IS_MESSAGE_COLORS[$m['color']]) ? $m['color'] : 'blauw',
         ];
     }
+    $branding = pd_branding_resolve(pd_branding_rows($db), $locations, $settings['theme'], $baseUrl, $settings['title'], $brandChoice);
 
     // Sources
     $stmt = $db->query("SELECT * FROM infoscreen_sources WHERE active = 1 ORDER BY sort_order, id");
@@ -1231,7 +1271,7 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
 
     return [
         'settings' => [
-            'title'          => $settings['title'],
+            'title'          => $branding['title'],
             'slide_seconds'  => (int)$settings['slide_seconds'],
             'news_slides'    => $settings['news_slides'] === '1',
             'news_slide_max' => (int)$settings['news_slide_max'],
@@ -1248,6 +1288,7 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
             'bhv_names'      => $settings['bhv_names'] === '1',
             'birthday_slide' => $settings['birthday_slide'] === '1',
         ],
+        'branding'  => $branding,
         'messages'  => $messages,
         'agenda'    => $agenda,
         'news'      => $news,
@@ -1329,6 +1370,122 @@ function pd_infoscreen_birthdays(PDO $db, array $locations, ?DateTimeImmutable $
     } catch (\Throwable $e) {
         return []; // column not migrated yet
     }
+}
+
+/** Image placement of a message from the form: [layout, fit, size]. */
+function pd_infoscreen_image_options_from_post(array $post): array
+{
+    return [
+        isset(PD_IS_IMAGE_LAYOUTS[$post['image_layout'] ?? '']) ? $post['image_layout'] : 'left',
+        ($post['image_fit'] ?? '') === 'contain' ? 'contain' : 'cover',
+        max(30, min(70, (int)($post['image_size'] ?? 50))),
+    ];
+}
+
+/** Message colour from the form (default: the huisstijl colour). */
+function pd_infoscreen_color_from_post(array $post): string
+{
+    return isset(PD_IS_MESSAGE_COLORS[$post['color'] ?? '']) ? $post['color'] : 'huisstijl';
+}
+
+/**
+ * Form fields for colour and image placement of a message, with a small live preview.
+ * $m: the message row. $brand: resolved huisstijl (for the two huisstijl colours).
+ */
+function pd_infoscreen_message_style_fields(array $m, array $brand): string
+{
+    $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+    $swatch = function (string $key) use ($brand): string {
+        if ($key === 'huisstijl') return $brand['primary']['bg'];
+        if ($key === 'accent') return $brand['accent']['bg'];
+        return PD_IS_MESSAGE_COLORS[$key][1];
+    };
+    $colors = '';
+    foreach (PD_IS_MESSAGE_COLORS as $key => [$label]) {
+        $colors .= '<label><input type="radio" name="color" value="' . $key . '"' . (($m['color'] ?? 'huisstijl') === $key ? ' checked' : '')
+                 . ' data-hex="' . $h($swatch($key)) . '" data-text="' . $h(pd_color_text_on($swatch($key))) . '"><span><i style="background:' . $h($swatch($key)) . '"></i>'
+                 . $h($label) . '</span></label>';
+    }
+    $layouts = '';
+    foreach (PD_IS_IMAGE_LAYOUTS as $key => $label) {
+        $layouts .= '<option value="' . $key . '"' . (($m['image_layout'] ?? 'left') === $key ? ' selected' : '') . '>' . $h($label) . '</option>';
+    }
+    $fits = '';
+    foreach (PD_IS_IMAGE_FITS as $key => $label) {
+        $fits .= '<option value="' . $key . '"' . (($m['image_fit'] ?? 'cover') === $key ? ' selected' : '') . '>' . $h($label) . '</option>';
+    }
+    $size = max(30, min(70, (int)($m['image_size'] ?? 50)));
+    return '<div class="full">
+        <label class="f">Achtergrondkleur</label>
+        <div class="colors">' . $colors . '</div>
+        <div class="help">Huisstijl en Accent zijn de kleuren van de huisstijl van het scherm; elke locatie toont ze in de eigen huisstijl.</div>
+    </div>
+    <div class="full msg-layout" data-msg-layout>
+        <div class="msg-layout-fields">
+            <div><label class="f" for="image_layout">Plaats van de afbeelding</label><select id="image_layout" name="image_layout">' . $layouts . '</select></div>
+            <div><label class="f" for="image_fit">Afbeelding</label><select id="image_fit" name="image_fit">' . $fits . '</select></div>
+            <div><label class="f" for="image_size">Grootte: <output data-size-out>' . $size . '%</output> van de dia</label>
+                <input type="range" id="image_size" name="image_size" min="30" max="70" step="5" value="' . $size . '"></div>
+            <div class="help">Liggende foto die aan de zijkanten wordt afgekapt? Kies <b>Boven</b>, of <b>Helemaal tonen</b>. Een bericht zonder tekst toont de afbeelding altijd over de hele dia.</div>
+        </div>
+        <div class="msg-mini" data-mini><div class="mm-img"></div><div class="mm-text"><b data-mini-title>Titel</b><span>Tekst van het bericht…</span></div></div>
+    </div>';
+}
+
+function pd_infoscreen_message_style_css(): string
+{
+    return '<style>
+.msg-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 18px; align-items: start; }
+@media (max-width: 700px) { .msg-layout { grid-template-columns: 1fr; } }
+.msg-layout-fields { display: grid; gap: 10px; }
+.msg-layout input[type=range] { width: 100%; }
+.msg-mini { aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; display: flex; position: relative; background: #1d4ed8; color: #fff; font-size: 11px; }
+.msg-mini .mm-img { background: #9ca3af center / cover no-repeat; flex: 0 0 50%; }
+.msg-mini .mm-text { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 8px 10px; min-width: 0; }
+.msg-mini b { font-size: 13px; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; }
+.msg-mini.l-right { flex-direction: row-reverse; } .msg-mini.l-top { flex-direction: column; }
+.msg-mini.l-full .mm-img { position: absolute; inset: 0; }
+.msg-mini.l-full .mm-text { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, rgba(0,0,0,.75)); color: #fff; }
+.msg-mini.f-contain .mm-img { background-size: contain; background-color: rgba(0,0,0,.25); }
+.msg-mini.no-img .mm-img { display: none; } .msg-mini.no-img .mm-text { align-items: center; text-align: center; }
+</style>';
+}
+
+function pd_infoscreen_message_style_js(): string
+{
+    return <<<'JS'
+<script>
+(function () {
+    const box = document.querySelector('[data-msg-layout]');
+    if (!box) return;
+    const form = box.closest('form');
+    const mini = box.querySelector('[data-mini]');
+    const img = mini.querySelector('.mm-img');
+    const file = form.querySelector('input[type=file][name=image]');
+    const current = form.querySelector('.current-img img');
+    let src = current ? current.src : '';
+    if (file) file.addEventListener('change', () => { if (file.files[0]) src = URL.createObjectURL(file.files[0]); update(); });
+    function update() {
+        const layout = form.elements.image_layout.value, fit = form.elements.image_fit.value, size = form.elements.image_size.value;
+        const removed = form.elements.remove_image && form.elements.remove_image.checked;
+        const has = !!src && !removed;
+        mini.className = 'msg-mini l-' + layout + ' f-' + fit + (has ? '' : ' no-img');
+        img.style.backgroundImage = has ? 'url("' + src + '")' : 'none';
+        img.style.flexBasis = size + '%';
+        box.querySelector('[data-size-out]').textContent = size + '%';
+        const c = form.querySelector('input[name=color]:checked');
+        if (c) { mini.style.background = c.dataset.hex; mini.style.color = c.dataset.text; }
+        const t = form.elements.title ? form.elements.title.value.trim() : '';
+        mini.querySelector('[data-mini-title]').textContent = t || 'Titel';
+        ['image_fit', 'image_size'].forEach((n) => { form.elements[n].disabled = !has; });
+        form.elements.image_layout.disabled = !has;
+    }
+    form.addEventListener('input', update);
+    form.addEventListener('change', update);
+    update();
+})();
+</script>
+JS;
 }
 
 /** Store an uploaded message image. Returns the relative path. Throws RuntimeException. */

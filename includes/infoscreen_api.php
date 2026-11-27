@@ -28,7 +28,7 @@ define('PD_INFOSCREEN_API_LOADED', true);
 require_once __DIR__ . '/infoscreen.php';
 
 const PD_IS_API_PER_HOUR = 120;
-const PD_IS_COLORS = ['blauw', 'groen', 'oranje', 'rood', 'paars', 'grijs'];
+const PD_IS_COLORS = ['huisstijl', 'accent', 'blauw', 'groen', 'oranje', 'rood', 'paars', 'grijs'];
 
 /** A new API key: [key, sha256, hint]. The key itself is shown once and never stored. */
 function pd_is_api_new_key(): array

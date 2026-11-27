@@ -210,6 +210,33 @@ $msg->execute(['Kerstviering', 'Donderdag 17 december om 17:30 uur in het speell
 $concierge = (int)$db->query("SELECT id FROM users WHERE username = 'concierge'")->fetchColumn();
 $msg->execute(['Lift buiten gebruik', 'Tot en met donderdag. Gebruik de trap bij de hoofdingang of vraag de conciërge.', null, '["Hoofdgebouw"]', null, date('Y-m-d 17:00:00', strtotime('+3 days')), 0, 'grijs', $concierge]);
 $msg->execute(['Fietsenstalling BSO tijdelijk dicht', 'Zet je fiets deze week bij de hoofdingang.', null, '["BSO De Vlinder"]', null, date('Y-m-d 18:00:00', strtotime('+6 days')), 0, 'groen', $concierge]);
+// 2.9.0: a message in the huisstijl, with the image on the right
+$db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, image_layout, image_fit, image_size, locations, priority, color, active, created_by, sort_order)
+              VALUES (?, ?, ?, 'right', 'cover', 45, '[\"BSO De Vlinder\"]', 0, 'huisstijl', 1, ?, -1)")
+   ->execute(['Fietsdag bij de BSO', "Vrijdag gaan we samen fietsen in het park.\nNeem je eigen fiets en helm mee!", PD_IS_UPLOAD_DIR . '/demo-nieuws-2.jpg', $concierge]);
+
+// Huisstijl of BSO De Vlinder (2.9.0): fictional logo, own colours and font
+$logo = imagecreatetruecolor(600, 200);
+imagesavealpha($logo, true);
+imagefill($logo, 0, 0, imagecolorallocatealpha($logo, 0, 0, 0, 127));
+$teal = imagecolorallocate($logo, 14, 124, 102);
+$orange = imagecolorallocate($logo, 245, 158, 11);
+imagefilledellipse($logo, 62, 70, 90, 110, $orange);
+imagefilledellipse($logo, 138, 70, 90, 110, $orange);
+imagefilledellipse($logo, 70, 140, 70, 70, $teal);
+imagefilledellipse($logo, 130, 140, 70, 70, $teal);
+imagefilledrectangle($logo, 95, 40, 105, 170, imagecolorallocate($logo, 40, 40, 40));
+$ttf = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+if (function_exists('imagettftext') && is_file($ttf)) {
+    imagettftext($logo, 44, 0, 190, 95, $teal, $ttf, 'BSO');
+    imagettftext($logo, 44, 0, 190, 160, $teal, $ttf, 'De Vlinder');
+}
+imagepng($logo, $imgDir . '/logo_demo_vlinder.png');
+imagedestroy($logo);
+$db->prepare("INSERT INTO infoscreen_branding (location_name, title, logo_path, logo_mode, logo_plate, use_colors, color_primary, color_accent, color_bg1, color_bg2, font)
+              VALUES ('BSO De Vlinder', 'Welkom bij BSO De Vlinder', ?, 'logo', 0, 1, '#0e7c66', '#f59e0b', '#f3faf7', '#d9efe8', 'trebuchet')")
+   ->execute([PD_IS_UPLOAD_DIR . '/logo_demo_vlinder.png']);
+$db->exec("UPDATE users SET features = JSON_SET(features, '$.infoscreenBranding', true) WHERE username = 'concierge'");
 
 $demoHost = 'http://' . (getenv('PD_DEMO_DOMAIN') ?: 'localhost');
 $db->prepare("INSERT INTO infoscreen_sources (type, name, url, locations, max_items, show_images, attribution, active, last_fetch_at, last_ok_at, last_status)

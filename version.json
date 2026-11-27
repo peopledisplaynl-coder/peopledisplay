@@ -1,12 +1,24 @@
 {
-    "version": "2.8.2",
+    "version": "2.9.0",
     "critical": false,
-    "message": "Het versienummer staat nu ook op het inlogscherm en in het gebruikersmenu.",
+    "message": "Nieuw: het infoscherm in uw eigen huisstijl (logo, kleuren, lettertype, per locatie), rechten per gebruiker en betere plaatsing van afbeeldingen.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
-    "release_date": "2026-11-26",
+    "release_date": "2026-11-27",
     "changelog": [
+        {
+            "version": "2.9.0",
+            "date": "2026-11-27",
+            "changes": [
+                "Nieuw: tabblad Huisstijl bij Infoscherm. Stel voor de hele organisatie en per locatie (bijvoorbeeld per school) een logo, titel, hoofdkleur, accentkleur, achtergrondkleuren en lettertype in, met een voorbeeld en een controle of de tekst goed leesbaar blijft",
+                "Nieuw: berichtkleuren Huisstijl en Accent: elk scherm toont het bericht in de kleuren van zijn eigen huisstijl. Nieuwe berichten krijgen standaard Huisstijl",
+                "Nieuw: bij een bericht kies je waar de afbeelding staat (links, rechts, boven of over de hele dia), of hij de ruimte vult of helemaal zichtbaar is, en hoe groot hij is (30-70%), met een schets in het formulier. Liggende foto's hoeven niet meer afgekapt te worden",
+                "Nieuw: tabblad Infoscherm bij Gebruikers: kies per gebruiker de rechten Berichten plaatsen en Huisstijl aanpassen, en voor welke locaties. Zo kan bijvoorbeeld een directeur de huisstijl van de eigen school instellen zonder de andere scholen te kunnen wijzigen",
+                "Nieuw: bij Infoscherm > Schermen kies je per scherm welke huisstijl het gebruikt. Automatisch: een scherm met één locatie krijgt de huisstijl van die locatie, anders die van de organisatie",
+                "Gewijzigd: de titel bovenaan het infoscherm staat nu bij Huisstijl in plaats van bij Weergave; de bestaande titel wordt automatisch overgenomen"
+            ]
+        },
         {
             "version": "2.8.2",
             "date": "2026-11-26",

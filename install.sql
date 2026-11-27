@@ -8,7 +8,7 @@
 -- Run this script ONCE during installation.
 -- All statements use IF NOT EXISTS — safe to re-run.
 --
--- Tables: 41
+-- Tables: 42
 --
 -- Single source: edit THIS file (repository root). install/sql/install.sql
 -- is an exact copy for the install wizard — run `npm run sync-sql` after editing.
@@ -756,6 +756,9 @@ CREATE TABLE IF NOT EXISTS `infoscreen_messages` (
   `title`            varchar(200) NOT NULL,
   `body`             text         DEFAULT NULL,
   `image_path`       varchar(255) DEFAULT NULL,
+  `image_layout`     varchar(10)  NOT NULL DEFAULT 'left' COMMENT 'left, right, top of full',
+  `image_fit`        varchar(10)  NOT NULL DEFAULT 'cover' COMMENT 'cover of contain',
+  `image_size`       tinyint(3)   NOT NULL DEFAULT 50 COMMENT 'Deel van de dia in procenten, 30-70',
   `location`         varchar(100) DEFAULT NULL COMMENT 'Verouderd sinds 2.6.0, zie locations',
   `locations`        text DEFAULT NULL COMMENT 'JSON-lijst van locations.location_name, NULL = alle locaties',
   `starts_at`        datetime     DEFAULT NULL,
@@ -837,6 +840,30 @@ CREATE TABLE IF NOT EXISTS `infoscreen_settings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- TABLE: infoscreen_branding
+-- Infoscherm: huisstijl van de organisatie (location_name '') en per locatie (2.9.0)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `infoscreen_branding` (
+  `id`            int(11)      NOT NULL AUTO_INCREMENT,
+  `location_name` varchar(100) NOT NULL DEFAULT '' COMMENT 'Leeg = hele organisatie',
+  `title`         varchar(80)  DEFAULT NULL COMMENT 'Leeg = titel van de organisatie',
+  `logo_path`     varchar(255) DEFAULT NULL,
+  `logo_mode`     varchar(12)  NOT NULL DEFAULT 'logo_title' COMMENT 'logo_title, logo of title',
+  `logo_plate`    tinyint(1)   NOT NULL DEFAULT 0 COMMENT '1 = logo op een witte achtergrond',
+  `use_colors`    tinyint(1)   NOT NULL DEFAULT 0 COMMENT '0 = kleuren van de organisatie of het thema',
+  `color_primary` char(7)      DEFAULT NULL,
+  `color_accent`  char(7)      DEFAULT NULL,
+  `color_bg1`     char(7)      DEFAULT NULL,
+  `color_bg2`     char(7)      DEFAULT NULL,
+  `font`          varchar(20)  DEFAULT NULL COMMENT 'Leeg = lettertype van de organisatie',
+  `updated_by`    int(11)      DEFAULT NULL,
+  `created_at`    datetime     NOT NULL DEFAULT current_timestamp(),
+  `updated_at`    datetime     DEFAULT NULL ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_location` (`location_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- TABLE: infoscreen_events
 -- Infoscherm: appointments from iCal agendas (repeating ones expanded)
 -- ============================================================
@@ -883,6 +910,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
 -- END OF SCHEMA
--- Tables created: 41
+-- Tables created: 42
 -- Run install.php after this to create your admin account
 -- ============================================================

@@ -95,7 +95,7 @@ All return JSON and check the session/role themselves.
 | `process_scan.php` | badge scans |
 | `generate_badges.php`, `generate_badge_png.php` | badge PDF/PNG |
 | `get_user_presentation.php` | presentation mode settings (Slides ID, idle seconds, `screen_mode`) |
-| `infoscreen_data.php` | everything the infoscreen shows, filtered for the screen account's locations; fetches due sources after the response. `?as=<user id>` (2.8.0): preview of another screen account, only with the admin feature `manage_infoscreen` |
+| `infoscreen_data.php` | everything the infoscreen shows, filtered for the screen account's locations; fetches due sources after the response. `?as=<user id>` (2.8.0): preview of another screen account, only with the admin feature `manage_infoscreen`; `?loc=<name>` (2.9.0): preview of one location, for managers and for users with an infoscreen right for that location |
 | `infoscreen_push.php` | Berichten-API: other systems post, update, list or delete messages with a connection key (Bearer / X-Api-Key), no session |
 | `infoscreen_teams.php` | Teams outgoing webhook (`?k=<id>`): HMAC-signed channel messages become infoscreen messages; replies in the channel |
 | `get_todays_visitors.php`, `get_visitors_inside.php`, `visitor_checkin.php`, `visitor_checkout.php` | visitors |
@@ -207,6 +207,23 @@ fetchers and parsers, and `pd_infoscreen_screen_data()` for the screen.
   Per screen (2.8.1): `users.features.infoscreenParts` = `{"birthdays": "on"|"off", "bhv": "on"|"off"}`
   (missing = the global setting), set on the Schermen tab; `users_manage.php` keeps the key when it
   rebuilds `features`.
+- **Huisstijl (2.9.0).** `includes/infoscreen_branding.php`, table `infoscreen_branding` (one row per
+  location, `location_name` '' = organisation; created by `pd_infoscreen_ensure_schema()`, which also
+  moves the old `infoscreen_settings.title` into the organisation row). Empty fields of a location
+  follow the organisation; colours go as one group (`use_colors`). A screen with one location uses
+  that location, with more locations the organisation, unless `users.features.infoscreenBrand` says
+  otherwise ('' = organisation, or a location; set on the Schermen tab). `pd_branding_resolve()` sends
+  colours, the derived text colours (WCAG contrast, white or #10213a) and a system font stack;
+  nothing is loaded from the internet. Logos: PNG/JPG/GIF/WEBP only (no SVG: it could carry script).
+  Message colours `huisstijl` and `accent` follow the screen's huisstijl.
+- **Infoscreen rights (2.9.0).** `users.features.infoscreenEditor` (messages) and `infoscreenBranding`
+  (huisstijl) for `features.infoscreenLocations` (falls back to `features.locations` for users from
+  before 2.9.0); `pd_infoscreen_editor_scope()`; page `infoscherm_berichten.php` with tabs.
+  `users_manage.php` keeps `infoscreenParts`, `infoscreenBrand` and `infoscreenLocations` when it
+  rebuilds `features`.
+- **Image placement (2.9.0).** `infoscreen_messages.image_layout` (left, right, top, full),
+  `image_fit` (cover, contain) and `image_size` (30-70 %); a message without text always shows its
+  image across the whole slide.
 - **Preview per screen (2.8.0).** `infoscherm.php?preview=1&as=<id>` loads the data of that account
   (checked again in the API) and keeps its own `localStorage` cache key, so a preview never
   overwrites the cache of a real screen in the same browser.

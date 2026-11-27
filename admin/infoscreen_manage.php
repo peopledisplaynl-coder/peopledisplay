@@ -36,10 +36,11 @@ $tabs = [
     'agenda'    => '📅 Agenda',
     'koppelingen' => '🔗 Koppelingen',
     'weergave'  => '🎨 Weergave',
+    'huisstijl' => '🖌️ Huisstijl',
     'schermen'  => '🖥️ Schermen',
 ];
 $tab = isset($tabs[$_GET['tab'] ?? '']) ? $_GET['tab'] : 'berichten';
-$colors = ['blauw' => '#1d4ed8', 'groen' => '#15803d', 'oranje' => '#ea7a12', 'rood' => '#dc2626', 'paars' => '#7c3aed', 'grijs' => '#475569'];
+$colors = array_map(fn($c) => $c[1] ?? PD_BRAND_DEFAULT_PRIMARY, PD_IS_MESSAGE_COLORS); // swatches for lists
 
 function pd_is_redirect(string $tab, string $flash, bool $ok = true, string $extra = ''): void
 {
@@ -82,7 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $title = mb_substr(trim((string)($_POST['title'] ?? '')), 0, 200);
                 if ($title === '') pd_is_redirect('berichten', 'Vul een titel in.', false, $id ? '&edit=' . $id : '&new=1');
                 $body = mb_substr(trim((string)($_POST['body'] ?? '')), 0, 2000);
-                $color = isset($colors[$_POST['color'] ?? '']) ? $_POST['color'] : 'blauw';
+                $color = pd_infoscreen_color_from_post($_POST);
+                [$imgLayout, $imgFit, $imgSize] = pd_infoscreen_image_options_from_post($_POST);
                 $starts = pd_is_dt($_POST['starts_at'] ?? '');
                 $ends = pd_is_dt($_POST['ends_at'] ?? '');
                 if ($starts && $ends && $ends <= $starts) pd_is_redirect('berichten', 'De einddatum moet na de begindatum liggen.', false, $id ? '&edit=' . $id : '&new=1');
@@ -105,15 +107,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($id) {
-                    $db->prepare("UPDATE infoscreen_messages SET title = ?, body = ?, image_path = ?, locations = ?, starts_at = ?, ends_at = ?,
-                                  duration_seconds = ?, priority = ?, color = ?, active = ? WHERE id = ?")
-                       ->execute([$title, $body, $image, $locs, $starts, $ends, $duration, $priority, $color, $active, $id]);
+                    $db->prepare("UPDATE infoscreen_messages SET title = ?, body = ?, image_path = ?, image_layout = ?, image_fit = ?, image_size = ?,
+                                  locations = ?, starts_at = ?, ends_at = ?, duration_seconds = ?, priority = ?, color = ?, active = ? WHERE id = ?")
+                       ->execute([$title, $body, $image, $imgLayout, $imgFit, $imgSize, $locs, $starts, $ends, $duration, $priority, $color, $active, $id]);
                     if (($old['image_path'] ?? null) && $old['image_path'] !== $image) pd_infoscreen_delete_image($db, $old['image_path'], $appRoot);
                     pd_is_redirect('berichten', 'Bericht opgeslagen.');
                 }
-                $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, locations, starts_at, ends_at, duration_seconds, priority, color, active, created_by)
-                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-                   ->execute([$title, $body, $image, $locs, $starts, $ends, $duration, $priority, $color, $active, (int)$_SESSION['user_id']]);
+                $db->prepare("INSERT INTO infoscreen_messages (title, body, image_path, image_layout, image_fit, image_size, locations, starts_at, ends_at, duration_seconds, priority, color, active, created_by)
+                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                   ->execute([$title, $body, $image, $imgLayout, $imgFit, $imgSize, $locs, $starts, $ends, $duration, $priority, $color, $active, (int)$_SESSION['user_id']]);
                 pd_is_redirect('berichten', 'Bericht toegevoegd.');
 
             case 'toggle_message':
@@ -278,6 +280,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->prepare("DELETE FROM infoscreen_api_keys WHERE id = ?")->execute([(int)$_POST['id']]);
                 pd_is_redirect('koppelingen', 'Koppeling verwijderd. Berichten die al geplaatst waren, blijven staan tot hun einddatum.');
 
+            case 'save_brand':
+            case 'reset_brand':
+                $loc = (string)($_POST['loc'] ?? '');
+                if ($loc !== '' && !in_array($loc, $locations, true)) pd_is_redirect('huisstijl', 'Onbekende locatie.', false);
+                $qs = '&loc=' . rawurlencode($loc);
+                if ($action === 'reset_brand') {
+                    pd_branding_reset($db, $loc, $appRoot);
+                    pd_is_redirect('huisstijl', $loc === '' ? 'Huisstijl van de organisatie verwijderd.' : 'Eigen huisstijl verwijderd: de locatie volgt weer de organisatie.', true, $qs);
+                }
+                pd_branding_save($db, $loc, $_POST, $_FILES, $appRoot, (int)$_SESSION['user_id']);
+                pd_is_redirect('huisstijl', 'Huisstijl opgeslagen. Open schermen nemen dit binnen 5 minuten over.', true, $qs);
+
             case 'save_settings':
                 pd_infoscreen_save_settings($db, $_POST);
                 pd_is_redirect('weergave', 'Weergave opgeslagen. Open schermen nemen dit binnen 5 minuten over.');
@@ -296,8 +310,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $featStmt->execute([(int)$userId]);
                     $feat = json_decode((string)$featStmt->fetchColumn(), true) ?: [];
                     $parts = pd_infoscreen_screen_parts_clean(is_array($partsInput[$userId] ?? null) ? $partsInput[$userId] : []);
-                    if ($parts === ($feat['infoscreenParts'] ?? [])) continue;
+                    // Huisstijl of this screen (2.9.0): automatic, organisation or one location
+                    $brandIn = $_POST['brand'][$userId] ?? '*auto*';
+                    $brand = $brandIn === '*org*' ? '' : (in_array($brandIn, $locations, true) ? $brandIn : null);
+                    if ($parts === ($feat['infoscreenParts'] ?? []) && $brand === ($feat['infoscreenBrand'] ?? null)) continue;
                     if ($parts) $feat['infoscreenParts'] = $parts; else unset($feat['infoscreenParts']);
+                    if ($brand !== null) $feat['infoscreenBrand'] = $brand; else unset($feat['infoscreenBrand']);
                     $featSave->execute([json_encode($feat, JSON_UNESCAPED_UNICODE), (int)$userId]);
                 }
                 pd_is_redirect('schermen', 'Schermen opgeslagen. Een scherm neemt de keuze over na het opnieuw laden van de pagina.');
@@ -346,6 +364,12 @@ if ($editId && $tab === 'berichten') {
 if ($editId && in_array($tab, ['nieuws', 'weer', 'agenda'], true)) {
     foreach ($sources as $s) if ((int)$s['id'] === $editId) $editSource = $s;
 }
+
+// Huisstijl (2.9.0)
+$brandRows = pd_branding_rows($db);
+$orgBrand = pd_branding_resolve($brandRows, [], $settings['theme'], '..', $settings['title']);
+$brandLoc = (string)($_GET['loc'] ?? '');
+if ($brandLoc !== '' && !in_array($brandLoc, $locations, true)) $brandLoc = '';
 
 $screens = [];
 if ($tab === 'schermen') {
@@ -409,6 +433,12 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 18px; font-weight: 500; font-size: 14px; }
     .alert.ok { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
     .alert.err { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .screen-parts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; align-items: center; min-width: 250px; }
+    .screen-parts label { font-size: 12px; color: #6b7280; white-space: nowrap; }
+    .screen-parts select { padding: 4px 6px; font-size: 13px; }
+    .loc-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .loc-tabs a { padding: 6px 12px; border-radius: 99px; border: 1.5px solid #d1d5db; text-decoration: none; color: #374151; font-size: 13.5px; font-weight: 600; background: #fff; }
+    .loc-tabs a.active { background: #312e81; border-color: #312e81; color: #fff; }
     .info { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 6px; font-size: 13.5px; color: #1e3a5f; line-height: 1.55; margin-bottom: 18px; }
     .info.warn { background: #fffbeb; border-left-color: #f59e0b; color: #5b4204; }
     .info strong { color: inherit; }
@@ -483,6 +513,8 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     .loc-picker input:disabled + * , .loc-picker label:has(input:disabled) { color: #9ca3af; }
     @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .container { padding: 20px 16px; } td, th { padding: 8px 6px; } .hide-sm { display: none; } }
 </style>
+<?= pd_infoscreen_message_style_css() ?>
+<?= pd_branding_form_css() ?>
 </head>
 <body>
 <a href="dashboard.php" class="back-link">← Terug naar Dashboard</a>
@@ -508,7 +540,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     <?php endif; ?>
 
 <?php if ($tab === 'berichten'): ?>
-    <?php if ($showForm): $m = $editMessage ?? ['id' => 0, 'title' => '', 'body' => '', 'image_path' => null, 'locations' => null, 'starts_at' => null, 'ends_at' => null, 'duration_seconds' => null, 'priority' => 0, 'color' => 'blauw', 'active' => 1]; ?>
+    <?php if ($showForm): $m = $editMessage ?? ['id' => 0, 'title' => '', 'body' => '', 'image_path' => null, 'image_layout' => 'left', 'image_fit' => 'cover', 'image_size' => 50, 'locations' => null, 'starts_at' => null, 'ends_at' => null, 'duration_seconds' => null, 'priority' => 0, 'color' => 'huisstijl', 'active' => 1]; ?>
     <div class="panel">
         <h2><?= $m['id'] ? '✏️ Bericht bewerken' : '➕ Nieuw bericht' ?></h2>
         <form method="post" enctype="multipart/form-data">
@@ -532,16 +564,9 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                         <div class="current-img"><img src="../<?= $h($m['image_path']) ?>" alt=""><label class="check"><input type="checkbox" name="remove_image" value="1"> Afbeelding verwijderen</label></div>
                     <?php endif; ?>
                     <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/gif,image/webp">
-                    <div class="help">JPG, PNG, GIF of WEBP, maximaal 5 MB. Liggend formaat (16:9) werkt het best.</div>
+                    <div class="help">JPG, PNG, GIF of WEBP, maximaal 5 MB. Kies hieronder waar de afbeelding staat en of hij helemaal zichtbaar moet zijn.</div>
                 </div>
-                <div class="full">
-                    <label class="f">Achtergrondkleur</label>
-                    <div class="colors">
-                        <?php foreach ($colors as $key => $hex): ?>
-                            <label><input type="radio" name="color" value="<?= $key ?>" <?= $m['color'] === $key ? 'checked' : '' ?>><span><i style="background:<?= $hex ?>"></i><?= ucfirst($key) ?></span></label>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
+                <?= pd_infoscreen_message_style_fields($m, $orgBrand) ?>
                 <div>
                     <label class="f" for="starts_at">Tonen vanaf</label>
                     <input type="datetime-local" id="starts_at" name="starts_at" value="<?= $dtValue($m['starts_at']) ?>">
@@ -590,7 +615,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <tbody>
         <?php foreach ($messages as $m): [$statusText, $statusCls] = pd_is_status($m); ?>
             <tr>
-                <td><?php if ($m['image_path']): ?><img class="thumb" src="../<?= $h($m['image_path']) ?>" alt=""><?php else: ?><span class="thumb" style="background:<?= $colors[$m['color']] ?? '#1d4ed8' ?>"></span><?php endif; ?></td>
+                <td><?php if ($m['image_path']): ?><img class="thumb" src="../<?= $h($m['image_path']) ?>" alt=""><?php else: ?><span class="thumb" style="background:<?= $h($m['color'] === 'accent' ? $orgBrand['accent']['bg'] : ($m['color'] === 'huisstijl' ? $orgBrand['primary']['bg'] : ($colors[$m['color']] ?? '#1d4ed8'))) ?>"></span><?php endif; ?></td>
                 <td><strong><?= $h($m['title']) ?></strong><?php if ((int)$m['priority']): ?> <span class="pill prio">Belangrijk</span><?php endif; ?>
                     <?php if (($m['source'] ?? 'handmatig') !== 'handmatig'): ?><span class="pill src" title="Geplaatst via <?= $h($m['source'] === 'teams' ? 'Teams' : 'de Berichten-API') ?>"><?= $m['source'] === 'teams' ? 'Teams' : 'API' ?><?= isset($keyNames[$m['api_key_id']]) ? ' · ' . $h($keyNames[$m['api_key_id']]) : '' ?><?= $m['author'] ? ' · ' . $h($m['author']) : '' ?></span><?php endif; ?>
                     <?php if ($m['body']): ?><div class="muted"><?= $h(mb_strimwidth($m['body'], 0, 90, '…')) ?></div><?php endif; ?></td>
@@ -1104,7 +1129,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 </div>
                 <div>
                     <label class="f" for="color">Standaardkleur</label>
-                    <select id="color" name="color"><?php foreach (array_keys($colors) as $c): ?><option value="<?= $c ?>"><?= ucfirst($c) ?></option><?php endforeach; ?></select>
+                    <select id="color" name="color"><?php foreach (PD_IS_MESSAGE_COLORS as $c => [$cl]): ?><option value="<?= $c ?>"><?= $h($cl) ?></option><?php endforeach; ?></select>
                 </div>
             </div>
             <div class="form-actions">
@@ -1194,16 +1219,17 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <h2>🎨 Weergave van het infoscherm</h2>
         <div class="grid">
             <div>
-                <label class="f" for="title">Titel bovenaan</label>
-                <input type="text" id="title" name="title" maxlength="80" value="<?= $h($settings['title']) ?>" placeholder="Bijv. Welkom bij OBS De Linde">
-                <div class="help">Leeg = geen titel, alleen datum en tijd.</div>
-            </div>
-            <div>
                 <label class="f" for="theme">Kleurstelling</label>
                 <select id="theme" name="theme">
                     <option value="donker" <?= $settings['theme'] === 'donker' ? 'selected' : '' ?>>Donker (aanbevolen voor schermen)</option>
                     <option value="licht" <?= $settings['theme'] === 'licht' ? 'selected' : '' ?>>Licht</option>
                 </select>
+                <div class="help">Geldt als er geen eigen kleuren zijn ingesteld bij Huisstijl.</div>
+            </div>
+            <div>
+                <label class="f">Titel, logo, kleuren en lettertype</label>
+                <a class="btn btn-light" href="?tab=huisstijl">🖌️ Naar Huisstijl</a>
+                <div class="help">Voor de hele organisatie en per locatie.</div>
             </div>
             <div>
                 <label class="f" for="slide_seconds">Tijd per dia (seconden)</label>
@@ -1253,6 +1279,32 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         </div>
     </form>
 
+<?php elseif ($tab === 'huisstijl'): ?>
+    <div class="info">
+        <strong>Huisstijl:</strong> logo, titel, kleuren en lettertype. Stel eerst de huisstijl van de <strong>hele organisatie</strong> in; een locatie
+        (bijvoorbeeld een school binnen de stichting) kan een eigen huisstijl krijgen. Lege velden van een locatie volgen de organisatie.
+        Een scherm met één locatie krijgt de huisstijl van die locatie, een scherm met meer locaties die van de organisatie; bij Schermen kiest u per scherm een andere. Gebruikers zonder beheerrechten kunnen de huisstijl
+        van hun eigen locaties aanpassen met het recht <em>Huisstijl aanpassen</em> (Gebruikers › 📺 Infoscherm).
+    </div>
+    <div class="loc-tabs">
+        <a href="?tab=huisstijl" class="<?= $brandLoc === '' ? 'active' : '' ?>">🌐 Hele organisatie<?= isset($brandRows['']) ? ' ✓' : '' ?></a>
+        <?php foreach ($locations as $l): ?>
+            <a href="?tab=huisstijl&amp;loc=<?= $h(rawurlencode($l)) ?>" class="<?= $l === $brandLoc ? 'active' : '' ?>">📍 <?= $h($l) ?><?= isset($brandRows[$l]) ? ' ✓' : '' ?></a>
+        <?php endforeach; ?>
+    </div>
+    <div class="panel">
+        <h2><?= $brandLoc === '' ? '🌐 Huisstijl van de hele organisatie' : '📍 Huisstijl van ' . $h($brandLoc) ?></h2>
+        <?php if ($brandLoc !== '' && !isset($brandRows[$brandLoc])): ?><p class="help" style="margin:-6px 0 14px">Deze locatie volgt nu de organisatie. Sla op om een eigen huisstijl te maken.</p><?php endif; ?>
+        <?php
+        $hidden = '<input type="hidden" name="csrf" value="' . $h($csrf) . '"><input type="hidden" name="action" value="save_brand"><input type="hidden" name="tab" value="huisstijl"><input type="hidden" name="loc" value="' . $h($brandLoc) . '">';
+        $reset = isset($brandRows[$brandLoc])
+            ? '<button class="btn btn-light" type="submit" name="action" value="reset_brand" formnovalidate onclick="return confirm(\'' . ($brandLoc === '' ? 'Huisstijl van de organisatie verwijderen?' : 'Eigen huisstijl van deze locatie verwijderen?') . '\')">↺ ' . ($brandLoc === '' ? 'Standaard herstellen' : 'Volg de organisatie') . '</button>' : '';
+        echo pd_branding_form($brandRows[$brandLoc] ?? pd_branding_blank($brandLoc), $hidden, '../',
+            $brandLoc === '' ? pd_branding_resolve([], [], $settings['theme'], '..', '') : $orgBrand,
+            '../infoscherm.php?preview=1&mode=infoscreen' . ($brandLoc !== '' ? '&loc=' . rawurlencode($brandLoc) : ''), $reset);
+        ?>
+    </div>
+
 <?php elseif ($tab === 'schermen'): ?>
     <div class="info">
         <strong>Wat toont een scherm?</strong> Per gebruikersaccount (meestal het account van een kiosk of tv-scherm) kiest u wat er verschijnt:
@@ -1260,6 +1312,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <br>• <strong>Infoscherm</strong> — eigen berichten, nieuws en weer.
         <br>• <strong>Slides + infoscherm</strong> — de Google Slides presentatie groot in beeld, met weer, mededelingen en nieuwsbalk eromheen.
         <br>Op een aanraakscherm met medewerkerskaarten verschijnt dit na de ingestelde inactiviteit (“Automatisch tonen” moet aan staan); aanraken sluit het weer.
+        <br><strong>Huisstijl</strong>: <em>Automatisch</em> = een scherm met één locatie krijgt de huisstijl van die locatie, een scherm met meer locaties die van de organisatie. Of kies zelf.
         <br><strong>Vandaag jarig</strong> en <strong>BHV aanwezig</strong>: <em>Standaard</em> volgt de instelling bij Weergave; met <em>Aan</em> of <em>Uit</em> kiest u het voor dit scherm apart. Een scherm toont altijd alleen de jarigen en BHV'ers van de eigen locaties; een account zonder locaties ziet alle locaties.
     </div>
     <form method="post">
@@ -1267,7 +1320,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <input type="hidden" name="action" value="save_screens">
         <input type="hidden" name="tab" value="schermen">
         <table>
-            <thead><tr><th>Gebruiker</th><th class="hide-sm">Rol</th><th>Automatisch tonen</th><th>Weergave</th><th>Vandaag jarig</th><th>BHV aanwezig</th><th class="hide-sm">Na inactiviteit</th><th>Voorbeeld</th></tr></thead>
+            <thead><tr><th>Gebruiker</th><th class="hide-sm">Rol</th><th>Automatisch tonen</th><th>Weergave</th><th>Infoscherm</th><th class="hide-sm">Na inactiviteit</th><th>Voorbeeld</th></tr></thead>
             <tbody>
             <?php foreach ($screens as $u): $hasId = trim((string)$u['presentation_id']) !== '' || $globalPresentation !== ''; ?>
                 <tr>
@@ -1281,17 +1334,32 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                             <option value="combined" <?= $u['screen_mode'] === 'combined' ? 'selected' : '' ?>>Slides + infoscherm</option>
                         </select>
                     </td>
-                    <?php $parts = (json_decode((string)$u['features'], true) ?: [])['infoscreenParts'] ?? []; ?>
-                    <?php foreach (['birthdays' => 'birthday_slide', 'bhv' => 'bhv_card'] as $pk => $sk):
-                        $cur = $parts[$pk] ?? 'default'; ?>
+                    <?php $uf = json_decode((string)$u['features'], true) ?: [];
+                          $parts = $uf['infoscreenParts'] ?? [];
+                          $ub = is_string($uf['infoscreenBrand'] ?? null) ? $uf['infoscreenBrand'] : null;
+                          $uLocs = is_array($uf['locations'] ?? null) ? array_values(array_intersect($uf['locations'], $locations)) : [];
+                          $auto = count($uLocs) === 1 && isset($brandRows[$uLocs[0]]) ? $uLocs[0] : 'organisatie'; ?>
                     <td>
-                        <select name="parts[<?= (int)$u['id'] ?>][<?= $pk ?>]" style="width:auto;min-width:0" title="Standaard = de instelling bij Weergave">
+                        <div class="screen-parts">
+                        <label>Huisstijl</label>
+                        <select name="brand[<?= (int)$u['id'] ?>]" title="Automatisch: een scherm met één locatie krijgt de huisstijl van die locatie, anders die van de organisatie">
+                            <option value="*auto*" <?= $ub === null ? 'selected' : '' ?>>Automatisch (<?= $h($auto) ?>)</option>
+                            <option value="*org*" <?= $ub === '' ? 'selected' : '' ?>>Organisatie</option>
+                            <?php foreach ($locations as $l): if (!isset($brandRows[$l]) && $ub !== $l) continue; ?>
+                                <option value="<?= $h($l) ?>" <?= $ub === $l ? 'selected' : '' ?>><?= $h($l) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?php foreach (['birthdays' => ['birthday_slide', 'Vandaag jarig'], 'bhv' => ['bhv_card', 'BHV aanwezig']] as $pk => [$sk, $pl]):
+                            $cur = $parts[$pk] ?? 'default'; ?>
+                        <label><?= $pl ?></label>
+                        <select name="parts[<?= (int)$u['id'] ?>][<?= $pk ?>]" title="Standaard = de instelling bij Weergave">
                             <option value="default" <?= $cur === 'default' ? 'selected' : '' ?>>Standaard (<?= $settings[$sk] === '1' ? 'aan' : 'uit' ?>)</option>
                             <option value="on" <?= $cur === 'on' ? 'selected' : '' ?>>Aan</option>
                             <option value="off" <?= $cur === 'off' ? 'selected' : '' ?>>Uit</option>
                         </select>
+                        <?php endforeach; ?>
+                        </div>
                     </td>
-                    <?php endforeach; ?>
                     <td class="hide-sm muted"><?= (int)$u['presentation_idle_seconds'] ?> sec</td>
                     <td>
                         <?php if ($u['screen_mode'] === 'slides'):
@@ -1339,5 +1407,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
 </div>
 <?= pd_infoscreen_location_picker_js() ?>
 <?= pd_infoscreen_text_counter_js() ?>
+<?= pd_infoscreen_message_style_js() ?>
+<?= pd_branding_form_js() ?>
 </body>
 </html>

@@ -391,5 +391,50 @@ if (in_array('sqlite', PDO::getAvailableDrivers(), true)) {
     echo "(sqlite not available: BHV/birthday queries tested in db_smoke)\n";
 }
 
+// ── Huisstijl (2.9.0) ────────────────────────────────────────────────────
+eq(pd_color_valid('#ABC'), '#aabbcc', 'color: short hex');
+eq(pd_color_valid('1d4ed8'), '#1d4ed8', 'color: without #');
+eq(pd_color_valid('red'), null, 'color: names refused');
+eq(pd_color_valid('#12345g'), null, 'color: invalid hex');
+eq(pd_color_contrast('#ffffff', '#000000'), 21.0, 'contrast: black on white');
+eq(pd_color_contrast('#777777', '#777777'), 1.0, 'contrast: same colour');
+eq(pd_color_text_on('#1d4ed8'), '#ffffff', 'text on dark blue: white');
+eq(pd_color_text_on('#fde047'), PD_BRAND_DARK_TEXT, 'text on yellow: dark');
+eq(pd_color_shade('#ffffff', -0.5), '#808080', 'shade: half darker');
+eq(array_column(pd_brand_contrast_report('#1d4ed8', '#fde047', '#0b1f3a', '#143a6b'), 2), ['ok', 'ok', 'ok', 'ok'], 'contrast report: good set');
+eq(pd_brand_contrast_report('#1d4ed8', '#dc2626', '#0b1f3a', '#808080')[1][2], 'warn', 'contrast report: grey background is a warning');
+$rows = [
+    '' => ['location_name' => '', 'title' => 'Stichting', 'logo_path' => 'uploads/infoscreen/logo_s.png', 'logo_mode' => 'logo_title', 'logo_plate' => 0,
+           'use_colors' => 1, 'color_primary' => '#00a3e0', 'color_accent' => '#e4007c', 'color_bg1' => '#ffffff', 'color_bg2' => '#eef6fb', 'font' => 'verdana'],
+    'OBS De Linde' => ['location_name' => 'OBS De Linde', 'title' => 'Welkom op De Linde', 'logo_path' => null, 'logo_mode' => 'logo', 'logo_plate' => 1,
+           'use_colors' => 0, 'color_primary' => null, 'color_accent' => null, 'color_bg1' => null, 'color_bg2' => null, 'font' => null],
+    'KC Kiem' => ['location_name' => 'KC Kiem', 'title' => null, 'logo_path' => 'uploads/infoscreen/logo_k.png', 'logo_mode' => 'logo', 'logo_plate' => 1,
+           'use_colors' => 1, 'color_primary' => '#2e7d32', 'color_accent' => '#f9a825', 'color_bg1' => '#0d2b12', 'color_bg2' => '#0d2b12', 'font' => 'georgia'],
+];
+$b = pd_branding_resolve($rows, [], 'donker', '/pd');
+eq([$b['title'], $b['logo'], $b['colors']['light'], $b['primary']['bg']], ['Stichting', '/pd/uploads/infoscreen/logo_s.png', true, '#00a3e0'], 'brand: organisation (light background)');
+check(str_starts_with($b['font'], 'Verdana'), 'brand: organisation font');
+$b = pd_branding_resolve($rows, ['OBS De Linde'], 'donker', '');
+eq([$b['title'], $b['logo'], $b['colors']['bg1'], $b['location']], ['Welkom op De Linde', '/uploads/infoscreen/logo_s.png', '#ffffff', 'OBS De Linde'], 'brand: location title, organisation logo and colours');
+eq($b['logo_mode'], 'logo_title', 'brand: logo settings come with the logo');
+$b = pd_branding_resolve($rows, ['Gymzaal', 'KC Kiem'], 'donker', '');
+eq([$b['title'], $b['location'], $b['colors']['bg1']], ['Stichting', null, '#ffffff'], 'brand: screen with more locations = organisation');
+$b = pd_branding_resolve($rows, ['OBS De Linde'], 'donker', '', '', '');
+eq($b['location'], null, 'brand: organisation chosen for a one-location screen');
+$b = pd_branding_resolve($rows, ['Gymzaal', 'KC Kiem'], 'donker', '', '', 'KC Kiem');
+eq([$b['title'], $b['colors']['light'], $b['accent']['bg'], $b['logo_mode'], $b['logo_plate']], ['Stichting', false, '#f9a825', 'logo', true], 'brand: chosen location, own colours');
+eq($b['accent']['text'], PD_BRAND_DARK_TEXT, 'brand: dark text on a yellow accent');
+eq($b['colors']['link'], '#ffffff', 'brand: dark green headings on dark green are unreadable, so white');
+check(str_starts_with($b['font'], 'Georgia'), 'brand: location font');
+$b = pd_branding_resolve([], ['X'], 'licht', '', 'Oude titel');
+eq([$b['title'], $b['logo'], $b['colors'], $b['primary']['bg']], ['Oude titel', null, null, PD_BRAND_DEFAULT_PRIMARY], 'brand: nothing set = theme and old title');
+eq(pd_infoscreen_image_options_from_post(['image_layout' => 'top', 'image_fit' => 'contain', 'image_size' => '95']), ['top', 'contain', 70], 'image options: clamped size');
+eq(pd_infoscreen_image_options_from_post(['image_layout' => 'diagonal']), ['left', 'cover', 50], 'image options: defaults');
+eq(pd_infoscreen_color_from_post(['color' => 'accent']), 'accent', 'message colour: accent');
+eq(pd_infoscreen_color_from_post(['color' => 'zwart']), 'huisstijl', 'message colour: unknown = huisstijl');
+eq(pd_infoscreen_screen_brand('{"infoscreenBrand":""}'), '', 'screen brand: organisation');
+eq(pd_infoscreen_screen_brand('{"infoscreenBrand":"KC Kiem"}'), 'KC Kiem', 'screen brand: location');
+eq(pd_infoscreen_screen_brand('{}'), null, 'screen brand: automatic');
+
 echo ($failures ? "FAILED: $failures of $count checks\n" : "OK: $count infoscreen checks passed\n");
 exit($failures ? 1 : 0);

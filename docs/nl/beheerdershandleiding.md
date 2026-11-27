@@ -144,7 +144,6 @@ Met tweestapsverificatie vult een gebruiker bij het inloggen, naast het wachtwoo
 - **Standaard sorteervolgorde** — geldt altijd, ook zonder sorteerknop: *Voornaam A→Z, status IN eerst*, *Voornaam* of *Achternaam*.
 - **Zoomknop tonen** en **Standaard zoomniveau** (50–150%).
 - **IN/UIT Bord weergave** — de gebruiker ziet het IN/UIT-bord in plaats van de kaarten. Geschikt voor een groot scherm.
-- **Infoscherm-berichten plaatsen (redacteur)** — de gebruiker plaatst berichten op het infoscherm voor de aangevinkte zichtbare locaties (zie [Wie mag berichten plaatsen?](#wie-mag-berichten-plaatsen)).
 - **Zichtbare locaties** en **Zichtbare afdelingen** — welke kaarten deze gebruiker ziet. Geen afdelingen aangevinkt betekent: alle afdelingen.
 
 ## Rechten van een admin
@@ -276,12 +275,15 @@ Het scherm bestaat uit:
 Klik op **Nieuw bericht** en vul in:
 
 - **Titel** en (korte) **tekst**. Een bericht met alleen een afbeelding en geen tekst toont de afbeelding groot, bijvoorbeeld een poster. Onder de tekst zie je hoeveel tekens je hebt gebruikt en wat het advies is (met afbeelding ongeveer 250, zonder ongeveer 450). Past een bericht niet op het scherm, dan maakt het scherm de tekst vanzelf kleiner, zodat titel en *Belangrijk* altijd in beeld blijven.
-- **Afbeelding** (JPG, PNG, GIF of WEBP, maximaal 5 MB; liggend werkt het best).
-- **Achtergrondkleur**, **Tonen vanaf** en **Tonen tot en met** (leeg = direct en blijvend) en de **Tijd in beeld**.
+- **Afbeelding** (JPG, PNG, GIF of WEBP, maximaal 5 MB), met de **plaats** (links, rechts, boven of over de hele dia met de tekst eroverheen), of hij de ruimte moet **vullen** of **helemaal** zichtbaar moet zijn, en de **grootte** (30 tot 70% van de dia). Een liggende foto die aan de zijkanten wordt afgekapt, zet je *Boven* of op *Helemaal tonen*. Rechts in het formulier zie je meteen een kleine schets.
+- **Achtergrondkleur** — een vaste kleur, of **Huisstijl** of **Accent**: dan toont elk scherm het bericht in de kleuren van zijn eigen [huisstijl](#huisstijl). Nieuwe berichten krijgen standaard *Huisstijl*.
+- **Tonen vanaf** en **Tonen tot en met** (leeg = direct en blijvend) en de **Tijd in beeld**.
 - **Locaties** — vink **🌐 Alle locaties** aan voor een bericht dat overal moet staan, of vink één of meer locaties aan. Een scherm toont de berichten van de locaties die bij zijn gebruikersaccount zijn ingesteld.
 - **Belangrijk** — het bericht krijgt een rode markering, komt vaker in beeld en staat ook in de nieuwsbalk.
 
 ![Een nieuw bericht voor twee locaties](../images/infoscherm-nieuw-bericht.png)
+
+![Plaats, vulling en grootte van de afbeelding, met een schets](../images/infoscherm-afbeelding.png)
 
 In de lijst zie je per bericht voor welke locaties het is en of het **Op het scherm** staat, **Gepland** of **Verlopen** is, of **Uit** staat. Met **Uitzetten** haal je een bericht weg zonder het te verwijderen.
 
@@ -290,9 +292,11 @@ Ook nieuwsbronnen, weerplaatsen, agenda's en koppelingen kun je aan één, meer 
 ## Wie mag berichten plaatsen?
 
 - **SuperAdmin** en een **Admin** met het recht *Infoscherm beheren* beheren alles op deze pagina en plaatsen berichten voor **alle locaties**, bijvoorbeeld een belangrijk bericht dat overal moet staan.
-- Een **berichtenredacteur** (bijvoorbeeld de receptie of de conciërge) plaatst en wijzigt berichten **alleen voor de eigen locaties**. Zet bij die gebruiker op het tabblad *Features* het vinkje **📝 Infoscherm-berichten plaatsen (redacteur)** aan en vink bij **Zichtbare locaties** de locaties aan waarvoor hij of zij berichten mag plaatsen. Geen locatie aangevinkt betekent: geen enkele. De rol mag gewoon *User* blijven.
+- Andere gebruikers, bijvoorbeeld de directeur, de receptie of de conciërge van één school, krijgen rechten **alleen voor hun eigen locaties**. Open de gebruiker bij **Gebruikers** en ga naar het tabblad **📺 Infoscherm**. Vink aan wat hij of zij mag: **📝 Berichten plaatsen** en/of **🖌️ Huisstijl aanpassen**, en vink onder **Voor welke locaties?** de locaties aan. Geen locatie aangevinkt betekent: geen enkele. De rol mag gewoon *User* blijven. Deze locaties staan los van de *Zichtbare locaties* (welke medewerkerskaarten iemand ziet); bij gebruikers van vóór versie 2.9.0 zijn ze daar eenmalig van overgenomen.
 
-De redacteur krijgt in het menu de knop **📝 Infoscherm-berichten**. Bovenaan staat duidelijk voor welke locaties hij of zij berichten plaatst. Berichten voor alle locaties, of die ook op andere locaties staan, zijn voor de redacteur te zien met **🔒 Alleen lezen**, maar niet aan te passen. Nieuws, weer, agenda, koppelingen en weergave blijven bij de beheerder.
+![Rechten voor het infoscherm per gebruiker](../images/gebruiker-infoscherm.png)
+
+De gebruiker krijgt in het menu de knop **📝 Infoscherm**, met de tabbladen *Berichten* en *Huisstijl* (wat hij of zij mag). Bovenaan staat duidelijk voor welke locaties. Berichten voor alle locaties, of die ook op andere locaties staan, zijn voor de redacteur te zien met **🔒 Alleen lezen**, maar niet aan te passen. Nieuws, weer, agenda, koppelingen en weergave blijven bij de beheerder.
 
 ![De pagina van een berichtenredacteur met twee locaties](../images/infoscherm-redacteur.png)
 
@@ -365,7 +369,7 @@ Klik op **➕ API-koppeling**. Je krijgt één keer een sleutel te zien: kopieer
 
 ## Weergave
 
-Op het tabblad **Weergave** stel je de titel bovenaan in, de kleurstelling (donker of licht), de tijd per dia, het aantal nieuwsdia's per ronde, de snelheid van de nieuwsbalk, hoeveel dagen vooruit de agenda gaat en welke onderdelen zichtbaar zijn (zijbalk, nieuwsbalk, nieuwsdia's, weerdia, agenda in de zijbalk, agendadia). Met **Voorbeeld** bekijk je het resultaat in een nieuw venster. Open schermen nemen wijzigingen binnen 5 minuten over.
+Op het tabblad **Weergave** stel je de kleurstelling in (donker of licht; geldt als er geen eigen kleuren zijn bij [Huisstijl](#huisstijl)), de tijd per dia, het aantal nieuwsdia's per ronde, de snelheid van de nieuwsbalk, hoeveel dagen vooruit de agenda gaat en welke onderdelen zichtbaar zijn (zijbalk, nieuwsbalk, nieuwsdia's, weerdia, agenda in de zijbalk, agendadia). Met **Voorbeeld** bekijk je het resultaat in een nieuw venster. Open schermen nemen wijzigingen binnen 5 minuten over.
 
 Onder **BHV en verjaardagen** staan twee extra onderdelen. Beide staan standaard uit. Wat je hier kiest, is de standaard voor alle schermen; per scherm zet je ze apart aan of uit bij [Schermen](#schermen).
 
@@ -374,11 +378,30 @@ Onder **BHV en verjaardagen** staan twee extra onderdelen. Beide staan standaard
 
 ![Vandaag jarig op het infoscherm](../images/infoscherm-jarig.png)
 
+## Huisstijl
+
+Op het tabblad **🖌️ Huisstijl** zet je het infoscherm in de huisstijl van de organisatie, en eventueel per locatie, bijvoorbeeld per school binnen een stichting.
+
+![De huisstijl van een locatie, met een voorbeeld en de leesbaarheidscontrole](../images/infoscherm-huisstijl.png)
+
+1. Kies bovenaan **🌐 Hele organisatie** of een locatie. Een ✓ betekent: deze heeft een eigen huisstijl.
+2. **Titel bovenaan** — bijvoorbeeld *Welkom op OBS De Linde*.
+3. **Logo** — bij voorkeur een PNG met een doorzichtige achtergrond, maximaal 2 MB (een SVG eerst opslaan als PNG). Kies bij **Bovenbalk** *Logo en titel*, *Alleen logo* of *Alleen titel*. Met **Logo op een wit vlak** blijft een donker logo zichtbaar op een donkere achtergrond.
+4. **Lettertype** — een van de standaardlettertypes (Segoe UI, Arial, Calibri, Verdana, Tahoma, Trebuchet MS of Georgia). Er wordt niets van internet geladen; op een Chromebook of Android-scherm verschijnt een gelijkend lettertype.
+5. **Eigen kleuren gebruiken** — de **hoofdkleur** (berichten in de huisstijl, de nieuwsbalk en de kopjes), de **accentkleur** (een tweede berichtkleur, bijvoorbeeld voor belangrijke berichten) en twee **achtergrondkleuren** (een kleurverloop; twee keer dezelfde kleur is effen). Bij een lichte achtergrond wordt de tekst vanzelf donker, bij een donkere achtergrond wit.
+6. Onder de kleuren staat de **leesbaarheidscontrole**: ✓ goed leesbaar, ⚠ matig of ✗ slecht leesbaar. Rechts zie je meteen een **voorbeeld**. Klik op **Opslaan**, en met **Bekijk op het scherm** zie je het echte scherm van die locatie.
+
+Lege velden van een locatie volgen de organisatie: zonder eigen titel of logo staan die van de organisatie erop, en zonder *Eigen kleuren* de kleuren van de organisatie. Met **↺ Volg de organisatie** verwijder je de eigen huisstijl van een locatie weer.
+
+Welke huisstijl een scherm gebruikt: een scherm met **één locatie** krijgt de huisstijl van die locatie, een scherm met **meer locaties** die van de organisatie. Bij [Schermen](#schermen) kies je per scherm een andere.
+
+![Het infoscherm in de huisstijl van een locatie, met een bericht in de huisstijlkleur](../images/infoscherm-huisstijl-scherm.png)
+
 ## Schermen
 
 Op het tabblad **Schermen** kies je per gebruikersaccount wat het scherm toont: **Google Slides**, **Infoscherm** of **Slides + infoscherm** (de presentatie groot in beeld, met het weer, de mededelingen en de nieuwsbalk eromheen). Dezelfde keuze staat ook bij de gebruiker op het tabblad *Presentatie*.
 
-In de kolommen **Vandaag jarig** en **BHV aanwezig** kies je per scherm **Standaard** (volgt de instelling bij Weergave), **Aan** of **Uit**. Zo toont bijvoorbeeld het scherm in de school de jarigen wel en het scherm van de opvang niet. Een scherm toont altijd alleen de jarigen en BHV'ers van zijn eigen locaties. Een account zonder aangevinkte locaties ziet alle locaties; vink bij een scherm in een gebouw dus altijd de locatie(s) aan.
+In de kolom **Infoscherm** kies je per scherm de **Huisstijl** (*Automatisch*, *Organisatie* of een locatie met een eigen huisstijl). Bij **Vandaag jarig** en **BHV aanwezig** kies je per scherm **Standaard** (volgt de instelling bij Weergave), **Aan** of **Uit**. Zo toont bijvoorbeeld het scherm in de school de jarigen wel en het scherm van de opvang niet. Een scherm toont altijd alleen de jarigen en BHV'ers van zijn eigen locaties. Een account zonder aangevinkte locaties ziet alle locaties; vink bij een scherm in een gebouw dus altijd de locatie(s) aan.
 
 Met **👁️ Voorbeeld** achter een account zie je in een nieuw venster precies wat dat scherm toont: de berichten, het nieuws, het weer en de BHV'ers van de locaties van dat account. Bij een scherm met alleen Google Slides opent **👁️ Slides** de presentatie. Het voorbeeld toont de opgeslagen keuze; sla dus eerst op na een wijziging.
 

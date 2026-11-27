@@ -336,6 +336,37 @@ shot('infoscherm-schermen', async () => {
   await open(p, 'admin/infoscreen_manage.php?tab=schermen', 800);
   await save('infoscherm-schermen', p, { selector: 'form table', pad: 12 });
 });
+shot('infoscherm-huisstijl', async () => {
+  const p = await pageFor('admin', { width: 1366, height: 900 });
+  await open(p, 'admin/infoscreen_manage.php?tab=huisstijl&loc=' + encodeURIComponent('BSO De Vlinder'), 1200);
+  await save('infoscherm-huisstijl', p, { selector: '.panel', pad: 0 });
+});
+shot('infoscherm-huisstijl-scherm', async () => {
+  const p = await pageFor('admin', SCREEN);
+  await open(p, 'infoscherm.php?preview=1&mode=infoscreen&loc=' + encodeURIComponent('BSO De Vlinder'), 1500);
+  await p.waitForSelector('#stage .slide.active.c-huisstijl', { timeout: 60000 }); // the message in the huisstijl
+  await p.waitForTimeout(1500);
+  await p.evaluate(() => { document.getElementById('preview-bar')?.remove();
+    document.getAnimations().forEach((a) => { if (a.effect && a.effect.target && a.effect.target.id === 'ticker-track') a.pause(); }); });
+  await save('infoscherm-huisstijl-scherm', p);
+});
+shot('infoscherm-afbeelding', async () => {
+  const p = await pageFor('admin', { width: 1366, height: 900 });
+  await open(p, 'admin/infoscreen_manage.php?tab=berichten', 800);
+  await p.locator('tr:has-text("Fietsdag") >> text=Bewerken').first().click();
+  await p.waitForLoadState();
+  await p.waitForTimeout(600);
+  await save('infoscherm-afbeelding', p, { selector: '[data-msg-layout]', pad: 14 });
+});
+shot('gebruiker-infoscherm', async () => {
+  const p = await pageFor('admin');
+  await open(p, 'admin/users_manage.php', 1200);
+  await p.locator('tr:has-text("concierge") button').first().click();
+  await p.waitForTimeout(1200);
+  await p.locator('.tab-button', { hasText: 'Infoscherm' }).first().click();
+  await p.waitForTimeout(600);
+  await save('gebruiker-infoscherm', p, { selector: '[id^="edit-content-"]:has(.tab-button)', pad: 0 });
+});
 shot('infoscherm-koppelingen', async () => {
   const p = await pageFor('admin');
   await open(p, 'admin/infoscreen_manage.php?tab=koppelingen', 800);
