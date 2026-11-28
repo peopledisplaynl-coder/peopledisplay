@@ -48,11 +48,14 @@ $userName = $user['display_name'] ?: $user['username'];
 $isAdmin = in_array($user['role'], ['admin', 'superadmin', 'employee_manager', 'user_manager']);
 $canUseScanner = (bool)($user['can_use_scanner'] ?? false);
 $userFeatures = json_decode((string)($user['features'] ?? ''), true);
-$isInfoscreenEditor = is_array($userFeatures) && (!empty($userFeatures['infoscreenEditor']) || !empty($userFeatures['infoscreenBranding']))
-    && is_file(__DIR__ . '/infoscherm_berichten.php');
-$infoscreenCardText = !empty($userFeatures['infoscreenEditor']) && !empty($userFeatures['infoscreenBranding'])
-    ? 'Berichten en huisstijl van het infoscherm voor uw locaties'
-    : (!empty($userFeatures['infoscreenBranding']) ? 'Huisstijl van het infoscherm voor uw locaties' : 'Berichten op het infoscherm plaatsen voor uw locaties');
+// Infoscreen rights (2.10.0): any role, each part separately, for chosen locations
+require_once __DIR__ . '/includes/infoscreen.php';
+$infoscreenScope = pd_infoscreen_scope($db, (int)$_SESSION['user_id']);
+$isInfoscreenEditor = $infoscreenScope !== null;
+$infoscreenCardText = $isInfoscreenEditor
+    ? ucfirst(implode(', ', array_map(fn($k) => mb_strtolower(preg_replace('/^\S+\s/u', '', PD_IS_RIGHTS[$k][0])), array_keys(array_filter($infoscreenScope['rights'])))))
+      . ($infoscreenScope['all'] ? ' — alle locaties' : ' — ' . (count($infoscreenScope['locations']) === 1 ? $infoscreenScope['locations'][0] : count($infoscreenScope['locations']) . ' locaties'))
+    : '';
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -228,7 +231,7 @@ $infoscreenCardText = !empty($userFeatures['infoscreenEditor']) && !empty($userF
             <?php endif; ?>
             
             <?php if ($isInfoscreenEditor): ?>
-            <a href="infoscherm_berichten.php" class="menu-card" style="background: linear-gradient(135deg, #34d399 0%, #059669 100%); color: white;">
+            <a href="admin/infoscreen_manage.php" class="menu-card" style="background: linear-gradient(135deg, #34d399 0%, #059669 100%); color: white;">
                 <div class="menu-card-icon">📝</div>
                 <div class="menu-card-title">Infoscherm</div>
                 <div class="menu-card-description">

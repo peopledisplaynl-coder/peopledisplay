@@ -28,6 +28,7 @@ if (defined('PD_INFOSCREEN_LOADED')) {
 define('PD_INFOSCREEN_LOADED', true);
 
 require_once __DIR__ . '/infoscreen_branding.php';
+require_once __DIR__ . '/infoscreen_rights.php';
 
 const PD_IS_MODES = ['slides', 'infoscreen', 'combined'];
 // Message colours: fixed colours plus the two huisstijl colours (2.9.0)
@@ -355,8 +356,9 @@ function pd_infoscreen_rename_location(PDO $db, string $old, string $new): void
  * $allowAll = false (Berichtenredacteur) hides "Alle locaties".
  * Posts locations_all=1 and/or locations[]; read back with pd_infoscreen_locs_from_post().
  */
-function pd_infoscreen_location_picker(array $locations, array $selected, bool $allowAll = true, string $help = ''): string
+function pd_infoscreen_location_picker(array $locations, array $selected, bool $allowAll = true, string $help = '', ?array $screenCounts = null): string
 {
+    // $screenCounts (2.10.0): per location the number of infoscreens that show it
     $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
     $isAll = $allowAll && $selected === [];
     $out = '<div class="loc-picker" data-loc-picker>';
@@ -367,8 +369,10 @@ function pd_infoscreen_location_picker(array $locations, array $selected, bool $
     $out .= '<div class="loc-list">';
     foreach ($locations as $loc) {
         $on = !$isAll && in_array($loc, $selected, true);
+        $n = $screenCounts[$loc] ?? null;
         $out .= '<label class="check"><input type="checkbox" name="locations[]" value="' . $h($loc) . '"' . ($on ? ' checked' : '')
-              . ($isAll ? ' disabled' : '') . '> 📍 ' . $h($loc) . '</label>';
+              . ($isAll ? ' disabled' : '') . '> 📍 ' . $h($loc)
+              . ($n !== null ? ' <span class="scr-count" title="Aantal infoschermen dat deze locatie toont">📺 ' . (int)$n . '</span>' : '') . '</label>';
     }
     if (!$locations) $out .= '<div class="help">Er zijn geen locaties beschikbaar.</div>';
     $out .= '</div>';
@@ -438,30 +442,15 @@ function pd_infoscreen_locs_from_post(array $allowed, bool $allowAll = true)
 }
 
 /**
- * Who may do what on the infoscreen, for which locations (2.6.0, rights since 2.9.0).
- * - SuperAdmin, and admins with the right "Infoscherm beheren" ($canManage): everything, all locations.
- * - Other users, per right in users.features: "infoscreenEditor" (berichten plaatsen) and
- *   "infoscreenBranding" (huisstijl aanpassen), only for their infoscreen locations
- *   (features.infoscreenLocations; before 2.9.0 the Zichtbare locaties, features.locations).
- * Returns ['all' => bool, 'locations' => [...], 'messages' => bool, 'branding' => bool], or null (no access).
+ * Old shape of the scope (2.6.0–2.9.0), kept for callers that only need messages and huisstijl.
+ * The rights themselves live in includes/infoscreen_rights.php since 2.10.0.
  */
-function pd_infoscreen_editor_scope(PDO $db, int $userId, bool $canManage): ?array
+function pd_infoscreen_editor_scope(PDO $db, int $userId, bool $canManage = false): ?array
 {
-    if ($canManage) {
-        return ['all' => true, 'locations' => [], 'messages' => true, 'branding' => true];
-    }
-    $stmt = $db->prepare("SELECT features FROM users WHERE id = ? AND active = 1");
-    $stmt->execute([$userId]);
-    $features = json_decode((string)$stmt->fetchColumn(), true);
-    if (!is_array($features)) return null;
-    $messages = !empty($features['infoscreenEditor']);
-    $branding = !empty($features['infoscreenBranding']);
-    if (!$messages && !$branding) return null;
-    $locs = is_array($features['infoscreenLocations'] ?? null) ? $features['infoscreenLocations']
-          : (is_array($features['locations'] ?? null) ? $features['locations'] : []);
-    $known = $db->query("SELECT location_name FROM locations")->fetchAll(PDO::FETCH_COLUMN);
-    return ['all' => false, 'locations' => array_values(array_intersect(array_map('strval', $locs), $known)),
-            'messages' => $messages, 'branding' => $branding];
+    $scope = pd_infoscreen_scope($db, $userId);
+    if ($scope === null) return null;
+    return ['all' => $scope['all'], 'locations' => $scope['locations'],
+            'messages' => $scope['rights']['messages'], 'branding' => $scope['rights']['branding']];
 }
 
 /** May this scope change a message for $msgLocs? A redacteur only for messages within the own locations. */

@@ -38,11 +38,15 @@ $preview = !empty($_GET['preview']);
 // Preview of a specific screen account (Infoscherm › Schermen › Voorbeeld), only for managers
 $asUser = null;
 if ($preview && isset($_GET['as'])) {
-    require_once __DIR__ . '/admin/auth_helper.php';
-    if (hasAdminFeature('manage_infoscreen')) {
-        $st = $db->prepare("SELECT id, username, display_name FROM users WHERE id = ?");
-        $st->execute([(int)$_GET['as']]);
-        $asUser = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+    // Only with the right Schermen, for a screen within the own locations (2.10.0; the API checks again)
+    $st = $db->prepare("SELECT id, username, display_name, features FROM users WHERE id = ?");
+    $st->execute([(int)$_GET['as']]);
+    $asUser = $st->fetch(PDO::FETCH_ASSOC) ?: null;
+    $previewScope = pd_infoscreen_scope($db, (int)$_SESSION['user_id']);
+    $asFeat = $asUser ? (json_decode((string)$asUser['features'], true) ?: []) : [];
+    $asLocsP = is_array($asFeat['locations'] ?? null) ? array_values(array_filter(array_map('strval', $asFeat['locations']))) : [];
+    if (!$asUser || !pd_infoscreen_scope_can($previewScope, 'screens') || !pd_infoscreen_scope_sees_screen($previewScope, $asLocsP)) {
+        $asUser = null;
     }
 }
 // Preview of one location (2.9.0, Huisstijl): managers, and editors for their own locations

@@ -371,7 +371,8 @@ test('infoscreen: the Berichten-API needs a key and the Teams endpoint a valid H
 test('infoscreen: API and pages need a login, the cron script only runs from the command line', () => {
   assert.match(read('api/infoscreen_data.php'), /empty\(\$_SESSION\['user_id'\]\)/);
   assert.match(read('infoscherm.php'), /isset\(\$_SESSION\['user_id'\]\)/);
-  assert.match(read('admin/infoscreen_manage.php'), /requireAdmin\(\);\s*requireAdminFeature\('manage_infoscreen'\)/);
+  // 2.10.0: login + infoscreen rights of this user (no admin role needed, no other admin rights)
+  assert.match(read('admin/infoscreen_manage.php'), /requireLogin\(\);[\s\S]*?\$scope = pd_infoscreen_scope\(\$db, \(int\)\$_SESSION\['user_id'\]\);\s*\$isAdminRole[\s\S]*?if \(\$scope === null\)/);
   assert.match(read('admin/infoscreen_manage.php'), /pd_infoscreen_csrf_ok/);
   assert.match(read('cron/cron_infoscreen.php'), /php_sapi_name\(\) !== 'cli'/);
 });
@@ -380,12 +381,11 @@ test('infoscreen: long messages are made smaller to fit, the forms show a charac
   assert.match(read('infoscherm.php'), /function fitText\(/);
   assert.match(read('infoscherm.php'), /var\(--fit\)/);
   assert.match(read('admin/infoscreen_manage.php'), /pd_infoscreen_text_counter_js\(\)/);
-  assert.match(read('infoscherm_berichten.php'), /pd_infoscreen_text_counter_js\(\)/);
 });
 
-test('infoscreen website source: the preview needs an admin with the infoscreen right and a CSRF token', () => {
+test('infoscreen website source: the preview needs the infoscreen right News and a CSRF token', () => {
   const api = read('admin/api/infoscreen_web_preview.php');
-  assert.match(api, /hasAdminFeature\('manage_infoscreen'\)/);
+  assert.match(api, /pd_infoscreen_scope_can\(pd_infoscreen_scope\(\$db, \(int\)\$_SESSION\['user_id'\]\), 'news'\)/);
   assert.match(api, /pd_infoscreen_csrf_ok/);
   assert.match(read('includes/infoscreen_web.php'), /pd_infoscreen_http_get\(/); // SSRF-guarded fetch only
   assert.doesNotMatch(read('includes/infoscreen_web.php'), /curl_init|file_get_contents\(\s*\$url/);
@@ -402,13 +402,24 @@ test('cron: no shared key in the code, every web cron entry checks the installat
   assert.match(read('admin/cron_manage.php'), /pd_infoscreen_csrf_ok/);
 });
 
-test('infoscreen editors: the page limits messages to the user\'s own locations', () => {
-  const page = read('infoscherm_berichten.php');
-  assert.match(page, /pd_infoscreen_editor_scope\(/);
-  assert.match(page, /pd_infoscreen_scope_allows\(/);
-  assert.match(page, /pd_infoscreen_csrf_ok/);
+test('infoscreen rights (2.10.0): every action checks the right and the own locations', () => {
+  const page = read('admin/infoscreen_manage.php');
+  for (const [action, right] of [['save_message', 'messages'], ['toggle_message', 'messages'], ['delete_message', 'messages'],
+    ['save_brand', 'branding'], ['save_settings', 'display'], ['save_screens', 'screens'],
+    ['create_key', 'connections'], ['save_teams_token', 'connections'], ['new_api_key', 'connections'], ['toggle_key', 'connections'], ['delete_key', 'connections']]) {
+    assert.match(page, new RegExp(`case '${action}':[\\s\\S]{0,200}?\\$need\\('${right}'`), `${action} must check the right ${right}`);
+  }
+  for (const action of ['fetch_source', 'toggle_source', 'delete_source']) {
+    assert.match(page, new RegExp(`case '${action}':\\s*\\n\\s*(\\$source = )?\\$loadSource\\(`), `${action} must load the source through the scope check`);
+  }
   assert.match(page, /pd_infoscreen_locs_from_post\(\$pickable, \$scope\['all'\]\)/);
-  assert.match(read('admin/users_manage.php'), /'infoscreenEditor' => \$infoscreenEditor/);
+  assert.match(page, /isset\(\$allowedScreens\[\(int\)\$userId\]\)/);
+  const rights = read('includes/infoscreen_rights.php');
+  assert.match(rights, /if \(\$orgWide\) \$rights\[\$k\] = false;/); // Weergave and Koppelingen only with all locations
+  assert.match(read('api/infoscreen_data.php'), /pd_infoscreen_scope_sees_screen\(\$scope, \$asLocs\)/);
+  assert.match(read('admin/users_manage.php'), /pd_infoscreen_rights_from_post\(\$_POST\)/);
+  assert.doesNotMatch(read('admin/users_manage.php'), /'manage_infoscreen'/);
+  assert.match(read('infoscherm_berichten.php'), /Location: admin\/infoscreen_manage\.php/);
 });
 
 // ── PHP syntax ─────────────────────────────────────────────────────────

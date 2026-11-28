@@ -113,8 +113,11 @@ $users = [
     ['receptie', 'Demo2026!', 'Receptie Hoofdgebouw', 'user', ['locations' => ['Hoofdgebouw']] + $features],
     ['bord', 'Demo2026!', 'Infoscherm hal', 'user', ['inuitBord' => true] + $features],
     ['locatiebeheer', 'Demo2026!', 'Isa de Groot', 'admin', ['admin_features' => ['manage_locations' => true, 'manage_departments' => true, 'manage_visitors' => true,
-        'manage_badges' => true, 'manage_infoscreen' => true, 'view_audit_log' => true]] + $features],
-    ['concierge', 'Demo2026!', 'Daan Visser', 'user', ['locations' => ['Hoofdgebouw', 'BSO De Vlinder'], 'infoscreenEditor' => true] + $features],
+        'manage_badges' => true, 'view_audit_log' => true]] + $features],
+    // Infoscreen rights (2.10.0): Hoofdredacteur for two locations
+    ['concierge', 'Demo2026!', 'Daan Visser', 'user', ['locations' => ['Hoofdgebouw', 'BSO De Vlinder'],
+        'infoscreenRights' => ['messages' => true, 'news' => true, 'weather' => true, 'agenda' => true, 'branding' => true, 'screens' => true],
+        'infoscreenAllLocations' => false, 'infoscreenLocations' => ['Hoofdgebouw', 'BSO De Vlinder']] + $features],
 ];
 $st = $db->prepare('INSERT INTO users (username, password_hash, display_name, email, role, features, active) VALUES (?, ?, ?, ?, ?, ?, 1)');
 foreach ($users as $u) {
@@ -236,7 +239,6 @@ imagedestroy($logo);
 $db->prepare("INSERT INTO infoscreen_branding (location_name, title, logo_path, logo_mode, logo_plate, use_colors, color_primary, color_accent, color_bg1, color_bg2, font)
               VALUES ('BSO De Vlinder', 'Welkom bij BSO De Vlinder', ?, 'logo', 0, 1, '#0e7c66', '#f59e0b', '#f3faf7', '#d9efe8', 'trebuchet')")
    ->execute([PD_IS_UPLOAD_DIR . '/logo_demo_vlinder.png']);
-$db->exec("UPDATE users SET features = JSON_SET(features, '$.infoscreenBranding', true) WHERE username = 'concierge'");
 
 $demoHost = 'http://' . (getenv('PD_DEMO_DOMAIN') ?: 'localhost');
 $db->prepare("INSERT INTO infoscreen_sources (type, name, url, locations, max_items, show_images, attribution, active, last_fetch_at, last_ok_at, last_status)

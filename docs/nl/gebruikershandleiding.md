@@ -192,9 +192,11 @@ Heeft de beheerder het IN/UIT-bord voor jouw account aangezet, dan opent het aan
 
 # Infoscherm
 
-Heeft de beheerder je rechten voor het infoscherm gegeven (bijvoorbeeld als directeur, receptie of conciërge), dan staat op het welkomstscherm de knop **📝 Infoscherm**. Daarmee zet je berichten op het infoscherm en/of pas je de huisstijl aan, alleen voor **jouw locaties**. Welke dat zijn, staat bovenaan in het groene vak.
+Heeft de beheerder je rechten voor het infoscherm gegeven (bijvoorbeeld als directeur, receptie of conciërge), dan staat op het welkomstscherm de knop **📝 Infoscherm**, met daaronder wat je mag. Je ziet alleen de tabbladen waarvoor je rechten hebt, bijvoorbeeld *Berichten*, *Nieuws*, *Weer*, *Agenda*, *Huisstijl* en *Schermen*, en alles alleen voor **jouw locaties**. Welke dat zijn, staat bovenaan in het groene vak.
 
-![Infoscherm-berichten plaatsen voor de eigen locaties](../images/infoscherm-redacteur.png)
+![Het infoscherm beheren voor de eigen locaties](../images/infoscherm-redacteur.png)
+
+Achter elk bericht staat **📺** met het aantal schermen dat het toont; wijs ernaar om te zien welke.
 
 1. Klik op **Nieuw bericht**.
 2. Vul een **titel** en een korte **tekst** in, en kies eventueel een afbeelding en een achtergrondkleur. Onder de tekst staat hoeveel tekens je gebruikt; houd je aan het advies, dan blijft de tekst groot en goed leesbaar. Bij een afbeelding kies je waar hij staat (links, rechts, boven of over de hele dia), of hij helemaal zichtbaar moet zijn en hoe groot hij is; de schets ernaast laat het meteen zien. De kleur **Huisstijl** of **Accent** toont het bericht in de kleuren van jouw school.
@@ -205,6 +207,8 @@ Heeft de beheerder je rechten voor het infoscherm gegeven (bijvoorbeeld als dire
 Je eigen berichten kun je **bewerken**, **uitzetten** en **verwijderen**. Berichten van de beheerder voor **🌐 Alle locaties**, en berichten die ook op andere locaties staan, zie je met **🔒 Alleen lezen**: die past de beheerder aan. Met **Voorbeeld** bekijk je hoe het scherm eruitziet.
 
 **Huisstijl.** Mag je de huisstijl aanpassen, dan staat er een tabblad **🖌️ Huisstijl**. Kies (als je meer locaties hebt) de locatie en stel de titel, het logo, het lettertype en de kleuren in. Rechts zie je meteen een voorbeeld, en onder de kleuren staat of de tekst goed leesbaar blijft. Lege velden nemen de huisstijl van de organisatie over. Met **Bekijk op het scherm** zie je het echte scherm van die locatie.
+
+**Nieuws, weer, agenda en schermen.** Mag je dat ook, dan werken die tabbladen zoals in de Beheerdershandleiding staat, alleen voor jouw locaties. Op het tabblad *Schermen* zie je de schermen van jouw locaties en kies je wat ze tonen; welke locaties een scherm heeft, bepaalt de beheerder.
 
 # Mijn profiel
 

@@ -216,11 +216,17 @@ fetchers and parsers, and `pd_infoscreen_screen_data()` for the screen.
   colours, the derived text colours (WCAG contrast, white or #10213a) and a system font stack;
   nothing is loaded from the internet. Logos: PNG/JPG/GIF/WEBP only (no SVG: it could carry script).
   Message colours `huisstijl` and `accent` follow the screen's huisstijl.
-- **Infoscreen rights (2.9.0).** `users.features.infoscreenEditor` (messages) and `infoscreenBranding`
-  (huisstijl) for `features.infoscreenLocations` (falls back to `features.locations` for users from
-  before 2.9.0); `pd_infoscreen_editor_scope()`; page `infoscherm_berichten.php` with tabs.
-  `users_manage.php` keeps `infoscreenParts`, `infoscreenBrand` and `infoscreenLocations` when it
-  rebuilds `features`.
+- **Infoscreen rights (2.10.0).** `includes/infoscreen_rights.php`. Per user (any role) in `users.features`:
+  `infoscreenRights` (messages, news, weather, agenda, branding, screens, display, connections),
+  `infoscreenAllLocations`, `infoscreenLocations`. `display` and `connections` only count with all
+  locations. Users without `infoscreenRights` (before 2.10.0) are derived from the old settings
+  (admin right `manage_infoscreen` = everything; `infoscreenEditor`/`infoscreenBranding` for their
+  locations) until they are saved again. `pd_infoscreen_scope()` drives `admin/infoscreen_manage.php`
+  for every user: tabs per right, lists filtered to what can reach the user's screens, items editable
+  only when all their locations are within the user's locations, screen accounts only when their
+  locations are (accounts without locations = all, only for all-location users). The admin right
+  `manage_infoscreen` is gone from the Rechten tab; `infoscherm_berichten.php` redirects.
+  `pd_infoscreen_screen_accounts()` / `pd_infoscreen_screens_showing()` give the 📺 counts.
 - **Image placement (2.9.0).** `infoscreen_messages.image_layout` (left, right, top, full),
   `image_fit` (cover, contain) and `image_size` (30-70 %); a message without text always shows its
   image across the whole slide.

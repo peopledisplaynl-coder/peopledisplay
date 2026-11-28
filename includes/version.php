@@ -1,5 +1,5 @@
 <?php
 // version.php
 // Upload naar: /includes/version.php
-define('PD_CURRENT_VERSION', '2.9.0');
-define('PEOPLEDISPLAY_VERSION', '2.9.0'); // alias voor backward compatibility
+define('PD_CURRENT_VERSION', '2.10.0');
+define('PEOPLEDISPLAY_VERSION', '2.10.0'); // alias voor backward compatibility

@@ -33,8 +33,13 @@ if (empty($_SESSION['user_id'])) {
 $userId = (int)$_SESSION['user_id'];
 // ?as=<id>: preview of another screen account (Infoscherm › Schermen), only for managers
 if (isset($_GET['as']) && (int)$_GET['as'] !== $userId) {
-    require_once __DIR__ . '/../admin/auth_helper.php';
-    if (!hasAdminFeature('manage_infoscreen')) {
+    // Only with the right Schermen, for a screen within the own locations (2.10.0)
+    $scope = pd_infoscreen_scope($db, $userId);
+    $st = $db->prepare("SELECT features FROM users WHERE id = ?");
+    $st->execute([(int)$_GET['as']]);
+    $asFeatures = json_decode((string)$st->fetchColumn(), true) ?: [];
+    $asLocs = is_array($asFeatures['locations'] ?? null) ? array_values(array_filter(array_map('strval', $asFeatures['locations']))) : [];
+    if (!pd_infoscreen_scope_can($scope, 'screens') || !pd_infoscreen_scope_sees_screen($scope, $asLocs)) {
         http_response_code(403);
         echo json_encode(['success' => false, 'error' => 'Geen toegang']);
         exit;
@@ -44,8 +49,7 @@ if (isset($_GET['as']) && (int)$_GET['as'] !== $userId) {
 // ?loc=<name>: preview of one location (2.9.0), for managers and for editors of that location
 $previewLoc = null;
 if (isset($_GET['loc']) && (string)$_GET['loc'] !== '') {
-    require_once __DIR__ . '/../admin/auth_helper.php';
-    $scope = pd_infoscreen_editor_scope($db, $userId, hasAdminFeature('manage_infoscreen'));
+    $scope = pd_infoscreen_scope($db, $userId);
     $loc = (string)$_GET['loc'];
     $known = in_array($loc, $db->query("SELECT location_name FROM locations")->fetchAll(PDO::FETCH_COLUMN), true);
     if (!$scope || !$known || (!$scope['all'] && !in_array($loc, $scope['locations'], true))) {

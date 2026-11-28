@@ -194,9 +194,11 @@ If your administrator enabled the IN/OUT board for your account, the check-in sc
 
 # Infoscreen
 
-If the administrator gave you infoscreen permissions (for example as head teacher, reception or caretaker), the welcome screen shows the button **📝 Infoscherm** (infoscreen). With it you put messages on the infoscreen and/or change its house style, for **your locations** only. Which ones those are is shown at the top, in the green box.
+If the administrator gave you infoscreen permissions (for example as head teacher, reception or caretaker), the welcome screen shows the button **📝 Infoscherm** (infoscreen), with what you may do below it. You only see the tabs you have permissions for, for example *Berichten*, *Nieuws*, *Weer*, *Agenda*, *Huisstijl* and *Schermen* (messages, news, weather, agenda, house style, screens), and everything only for **your locations**. Which ones those are is shown at the top, in the green box.
 
-![Posting infoscreen messages for your own locations](../images/infoscherm-redacteur.png)
+![Managing the infoscreen for your own locations](../images/infoscherm-redacteur.png)
+
+After each message, **📺** shows how many screens show it; point at it to see which.
 
 1. Click **Nieuw bericht** (new message).
 2. Fill in a **Titel** (title) and a short **Tekst** (text), and optionally choose an image and a background colour. Below the text you see how many characters you use; keep to the advice and the text stays large and easy to read. With an image, choose where it goes (left, right, top or across the whole slide), whether it must be shown completely and how large it is; the sketch next to it shows the result. The colour **Huisstijl** or **Accent** shows the message in the colours of your school.
@@ -207,6 +209,8 @@ If the administrator gave you infoscreen permissions (for example as head teache
 You can **edit** (Bewerken), **switch off** (Uitzetten) and **delete** (Verwijderen) your own messages. Messages from the administrator for **🌐 Alle locaties** (all locations), and messages that are also on other locations, show **🔒 Alleen lezen** (read only): the administrator changes those. **Voorbeeld** (preview) shows what the screen looks like.
 
 **Huisstijl (house style).** If you may change the house style, there is a tab **🖌️ Huisstijl**. Choose the location (if you have more than one) and set the title, logo, font and colours. A preview on the right updates right away, and below the colours you see whether the text stays easy to read. Empty fields take over the house style of the organisation. **Bekijk op het scherm** (view on screen) shows the real screen of that location.
+
+**News, weather, agenda and screens.** If you may do those as well, these tabs work as described in the Admin guide, only for your locations. On the *Schermen* tab you see the screens of your locations and choose what they show; which locations a screen has is decided by the administrator.
 
 # My profile
 

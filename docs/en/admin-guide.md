@@ -150,7 +150,7 @@ With two-step verification a user enters, besides the password, a 6-digit code f
 
 ## An admin's permissions
 
-When the user has the role **Admin**, there is an extra tab **🔐 Rechten** (permissions). There you tick which management functions this admin may use: locations, departments, kiosk tokens, visitors, badges, bulk actions, audit log, system configuration, sub-status dates, users, backup and infoscreen. **Alles aan** and **Alles uit** (all on / all off) set them in one go. A SuperAdmin may always do everything. The tab appears once you have saved the role Admin.
+When the user has the role **Admin**, there is an extra tab **🔐 Rechten** (permissions). There you tick which management functions this admin may use: locations, departments, kiosk tokens, visitors, badges, bulk actions, audit log, system configuration, sub-status dates, users and backup. The infoscreen permissions are on the **📺 Infoscherm** tab (see [Infoscreen permissions](#infoscreen-permissions)). **Alles aan** and **Alles uit** (all on / all off) set them in one go. A SuperAdmin may always do everything. The tab appears once you have saved the role Admin.
 
 ![The Rechten tab of an admin](../images/gebruiker-rechten.png)
 
@@ -260,7 +260,7 @@ A kiosk token is a permanent login link for a screen without a keyboard, such as
 
 # Infoscreen
 
-The infoscreen shows **your own messages, news, the weather and the agenda** on a screen, with the date and time. Colleagues can also post a message from **Teams**. You use it instead of the Google Slides presentation, or together with it. It is available in every package, Starter included. You manage it under **Infoscherm** on the dashboard (group *Systeem Configuratie*).
+The infoscreen shows **your own messages, news, the weather and the agenda** on a screen, with the date and time. Colleagues can also post a message from **Teams**. You use it instead of the Google Slides presentation, or together with it. It is available in every package, Starter included. You manage it under **Infoscherm** on the dashboard (group *Systeem Configuratie*); who may do so, and for which locations, is described under [Infoscreen permissions](#infoscreen-permissions).
 
 ![The infoscreen with an own message, the weather in the sidebar and the news ticker](../images/infoscherm-scherm.png)
 
@@ -289,18 +289,41 @@ Click **Nieuw bericht** (new message) and fill in:
 
 The list shows for each message its locations and whether it is **Op het scherm** (on screen), **Gepland** (scheduled), **Verlopen** (expired) or **Uit** (off). **Uitzetten** (switch off) removes a message from the screens without deleting it.
 
-News sources, weather places, agendas and connections can also be linked to one, several or all locations. When you rename a location, messages, sources and connections follow automatically.
+After each message and source, **📺** shows how many infoscreens show it; point at it to see their names. When choosing locations, that number is shown per location. News sources, weather places, agendas and connections can also be linked to one, several or all locations. When you rename a location, messages, sources and connections follow automatically.
 
-## Who may post messages?
+## Infoscreen permissions
 
-- **SuperAdmin** and an **Admin** with the permission *Infoscherm beheren* (manage infoscreen) manage everything on this page and post messages for **all locations**, for example an important message that must be everywhere.
-- Other users, for example the head teacher, reception or caretaker of one school, get permissions **for their own locations only**. Open the user under **Gebruikers** (users) and go to the **📺 Infoscherm** tab. Tick what they may do: **📝 Berichten plaatsen** (post messages) and/or **🖌️ Huisstijl aanpassen** (change the house style), and under **Voor welke locaties?** (for which locations?) tick the locations. No location ticked means: none at all. The role can stay *User*. These locations are separate from the *Zichtbare locaties* (which staff cards someone sees); for users from before version 2.9.0 they were copied from there once.
+Who may do what on the infoscreen is set per user in one place: **Gebruikers** (users) › ✏️ › tab **📺 Infoscherm**. This works for every role, also for a plain *User*. For example, the head teacher of one school can manage the messages, news and house style of that school, without access to the other schools and without other management rights.
 
 ![Infoscreen permissions per user](../images/gebruiker-infoscherm.png)
 
-The user gets the button **📝 Infoscherm** in the menu, with the tabs *Berichten* (messages) and *Huisstijl* (house style), depending on what they may do. The top of that page clearly shows which locations. Messages for all locations, or messages that are also on other locations, are visible to the editor with **🔒 Alleen lezen** (read only) but cannot be changed. News, weather, agenda, connections and display stay with the administrator.
+1. **Voor welke locaties?** (for which locations?) Choose *Alleen de aangevinkte locaties* (only the ticked locations) and tick them, or *🌐 Alle locaties* (all locations). These locations are separate from the *Zichtbare locaties* (visible locations) on the Features tab.
+2. **Wat mag deze gebruiker?** (what may this user do?) Tick the parts, or use a quick choice and adjust it if needed:
 
-![The page of a message editor with two locations](../images/infoscherm-redacteur.png)
+| Part | What it covers |
+|---|---|
+| 📝 Berichten (messages) | post, edit, switch off and delete messages |
+| 📰 Nieuws (news) | link news sources and websites |
+| 🌤️ Weer (weather) | choose a weather place |
+| 📅 Agenda | link agendas |
+| 🖌️ Huisstijl (house style) | logo, title, colours and font |
+| 🖥️ Schermen (screens) | choose per screen what it shows, its house style, birthdays and emergency responders, with a preview; the locations of a screen stay with the administrator |
+| 🎨 Weergave (display) | settings for all screens (only with all locations) |
+| 🔗 Koppelingen (connections) | Teams and the Berichten-API (only with all locations) |
+
+| Quick choice | Permissions |
+|---|---|
+| **Redacteur** (editor) | messages only, for the own locations |
+| **Hoofdredacteur** (chief editor) | everything for the own locations (messages, news, weather, agenda, house style, screens) |
+| **Beheerder infoscherm** (infoscreen administrator) | everything, for all locations |
+
+At the bottom, one sentence sums up what the user may do and for which locations. Click **Opslaan** (save).
+
+On the welcome screen the user gets the button **📝 Infoscherm** (an admin also the tile on the dashboard) and only sees the tabs they have permissions for. The top shows for which locations. Everything that also applies to other locations, or to all locations, is marked **🔒 Alleen lezen** (read only). A SuperAdmin may always do everything.
+
+![The infoscreen for a chief editor of two locations](../images/infoscherm-redacteur.png)
+
+From before version 2.10.0: an admin with the old permission *Infoscherm beheren* now has *Beheerder infoscherm, all locations*, and an editor keeps their rights and locations. The tab shows this; it is stored as soon as you save the user.
 
 ## News
 
@@ -401,7 +424,18 @@ Which house style a screen uses: a screen with **one location** gets the house s
 
 ## Screens
 
-On the **Schermen** tab you choose per user account what its screen shows: **Google Slides**, **Infoscherm** or **Slides + infoscherm** (the presentation large, with the weather, notices and the news ticker around it). The same choice is also on the user's *Presentatie* tab.
+Every screen (TV, kiosk or tablet) is a user account. On the **Schermen** tab you see the **locations** of each account and choose what its screen shows: **Google Slides**, **Infoscherm** or **Slides + infoscherm** (the presentation large, with the weather, notices and the news ticker around it). The same choice is also on the user's *Presentatie* tab.
+
+**What a screen shows is decided by the locations of the account** (Gebruikers › Features › *Zichtbare locaties*, set by the administrator). With no location ticked it says **🌐 Alle locaties** and the screen shows everything. Someone with the permission *Schermen* only sees the screens of their own locations and cannot change their locations.
+
+| | Screen with 1 location | More locations (e.g. a multi-purpose building or a kiosk for several locations) | 🌐 All locations |
+|---|---|---|---|
+| Messages, news, agenda | of that location + what is for all locations | of all its locations together + what is for all locations | everything |
+| Emergency responders, birthdays | that location | all its locations together | everyone |
+| Weather | weather place of that location, otherwise the general one | the first of its locations with its own weather place | the general one |
+| House style | of the location, otherwise the organisation | the organisation, or choose one | the organisation, or choose |
+
+A **kiosk** with staff cards for several locations always shows the content of all its locations on the infoscreen, also when one location is chosen on the kiosk.
 
 In the column **Infoscherm** you choose per screen the **Huisstijl** (*Automatisch* (automatic), *Organisatie* (organisation) or a location with its own house style). For **Vandaag jarig** (birthdays) and **BHV aanwezig** (emergency responders) you choose per screen **Standaard** (follows the setting under Weergave), **Aan** (on) or **Uit** (off). For example, the screen in the school shows birthdays and the screen of the childcare does not. A screen always shows only the birthdays and emergency responders of its own locations. An account without ticked locations sees all locations, so always tick the location(s) for a screen in a building.
 

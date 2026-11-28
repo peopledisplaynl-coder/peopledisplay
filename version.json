@@ -1,12 +1,23 @@
 {
-    "version": "2.9.0",
+    "version": "2.10.0",
     "critical": false,
-    "message": "Nieuw: het infoscherm in uw eigen huisstijl (logo, kleuren, lettertype, per locatie), rechten per gebruiker en betere plaatsing van afbeeldingen.",
+    "message": "Nieuw: infoscherm-rechten per gebruiker en per locatie, en duidelijk op welke schermen alles te zien is.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
-    "release_date": "2026-11-27",
+    "release_date": "2026-11-28",
     "changelog": [
+        {
+            "version": "2.10.0",
+            "date": "2026-11-28",
+            "changes": [
+                "Nieuw: tabblad 📺 Infoscherm bij Gebruikers met alle infoscherm-rechten op één plek: per onderdeel aan te vinken (Berichten, Nieuws, Weer, Agenda, Huisstijl, Schermen, Weergave, Koppelingen) en voor alle of voor gekozen locaties, met snelkeuzes Redacteur, Hoofdredacteur en Beheerder infoscherm. Werkt bij elke rol, ook bij een gewone gebruiker, zonder andere beheerrechten",
+                "Nieuw: iedereen met infoscherm-rechten gebruikt dezelfde pagina Infoscherm en ziet alleen zijn eigen tabbladen en locaties; wat ook voor andere locaties geldt staat er met Alleen lezen bij",
+                "Nieuw: achter elk bericht en elke bron staat op hoeveel infoschermen het te zien is, en bij het kiezen van locaties hoeveel schermen er per locatie zijn",
+                "Nieuw: het tabblad Schermen toont de locaties van elk scherm (of Alle locaties) en een tabel met wat een scherm met één, meer of alle locaties laat zien, ook voor kiosks en multifunctionele gebouwen",
+                "Gewijzigd: het admin-recht Infoscherm beheren is vervangen door de nieuwe rechten. Bestaande admins en redacteuren houden wat ze hadden; de pagina Infoscherm-berichten verwijst door naar de nieuwe pagina"
+            ]
+        },
         {
             "version": "2.9.0",
             "date": "2026-11-27",

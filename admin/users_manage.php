@@ -31,6 +31,7 @@ session_start();
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/license_check.php';
 require_once __DIR__ . '/auth_helper.php';
+require_once __DIR__ . '/../includes/infoscreen_rights.php';
 
 requireAdmin();
 requireAdminFeature('manage_users');
@@ -245,7 +246,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_user' && isset($_GET['use
             'features' => $features,
             'allLocations' => $allLocations,
             'allAfdelingen' => $allAfdelingenFormatted,
-            'afdelingen' => array_map('intval', $userAfdelingen)  // Convert to integers
+            'afdelingen' => array_map('intval', $userAfdelingen),  // Convert to integers
+            // Infoscherm-rechten (2.10.0), ook afgeleid van de instellingen van vóór 2.10.0
+            'infoscreen' => pd_infoscreen_rights_from_features($features, (string)$user['role']),
+            'infoscreenRights' => array_map(fn($r) => ['label' => $r[0], 'help' => $r[1], 'orgWide' => $r[2]], PD_IS_RIGHTS),
+            'infoscreenPresets' => array_map(fn($p) => ['label' => $p[0], 'help' => $p[1], 'rights' => $p[2]], PD_IS_PRESETS),
         ]);
     } else {
         echo json_encode(['success' => false, 'error' => 'User not found']);
@@ -301,11 +306,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     // 📺 Infoscherm-rechten (2.6.0 / 2.9.0): berichten plaatsen en huisstijl aanpassen, alleen
     // voor de infoscherm-locaties van deze gebruiker
-    $infoscreenEditor = isset($_POST['infoscreen_editor']);
-    $infoscreenBranding = isset($_POST['infoscreen_branding']);
-    $infoscreenLocations = isset($_POST['infoscreen_locations_set'])
-        ? array_values(array_map('strval', (array)($_POST['infoscreen_locations'] ?? [])))
-        : null;
+    // 2.10.0: alle rechten op het tabblad 📺 Infoscherm (alleen als dat tabblad is meegestuurd)
+    $infoscreenNew = isset($_POST['infoscreen_set']) ? pd_infoscreen_rights_from_post($_POST) : null;
 
     // 🔐 Admin features (alleen voor admins)
     $adminFeatures = [];
@@ -315,7 +317,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'manage_departments_order', 'manage_kiosk_tokens', 'manage_visitors',
             'manage_badges', 'manage_bulk_actions', 'view_audit_log',
             'manage_system_config', 'manage_substatus_dates', 'manage_users',
-            'create_backup', 'manage_infoscreen'
+            'create_backup'
         ];
         foreach ($adminFeatureKeys as $key) {
             $adminFeatures[$key] = isset($_POST['admin_feature_' . $key]);
@@ -336,13 +338,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'zoomFunctie' => $zoomFunctie,
         'zoomStandaard' => $zoomStandaard,
         'inuitBord' => $inuitBord,            // ← IN/UIT Bord weergave
-        'infoscreenEditor' => $infoscreenEditor, // ← Infoscherm-berichten voor de eigen locaties
-        'infoscreenBranding' => $infoscreenBranding, // ← Huisstijl van het infoscherm voor de eigen locaties (2.9.0)
         'admin_features' => $adminFeatures,   // ← NEW: Admin feature permissions
     ] + (isset($oldFeatures['infoscreenParts']) ? ['infoscreenParts' => $oldFeatures['infoscreenParts']] : [])
       + (isset($oldFeatures['infoscreenBrand']) ? ['infoscreenBrand' => $oldFeatures['infoscreenBrand']] : [])
-      + ($infoscreenLocations !== null ? ['infoscreenLocations' => $infoscreenLocations]
-         : (isset($oldFeatures['infoscreenLocations']) ? ['infoscreenLocations' => $oldFeatures['infoscreenLocations']] : [])));
+      + ($infoscreenNew ?? array_intersect_key($oldFeatures, array_flip(['infoscreenRights', 'infoscreenAllLocations', 'infoscreenLocations', 'infoscreenEditor', 'infoscreenBranding']))));
     
     
     // Validation
@@ -1747,7 +1746,6 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
             { key: 'manage_substatus_dates',   label: 'Sub-status datum instellingen' },
             { key: 'manage_users',             label: 'Gebruikersbeheer' },
             { key: 'create_backup',            label: '🗄️ Backup aanmaken' },
-            { key: 'manage_infoscreen',        label: '📺 Infoscherm beheren' },
         ];
 
         /**
@@ -1920,7 +1918,8 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                     const data = await response.json();
                     
                     if (data.success) {
-                        renderEditForm(userId, data.user, data.features, data.allLocations, data.allAfdelingen, data.afdelingen);
+                        window.pdInfoscreenDefs = { rights: data.infoscreenRights, presets: data.infoscreenPresets };
+                        renderEditForm(userId, data.user, data.features, data.allLocations, data.allAfdelingen, data.afdelingen, data.infoscreen);
                     } else {
                         editContent.innerHTML = `<p style="color:red;">❌ Fout: ${data.error}</p>`;
                     }
@@ -1930,7 +1929,82 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }
         
-        function renderEditForm(userId, user, features, allLocations, allAfdelingen, afdelingen) {
+        // 📺 Infoscherm-rechten (2.10.0): per onderdeel, voor alle of gekozen locaties, met snelkeuzes
+        function renderInfoscreenTab(userId, user, is, allLocations) {
+            const defs = window.pdInfoscreenDefs || { rights: {}, presets: {} };
+            const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            is = is || { all: false, locations: [], rights: {} };
+            if (user.role === 'superadmin') {
+                return `<h4>📺 Infoscherm</h4><p style="font-size:13px;color:#718096">Een SuperAdmin mag op het infoscherm altijd alles, voor alle locaties.</p>`;
+            }
+            const presets = Object.entries(defs.presets).map(([k, p]) =>
+                `<button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:13px" title="${esc(p.help)}"
+                    onclick="pdInfoscreenPreset(${userId}, '${k}')">${esc(p.label)}</button>`).join('');
+            const rights = Object.entries(defs.rights).map(([k, r]) => `
+                <div class="checkbox-item" style="align-items:flex-start" data-org-wide="${r.orgWide ? 1 : 0}">
+                    <input type="checkbox" id="isr-${userId}-${k}" name="infoscreen_rights[]" value="${k}" ${is.rights[k] ? 'checked' : ''}>
+                    <label for="isr-${userId}-${k}" style="flex:1"><strong style="display:block;margin-bottom:2px">${esc(r.label)}</strong>
+                        <span style="font-size:12px;color:#718096;line-height:1.4">${esc(r.help)}</span></label>
+                </div>`).join('');
+            const locs = allLocations.map((loc) => {
+                const id = 'isloc-' + userId + '-' + String(loc).replace(/[^a-z0-9]/gi, '-');
+                return `<div class="checkbox-item"><input type="checkbox" id="${id}" name="infoscreen_locations[]" value="${esc(loc)}"
+                    ${!is.all && (is.locations || []).includes(loc) ? 'checked' : ''}><label for="${id}">${esc(loc)}</label></div>`;
+            }).join('');
+            setTimeout(() => pdInfoscreenSync(userId), 0);
+            return `
+                <h4>📺 Infoscherm</h4>
+                <p style="font-size:13px;color:#718096;margin-bottom:14px">
+                    Wat mag deze gebruiker op het infoscherm, en voor welke locaties? Dit kan bij elke rol, ook bij een gewone gebruiker.
+                    De gebruiker krijgt dan de knop “Infoscherm” en ziet alleen wat hier is aangevinkt. Andere beheerrechten krijgt hij niet.
+                </p>
+                <input type="hidden" name="infoscreen_set" value="1">
+                <strong style="display:block;margin-bottom:8px">1. Voor welke locaties?</strong>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px">
+                    <label class="checkbox-item" style="gap:6px"><input type="radio" name="infoscreen_scope" value="locations" ${is.all ? '' : 'checked'} onchange="pdInfoscreenSync(${userId})"> Alleen de aangevinkte locaties</label>
+                    <label class="checkbox-item" style="gap:6px"><input type="radio" name="infoscreen_scope" value="all" ${is.all ? 'checked' : ''} onchange="pdInfoscreenSync(${userId})"> 🌐 Alle locaties (hele organisatie)</label>
+                </div>
+                <div class="checkbox-grid" data-is-locs="${userId}">${locs}</div>
+                <p style="font-size:12px;color:#718096;margin-top:6px">💡 Los van de Zichtbare Locaties op het tabblad Features (die bepalen welke kaarten iemand ziet en, bij een schermaccount, wat dat scherm toont).</p>
+                <strong style="display:block;margin:16px 0 8px">2. Wat mag deze gebruiker?</strong>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+                    <span style="font-size:12px;color:#718096">Snelkeuze:</span>${presets}
+                    <button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:13px" onclick="pdInfoscreenPreset(${userId}, '')">Geen rechten</button>
+                </div>
+                <div class="checkbox-grid" data-is-rights="${userId}" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">${rights}</div>
+                <div data-is-summary="${userId}" style="margin-top:12px;font-size:13px;padding:10px 12px;border-radius:8px;background:#f7fafc"></div>`;
+        }
+        function pdInfoscreenPreset(userId, key) {
+            const defs = window.pdInfoscreenDefs || { presets: {} };
+            const form = document.getElementById(`edit-form-${userId}`);
+            const p = defs.presets[key];
+            form.querySelectorAll('input[name="infoscreen_rights[]"]').forEach((c) => { c.checked = !!p && p.rights.includes(c.value); });
+            if (key === 'beheerder') form.querySelector('input[name="infoscreen_scope"][value="all"]').checked = true;
+            if (key === 'hoofdredacteur' || key === 'redacteur') form.querySelector('input[name="infoscreen_scope"][value="locations"]').checked = true;
+            pdInfoscreenSync(userId);
+        }
+        function pdInfoscreenSync(userId) {
+            const form = document.getElementById(`edit-form-${userId}`);
+            if (!form || !form.querySelector('input[name="infoscreen_set"]')) return;
+            form.querySelectorAll('[data-is-rights] input, [data-is-locs] input, input[name="infoscreen_scope"]').forEach((c) => {
+                if (!c.dataset.isBound) { c.dataset.isBound = 1; c.addEventListener('change', () => pdInfoscreenSync(userId)); }
+            });
+            const all = form.querySelector('input[name="infoscreen_scope"][value="all"]').checked;
+            form.querySelectorAll('[data-is-locs] input').forEach((c) => { c.disabled = all; });
+            form.querySelectorAll('[data-org-wide="1"]').forEach((row) => {
+                const c = row.querySelector('input'); c.disabled = !all; if (!all) c.checked = false;
+                row.style.opacity = all ? 1 : .5;
+            });
+            const rights = [...form.querySelectorAll('input[name="infoscreen_rights[]"]:checked')].map((c) => c.closest('.checkbox-item').querySelector('strong').textContent);
+            const locs = [...form.querySelectorAll('[data-is-locs] input:checked')].map((c) => c.value);
+            const box = form.querySelector('[data-is-summary]');
+            if (!rights.length) { box.innerHTML = 'Deze gebruiker heeft <strong>geen</strong> rechten op het infoscherm.'; box.style.background = '#f7fafc'; return; }
+            const where = all ? '<strong>alle locaties</strong>' : (locs.length ? locs.map((l) => '<strong>' + l.replace(/[<>&]/g, '') + '</strong>').join(', ') : '<strong style="color:#c53030">nog geen locatie aangevinkt</strong>');
+            box.innerHTML = `✅ Mag: ${rights.join(', ')} — voor ${where}.`;
+            box.style.background = all || locs.length ? '#f0fff4' : '#fff5f5';
+        }
+
+        function renderEditForm(userId, user, features, allLocations, allAfdelingen, afdelingen, infoscreen) {
             const editContent = document.getElementById(`edit-content-${userId}`);
             
             const visibleFields = features.visibleFields || [];
@@ -2203,45 +2277,9 @@ $users = $usersStmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     ` : ''}
 
-                    <!-- TAB: INFOSCHERM-RECHTEN (2.9.0) -->
+                    <!-- TAB: INFOSCHERM-RECHTEN (2.10.0) -->
                     <div id="infoscreen-${userId}" class="tab-content">
-                        <h4>📺 Infoscherm</h4>
-                        <p style="font-size: 13px; color: #718096; margin-bottom: 14px;">
-                            Wat mag deze gebruiker op het infoscherm, en voor welke locaties? Bijvoorbeeld de directeur of de receptie van één school.
-                            Een beheerder met het recht “Infoscherm beheren” mag alles, voor alle locaties.
-                        </p>
-                        <div class="checkbox-grid" style="grid-template-columns: 1fr;">
-                            <div class="checkbox-item" style="align-items: flex-start;">
-                                <input type="checkbox" id="infoscreen-editor-${userId}" name="infoscreen_editor" value="1" ${features.infoscreenEditor ? 'checked' : ''}>
-                                <label for="infoscreen-editor-${userId}" style="flex: 1;">
-                                    <strong style="display: block; margin-bottom: 4px;">📝 Berichten plaatsen</strong>
-                                    <span style="font-size: 12px; color: #718096; line-height: 1.4;">Berichten plaatsen en aanpassen voor de locaties hieronder (knop “Infoscherm” in het menu).</span>
-                                </label>
-                            </div>
-                            <div class="checkbox-item" style="align-items: flex-start;">
-                                <input type="checkbox" id="infoscreen-branding-${userId}" name="infoscreen_branding" value="1" ${features.infoscreenBranding ? 'checked' : ''}>
-                                <label for="infoscreen-branding-${userId}" style="flex: 1;">
-                                    <strong style="display: block; margin-bottom: 4px;">🖌️ Huisstijl aanpassen</strong>
-                                    <span style="font-size: 12px; color: #718096; line-height: 1.4;">Logo, titel, kleuren en lettertype van het infoscherm van de locaties hieronder.</span>
-                                </label>
-                            </div>
-                        </div>
-                        <input type="hidden" name="infoscreen_locations_set" value="1">
-                        <strong style="display: block; margin: 18px 0 10px;">Voor welke locaties?</strong>
-                        <div class="checkbox-grid">
-                            ${allLocations.map(loc => {
-                                const isLocs = Array.isArray(features.infoscreenLocations) ? features.infoscreenLocations : locations;
-                                const id = 'isloc-' + userId + '-' + String(loc).replace(/[^a-z0-9]/gi, '-');
-                                const safe = String(loc).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-                                return `<div class="checkbox-item">
-                                    <input type="checkbox" id="${id}" name="infoscreen_locations[]" value="${safe}" ${isLocs.includes(loc) ? 'checked' : ''}>
-                                    <label for="${id}">${safe}</label>
-                                </div>`;
-                            }).join('')}
-                        </div>
-                        <p style="font-size: 12px; color: #718096; margin-top: 8px;">
-                            💡 Geen locatie aangevinkt = geen enkele. Dit staat los van de Zichtbare Locaties (welke medewerkerskaarten de gebruiker ziet).
-                        </p>
+                        ${renderInfoscreenTab(userId, user, infoscreen, allLocations)}
                     </div>
 
                     <!-- TAB 3: PRESENTATION -->

@@ -13,6 +13,9 @@
  * Infoscreen management (2.4.0): own messages, news feeds, weather places, display
  * settings and which screens show the infoscreen. Server-rendered forms (POST → redirect
  * → flash), protected with a session CSRF token.
+ *
+ * Since 2.10.0 for every user with an infoscreen right (any role): tabs, lists and actions
+ * follow the rights and locations of that user (includes/infoscreen_rights.php).
  */
 
 require_once __DIR__ . '/../includes/db.php';
@@ -24,9 +27,15 @@ require_once __DIR__ . '/../includes/twofa.php';
 require_once __DIR__ . '/../includes/cron_key.php';
 require_once __DIR__ . '/auth_helper.php';
 
-requireAdmin();
-requireAdminFeature('manage_infoscreen');
+requireLogin();
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 pd_infoscreen_ensure_schema($db);
+$scope = pd_infoscreen_scope($db, (int)$_SESSION['user_id']);
+$isAdminRole = in_array($_SESSION['role'] ?? '', PD_IS_ADMIN_ROLES, true);
+if ($scope === null) {
+    header('Location: ' . ($isAdminRole ? 'dashboard.php' : '../frontpage.php'));
+    exit;
+}
 
 $appRoot = dirname(__DIR__);
 $tabs = [
@@ -39,7 +48,11 @@ $tabs = [
     'huisstijl' => '🖌️ Huisstijl',
     'schermen'  => '🖥️ Schermen',
 ];
-$tab = isset($tabs[$_GET['tab'] ?? '']) ? $_GET['tab'] : 'berichten';
+// Each tab needs its own right (2.10.0)
+const PD_IS_TAB_RIGHTS = ['berichten' => 'messages', 'nieuws' => 'news', 'weer' => 'weather', 'agenda' => 'agenda',
+    'koppelingen' => 'connections', 'weergave' => 'display', 'huisstijl' => 'branding', 'schermen' => 'screens'];
+$tabs = array_filter($tabs, fn($k) => pd_infoscreen_scope_can($scope, PD_IS_TAB_RIGHTS[$k]), ARRAY_FILTER_USE_KEY);
+$tab = isset($tabs[$_GET['tab'] ?? '']) ? $_GET['tab'] : array_key_first($tabs);
 $colors = array_map(fn($c) => $c[1] ?? PD_BRAND_DEFAULT_PRIMARY, PD_IS_MESSAGE_COLORS); // swatches for lists
 
 function pd_is_redirect(string $tab, string $flash, bool $ok = true, string $extra = ''): void
@@ -64,6 +77,33 @@ try {
     $locations = $db->query("SELECT location_name FROM locations ORDER BY location_name")->fetchAll(PDO::FETCH_COLUMN);
 }
 
+// Locations this user may choose; items for other (or all) locations are read-only
+$pickable = $scope['all'] ? $locations : array_values(array_intersect($locations, $scope['locations']));
+$canItem = fn(array $itemLocs): bool => pd_infoscreen_scope_allows($scope, $itemLocs);
+$sourceRight = ['rss' => 'news', 'weather' => 'weather', 'ical' => 'agenda'];
+$sourceTab = ['rss' => 'nieuws', 'weather' => 'weer', 'ical' => 'agenda'];
+$need = function (string $right, string $tabKey) use ($scope): void {
+    if (!pd_infoscreen_scope_can($scope, $right)) pd_is_redirect($tabKey, 'Hiervoor heeft u geen rechten.', false);
+};
+$loadSource = function (int $id) use ($db, $scope, $canItem, $sourceRight, $sourceTab): array {
+    $stmt = $db->prepare("SELECT * FROM infoscreen_sources WHERE id = ?");
+    $stmt->execute([$id]);
+    $src = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$src) pd_is_redirect('berichten', 'Bron niet gevonden.', false);
+    if (!pd_infoscreen_scope_can($scope, $sourceRight[$src['type']] ?? 'news') || !$canItem(pd_infoscreen_locs($src['locations']))) {
+        pd_is_redirect($sourceTab[$src['type']] ?? 'nieuws', 'Deze bron is ook voor andere locaties; die past de beheerder aan.', false);
+    }
+    return $src;
+};
+$loadMessage = function (int $id) use ($db, $canItem): array {
+    $stmt = $db->prepare("SELECT * FROM infoscreen_messages WHERE id = ?");
+    $stmt->execute([$id]);
+    $m = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$m) pd_is_redirect('berichten', 'Bericht niet gevonden.', false);
+    if (!$canItem(pd_infoscreen_locs($m['locations']))) pd_is_redirect('berichten', 'Dit bericht is ook voor andere locaties; dat past de beheerder aan.', false);
+    return $m;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // POST actions
 // ─────────────────────────────────────────────────────────────────────────────
@@ -79,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         switch ($action) {
             case 'save_message':
+                $need('messages', 'berichten');
                 $id = (int)($_POST['id'] ?? 0);
                 $title = mb_substr(trim((string)($_POST['title'] ?? '')), 0, 200);
                 if ($title === '') pd_is_redirect('berichten', 'Vul een titel in.', false, $id ? '&edit=' . $id : '&new=1');
@@ -89,17 +130,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ends = pd_is_dt($_POST['ends_at'] ?? '');
                 if ($starts && $ends && $ends <= $starts) pd_is_redirect('berichten', 'De einddatum moet na de begindatum liggen.', false, $id ? '&edit=' . $id : '&new=1');
                 $duration = trim((string)($_POST['duration_seconds'] ?? '')) === '' ? null : max(5, min(300, (int)$_POST['duration_seconds']));
-                $locs = pd_infoscreen_locs_from_post($locations);
+                $locs = pd_infoscreen_locs_from_post($pickable, $scope['all']);
+                if ($locs === false) pd_is_redirect('berichten', 'Kies minimaal één locatie.', false, $id ? '&edit=' . $id : '&new=1');
                 $priority = !empty($_POST['priority']) ? 1 : 0;
                 $active = !empty($_POST['active']) ? 1 : 0;
 
-                $old = null;
-                if ($id) {
-                    $stmt = $db->prepare("SELECT image_path FROM infoscreen_messages WHERE id = ?");
-                    $stmt->execute([$id]);
-                    $old = $stmt->fetch(PDO::FETCH_ASSOC);
-                    if (!$old) pd_is_redirect('berichten', 'Bericht niet gevonden.', false);
-                }
+                $old = $id ? $loadMessage($id) : null;
                 $image = $old['image_path'] ?? null;
                 if (!empty($_POST['remove_image'])) $image = null;
                 if (!empty($_FILES['image']['name'])) {
@@ -119,13 +155,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 pd_is_redirect('berichten', 'Bericht toegevoegd.');
 
             case 'toggle_message':
+                $need('messages', 'berichten');
+                $loadMessage((int)$_POST['id']);
                 $db->prepare("UPDATE infoscreen_messages SET active = 1 - active WHERE id = ?")->execute([(int)$_POST['id']]);
                 pd_is_redirect('berichten', 'Bericht bijgewerkt.');
 
             case 'delete_message':
-                $stmt = $db->prepare("SELECT image_path FROM infoscreen_messages WHERE id = ?");
-                $stmt->execute([(int)$_POST['id']]);
-                $path = $stmt->fetchColumn();
+                $need('messages', 'berichten');
+                $path = $loadMessage((int)$_POST['id'])['image_path'];
                 $db->prepare("DELETE FROM infoscreen_messages WHERE id = ?")->execute([(int)$_POST['id']]);
                 pd_infoscreen_delete_image($db, $path ?: null, $appRoot);
                 pd_is_redirect('berichten', 'Bericht verwijderd.');
@@ -134,10 +171,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id = (int)($_POST['id'] ?? 0);
                 $type = in_array($_POST['type'] ?? '', ['rss', 'weather', 'ical'], true) ? $_POST['type'] : 'rss';
                 $tabFor = ['rss' => 'nieuws', 'weather' => 'weer', 'ical' => 'agenda'][$type];
+                $need($sourceRight[$type], $tabFor);
+                if ($id) {
+                    $oldSrc = $loadSource($id);
+                    if ($oldSrc['type'] !== $type) pd_is_redirect($tabFor, 'Bron niet gevonden.', false);
+                }
                 $editQs = $id ? '&edit=' . $id : '&new=1';
                 $name = mb_substr(trim((string)($_POST['name'] ?? '')), 0, 150);
                 if ($name === '') pd_is_redirect($tabFor, 'Vul een naam in.', false, $editQs);
-                $locs = pd_infoscreen_locs_from_post($locations);
+                $locs = pd_infoscreen_locs_from_post($pickable, $scope['all']);
+                if ($locs === false) pd_is_redirect($tabFor, 'Kies minimaal één locatie.', false, $editQs);
                 $url = $provider = $lat = $lon = $attribution = null;
                 $maxItems = 8;
                 $showImages = 1;
@@ -215,24 +258,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 pd_is_redirect($tabFor, 'Opgeslagen. ' . ($result['ok'] ? $result['message'] : 'Ophalen lukte nog niet: ' . $result['message']), $result['ok']);
 
             case 'fetch_source':
-                $stmt = $db->prepare("SELECT * FROM infoscreen_sources WHERE id = ?");
-                $stmt->execute([(int)$_POST['id']]);
-                $source = $stmt->fetch(PDO::FETCH_ASSOC);
-                if (!$source) pd_is_redirect($back, 'Bron niet gevonden.', false);
+                $source = $loadSource((int)$_POST['id']);
                 $result = pd_infoscreen_fetch_source($db, $source);
                 pd_is_redirect($back, $source['name'] . ': ' . $result['message'], $result['ok']);
 
             case 'toggle_source':
+                $loadSource((int)$_POST['id']);
                 $db->prepare("UPDATE infoscreen_sources SET active = 1 - active WHERE id = ?")->execute([(int)$_POST['id']]);
                 pd_is_redirect($back, 'Bron bijgewerkt.');
 
             case 'delete_source':
+                $loadSource((int)$_POST['id']);
                 $db->prepare("DELETE FROM infoscreen_items WHERE source_id = ?")->execute([(int)$_POST['id']]);
                 $db->prepare("DELETE FROM infoscreen_events WHERE source_id = ?")->execute([(int)$_POST['id']]);
                 $db->prepare("DELETE FROM infoscreen_sources WHERE id = ?")->execute([(int)$_POST['id']]);
                 pd_is_redirect($back, 'Bron verwijderd.');
 
             case 'create_key':
+                $need('connections', 'koppelingen');
                 $type = ($_POST['type'] ?? '') === 'teams' ? 'teams' : 'api';
                 $name = mb_substr(trim((string)($_POST['name'] ?? '')), 0, 100);
                 if ($name === '') pd_is_redirect('koppelingen', 'Vul een naam in.', false, '&new=' . $type);
@@ -256,6 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 pd_is_redirect('koppelingen', 'Teams-koppeling aangemaakt. Maak nu de uitgaande webhook in Teams en vul het beveiligingstoken in.', true, '&setup=' . $newId);
 
             case 'save_teams_token':
+                $need('connections', 'koppelingen');
                 $id = (int)($_POST['id'] ?? 0);
                 $token = preg_replace('/\s+/', '', (string)($_POST['token'] ?? ''));
                 $raw = base64_decode($token, true);
@@ -266,24 +310,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 pd_is_redirect('koppelingen', 'Beveiligingstoken opgeslagen. Typ nu in het Teams-kanaal: @naam help');
 
             case 'new_api_key':
+                $need('connections', 'koppelingen');
                 [$key, $hash, $hint] = pd_is_api_new_key();
                 $db->prepare("UPDATE infoscreen_api_keys SET key_hash = ?, key_hint = ? WHERE id = ? AND type = 'api'")->execute([$hash, $hint, (int)$_POST['id']]);
                 $_SESSION['pd_is_new_key'] = ['id' => (int)$_POST['id'], 'key' => $key];
                 pd_is_redirect('koppelingen', 'Nieuwe sleutel gemaakt. De oude sleutel werkt niet meer.');
 
             case 'toggle_key':
+                $need('connections', 'koppelingen');
                 $db->prepare("UPDATE infoscreen_api_keys SET active = 1 - active WHERE id = ?")->execute([(int)$_POST['id']]);
                 pd_is_redirect('koppelingen', 'Koppeling bijgewerkt.');
 
             case 'delete_key':
+                $need('connections', 'koppelingen');
                 $db->prepare("UPDATE infoscreen_messages SET api_key_id = NULL WHERE api_key_id = ?")->execute([(int)$_POST['id']]);
                 $db->prepare("DELETE FROM infoscreen_api_keys WHERE id = ?")->execute([(int)$_POST['id']]);
                 pd_is_redirect('koppelingen', 'Koppeling verwijderd. Berichten die al geplaatst waren, blijven staan tot hun einddatum.');
 
             case 'save_brand':
             case 'reset_brand':
+                $need('branding', 'huisstijl');
                 $loc = (string)($_POST['loc'] ?? '');
-                if ($loc !== '' && !in_array($loc, $locations, true)) pd_is_redirect('huisstijl', 'Onbekende locatie.', false);
+                if (!in_array($loc, $scope['all'] ? array_merge([''], $locations) : $pickable, true)) {
+                    pd_is_redirect('huisstijl', 'De huisstijl van deze locatie mag u niet aanpassen.', false);
+                }
                 $qs = '&loc=' . rawurlencode($loc);
                 if ($action === 'reset_brand') {
                     pd_branding_reset($db, $loc, $appRoot);
@@ -293,18 +343,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 pd_is_redirect('huisstijl', 'Huisstijl opgeslagen. Open schermen nemen dit binnen 5 minuten over.', true, $qs);
 
             case 'save_settings':
+                $need('display', 'weergave');
                 pd_infoscreen_save_settings($db, $_POST);
                 pd_is_redirect('weergave', 'Weergave opgeslagen. Open schermen nemen dit binnen 5 minuten over.');
 
             case 'save_screens':
+                $need('screens', 'schermen');
                 $modes = $_POST['screen_mode'] ?? [];
+                // Only screen accounts within this user's locations
+                $allowedScreens = [];
+                foreach ($db->query("SELECT id, features FROM users WHERE deleted_at IS NULL")->fetchAll(PDO::FETCH_ASSOC) as $u) {
+                    $uf = json_decode((string)$u['features'], true) ?: [];
+                    $ul = is_array($uf['locations'] ?? null) ? array_values(array_filter(array_map('strval', $uf['locations']))) : [];
+                    if (pd_infoscreen_scope_sees_screen($scope, $ul)) $allowedScreens[(int)$u['id']] = true;
+                }
                 $enabled = $_POST['can_show'] ?? [];
                 $stmt = $db->prepare("UPDATE users SET screen_mode = ?, can_show_presentation = ? WHERE id = ? AND deleted_at IS NULL");
                 $partsInput = $_POST['parts'] ?? [];
                 $featStmt = $db->prepare("SELECT features FROM users WHERE id = ?");
                 $featSave = $db->prepare("UPDATE users SET features = ? WHERE id = ?");
                 foreach ($modes as $userId => $mode) {
-                    if (!in_array($mode, PD_IS_MODES, true)) continue;
+                    if (!in_array($mode, PD_IS_MODES, true) || !isset($allowedScreens[(int)$userId])) continue;
                     $stmt->execute([$mode, !empty($enabled[$userId]) ? 1 : 0, (int)$userId]);
                     // Per-screen choice for birthdays and BHV (2.8.1), stored in users.features
                     $featStmt->execute([(int)$userId]);
@@ -312,7 +371,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $parts = pd_infoscreen_screen_parts_clean(is_array($partsInput[$userId] ?? null) ? $partsInput[$userId] : []);
                     // Huisstijl of this screen (2.9.0): automatic, organisation or one location
                     $brandIn = $_POST['brand'][$userId] ?? '*auto*';
-                    $brand = $brandIn === '*org*' ? '' : (in_array($brandIn, $locations, true) ? $brandIn : null);
+                    $brand = $brandIn === '*org*' ? '' : (in_array($brandIn, $pickable, true) ? $brandIn : null);
                     if ($parts === ($feat['infoscreenParts'] ?? []) && $brand === ($feat['infoscreenBrand'] ?? null)) continue;
                     if ($parts) $feat['infoscreenParts'] = $parts; else unset($feat['infoscreenParts']);
                     if ($brand !== null) $feat['infoscreenBrand'] = $brand; else unset($feat['infoscreenBrand']);
@@ -339,10 +398,32 @@ $settings = pd_infoscreen_settings($db);
 $editId = (int)($_GET['edit'] ?? 0);
 $showForm = $editId > 0 || !empty($_GET['new']);
 
-$messages = $db->query("SELECT * FROM infoscreen_messages ORDER BY active DESC, priority DESC, COALESCE(starts_at, created_at) DESC, id DESC")->fetchAll(PDO::FETCH_ASSOC);
-$sources = $db->query("SELECT s.*, (SELECT COUNT(*) FROM infoscreen_items i WHERE i.source_id = s.id) AS item_count,
+// Visible: what can appear on this user's screens (own locations and "all locations"); editable: within own locations
+$visibleItem = fn(array $itemLocs): bool => $scope['all'] || ($scope['locations'] && pd_infoscreen_locs_match($itemLocs, $scope['locations']));
+$withFlags = function (array $rows) use ($visibleItem, $canItem): array {
+    $out = [];
+    foreach ($rows as $r) {
+        $l = pd_infoscreen_locs($r['locations']);
+        if (!$visibleItem($l)) continue;
+        $r['_locs'] = $l;
+        $r['_editable'] = $canItem($l);
+        $out[] = $r;
+    }
+    return $out;
+};
+$messages = $withFlags($db->query("SELECT * FROM infoscreen_messages ORDER BY active DESC, priority DESC, COALESCE(starts_at, created_at) DESC, id DESC")->fetchAll(PDO::FETCH_ASSOC));
+$sources = $withFlags($db->query("SELECT s.*, (SELECT COUNT(*) FROM infoscreen_items i WHERE i.source_id = s.id) AS item_count,
                               (SELECT COUNT(*) FROM infoscreen_items i WHERE i.source_id = s.id AND i.image_url IS NOT NULL) AS image_count
-                       FROM infoscreen_sources s ORDER BY s.type, s.sort_order, s.id")->fetchAll(PDO::FETCH_ASSOC);
+                       FROM infoscreen_sources s ORDER BY s.type, s.sort_order, s.id")->fetchAll(PDO::FETCH_ASSOC));
+// Where is it shown (2.10.0): infoscreen accounts and how many show each location
+$screenAccounts = pd_infoscreen_screen_accounts($db);
+$screenCounts = pd_infoscreen_screen_counts($pickable, $screenAccounts);
+$shownOn = function (array $itemLocs) use ($screenAccounts): string {
+    $names = pd_infoscreen_screens_showing($itemLocs, $screenAccounts);
+    return '<span class="pill scr" title="' . htmlspecialchars($names ? 'Te zien op: ' . implode(', ', $names) : 'Geen infoscherm toont dit (zie Schermen)', ENT_QUOTES, 'UTF-8') . '">📺 '
+         . count($names) . '</span>';
+};
+$readOnly = fn(array $itemLocs): string => '<span class="pill lock" title="' . ($itemLocs ? 'Ook voor locaties die niet bij u horen' : 'Voor alle locaties: dat past de beheerder aan') . '">🔒 Alleen lezen</span>';
 $rssSources = array_values(array_filter($sources, fn($s) => $s['type'] === 'rss'));
 $weatherSources = array_values(array_filter($sources, fn($s) => $s['type'] === 'weather'));
 $icalSources = array_values(array_filter($sources, fn($s) => $s['type'] === 'ical'));
@@ -359,22 +440,31 @@ unset($_SESSION['pd_is_new_key']);
 $editMessage = null;
 $editSource = null;
 if ($editId && $tab === 'berichten') {
-    foreach ($messages as $m) if ((int)$m['id'] === $editId) $editMessage = $m;
+    foreach ($messages as $m) if ((int)$m['id'] === $editId && $m['_editable']) $editMessage = $m;
+    if (!$editMessage) $showForm = false;
 }
 if ($editId && in_array($tab, ['nieuws', 'weer', 'agenda'], true)) {
-    foreach ($sources as $s) if ((int)$s['id'] === $editId) $editSource = $s;
+    foreach ($sources as $s) if ((int)$s['id'] === $editId && $s['_editable']) $editSource = $s;
+    if (!$editSource) $showForm = false;
 }
+if ($showForm && !$editId && !$scope['all'] && !$pickable) $showForm = false;
 
 // Huisstijl (2.9.0)
 $brandRows = pd_branding_rows($db);
 $orgBrand = pd_branding_resolve($brandRows, [], $settings['theme'], '..', $settings['title']);
-$brandLoc = (string)($_GET['loc'] ?? '');
-if ($brandLoc !== '' && !in_array($brandLoc, $locations, true)) $brandLoc = '';
+$brandLocs = $scope['all'] ? array_merge([''], $locations) : $pickable;
+$brandLoc = (string)($_GET['loc'] ?? ($brandLocs[0] ?? ''));
+if (!in_array($brandLoc, $brandLocs, true)) $brandLoc = $brandLocs[0] ?? '';
 
 $screens = [];
 if ($tab === 'schermen') {
-    $screens = $db->query("SELECT id, username, display_name, role, can_show_presentation, presentation_id, screen_mode, presentation_idle_seconds, features
-                           FROM users WHERE deleted_at IS NULL AND active = 1 ORDER BY role = 'user' DESC, display_name, username")->fetchAll(PDO::FETCH_ASSOC);
+    $screens = [];
+    foreach ($db->query("SELECT id, username, display_name, role, can_show_presentation, presentation_id, screen_mode, presentation_idle_seconds, features
+                         FROM users WHERE deleted_at IS NULL AND active = 1 ORDER BY role = 'user' DESC, display_name, username")->fetchAll(PDO::FETCH_ASSOC) as $u) {
+        $uf = json_decode((string)$u['features'], true) ?: [];
+        $u['_locs'] = is_array($uf['locations'] ?? null) ? array_values(array_filter(array_map('strval', $uf['locations']))) : [];
+        if (pd_infoscreen_scope_sees_screen($scope, $u['_locs'])) $screens[] = $u;
+    }
     $globalPresentation = (string)($db->query("SELECT presentationID FROM config WHERE id = 1")->fetchColumn() ?: '');
 }
 
@@ -436,6 +526,17 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     .screen-parts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; align-items: center; min-width: 250px; }
     .screen-parts label { font-size: 12px; color: #6b7280; white-space: nowrap; }
     .screen-parts select { padding: 4px 6px; font-size: 13px; }
+    .scope-box { background: #ecfdf5; border: 1.5px solid #6ee7b7; color: #064e3b; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
+    .loc-badge { display: inline-block; padding: 2px 9px; border-radius: 99px; background: #fff; border: 1px solid #d1d5db; font-size: 12.5px; font-weight: 600; color: #374151; margin: 2px 2px 2px 0; white-space: nowrap; }
+    .loc-badge.all { background: #312e81; border-color: #312e81; color: #fff; }
+    .pill.scr { background: #eef2ff; color: #3730a3; cursor: help; }
+    .pill.lock { background: #f3f4f6; color: #4b5563; cursor: help; }
+    .scr-count { font-size: 11.5px; color: #4338ca; background: #eef2ff; border-radius: 99px; padding: 0 6px; margin-left: 2px; }
+    details.rules { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; }
+    details.rules summary { cursor: pointer; font-weight: 700; color: #312e81; }
+    .rules-table { margin: 10px 0 6px; font-size: 13px; }
+    .rules-table th, .rules-table td { padding: 7px 9px; vertical-align: top; text-align: left; }
+    .rules-table tbody th { white-space: nowrap; color: #374151; }
     .loc-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
     .loc-tabs a { padding: 6px 12px; border-radius: 99px; border: 1.5px solid #d1d5db; text-decoration: none; color: #374151; font-size: 13.5px; font-weight: 600; background: #fff; }
     .loc-tabs a.active { background: #312e81; border-color: #312e81; color: #fff; }
@@ -517,7 +618,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
 <?= pd_branding_form_css() ?>
 </head>
 <body>
-<a href="dashboard.php" class="back-link">← Terug naar Dashboard</a>
+<?php if ($isAdminRole): ?><a href="dashboard.php" class="back-link">← Terug naar Dashboard</a><?php else: ?><a href="../frontpage.php" class="back-link">← Terug</a><?php endif; ?>
 <div class="container">
     <div class="head">
         <div>
@@ -529,6 +630,11 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         </div>
     </div>
 
+    <?php if (!$scope['all']): ?>
+    <div class="scope-box"><strong>U werkt voor:</strong>
+        <?= $pickable ? implode(' ', array_map(fn($l) => '<span class="loc-badge">📍 ' . $h($l) . '</span>', $pickable)) : '<em>nog geen locaties — vraag de beheerder om ze bij uw gebruiker aan te vinken</em>' ?>
+        <div class="muted" style="margin-top:6px">Wat ook voor andere locaties of voor alle locaties geldt, ziet u met 🔒 Alleen lezen.</div></div>
+    <?php endif; ?>
     <nav class="tabs">
         <?php foreach ($tabs as $key => $label): ?>
             <a href="?tab=<?= $key ?>" class="<?= $key === $tab ? 'active' : '' ?>"><?= $label ?></a>
@@ -579,7 +685,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 </div>
                 <div>
                     <label class="f">Locaties</label>
-                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($m['locations']), true, 'Kies één of meer locaties, of “Alle locaties” voor een bericht dat overal moet staan. Een scherm toont de berichten van de locaties van het schermaccount.') ?>
+                    <?= pd_infoscreen_location_picker($pickable, pd_infoscreen_locs($m['locations']), $scope['all'], ($scope['all'] ? 'Kies één of meer locaties, of “Alle locaties” voor een bericht dat overal moet staan. ' : '') . 'Een scherm toont de berichten van zijn locaties; 📺 = aantal infoschermen per locatie.', $screenCounts) ?>
                 </div>
                 <div>
                     <label class="f" for="duration_seconds">Tijd in beeld (seconden)</label>
@@ -598,20 +704,19 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
     </div>
     <?php endif; ?>
 
-    <?php if (!$showForm): ?>
-    <div class="info"><strong>Receptie of conciërge berichten laten plaatsen?</strong> Vink bij <a href="users_manage.php">Gebruikers</a> &gt; Features
-        “Infoscherm-berichten plaatsen (redacteur)” aan en kies de Zichtbare Locaties. Die gebruiker plaatst dan via de knop
-        <em>Infoscherm-berichten</em> alleen berichten voor die locaties. Berichten voor alle locaties plaatst u hier.</div>
+    <?php if (!$showForm && $scope['all'] && $isAdminRole): ?>
+    <div class="info"><strong>Iemand anders berichten of de huisstijl voor een locatie laten beheren?</strong> Geef die gebruiker bij
+        <a href="users_manage.php">Gebruikers</a> › 📺 Infoscherm de rechten en locaties. Die gebruiker ziet hier dan alleen zijn eigen locaties.</div>
     <?php endif; ?>
     <div class="toolbar">
         <div class="muted"><?= count($messages) ?> bericht(en)</div>
-        <?php if (!$showForm): ?><a class="btn btn-primary" href="?tab=berichten&amp;new=1">➕ Nieuw bericht</a><?php endif; ?>
+        <?php if (!$showForm && ($scope['all'] || $pickable)): ?><a class="btn btn-primary" href="?tab=berichten&amp;new=1">➕ Nieuw bericht</a><?php endif; ?>
     </div>
     <?php if (!$messages): ?>
         <div class="empty"><div class="big">📝</div>Nog geen berichten. Maak het eerste bericht aan met “Nieuw bericht”.</div>
     <?php else: ?>
     <table>
-        <thead><tr><th></th><th>Bericht</th><th class="hide-sm">Locatie</th><th class="hide-sm">Periode</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th></th><th>Bericht</th><th class="hide-sm">Locatie en schermen</th><th class="hide-sm">Periode</th><th>Status</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($messages as $m): [$statusText, $statusCls] = pd_is_status($m); ?>
             <tr>
@@ -619,15 +724,17 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 <td><strong><?= $h($m['title']) ?></strong><?php if ((int)$m['priority']): ?> <span class="pill prio">Belangrijk</span><?php endif; ?>
                     <?php if (($m['source'] ?? 'handmatig') !== 'handmatig'): ?><span class="pill src" title="Geplaatst via <?= $h($m['source'] === 'teams' ? 'Teams' : 'de Berichten-API') ?>"><?= $m['source'] === 'teams' ? 'Teams' : 'API' ?><?= isset($keyNames[$m['api_key_id']]) ? ' · ' . $h($keyNames[$m['api_key_id']]) : '' ?><?= $m['author'] ? ' · ' . $h($m['author']) : '' ?></span><?php endif; ?>
                     <?php if ($m['body']): ?><div class="muted"><?= $h(mb_strimwidth($m['body'], 0, 90, '…')) ?></div><?php endif; ?></td>
-                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($m['locations']))) ?></td>
+                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label($m['_locs'])) ?> <?= $shownOn($m['_locs']) ?></td>
                 <td class="hide-sm muted"><?= $h(pd_is_period($m)) ?></td>
                 <td><span class="pill <?= $statusCls ?>"><?= $statusText ?></span></td>
                 <td>
+                    <?php if (!$m['_editable']): ?><?= $readOnly($m['_locs']) ?><?php else: ?>
                     <div class="actions">
                         <a class="btn btn-light btn-sm" href="?tab=berichten&amp;edit=<?= (int)$m['id'] ?>">Bewerken</a>
                         <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="berichten"><input type="hidden" name="action" value="toggle_message"><input type="hidden" name="id" value="<?= (int)$m['id'] ?>"><button class="btn btn-light btn-sm"><?= (int)$m['active'] ? 'Uitzetten' : 'Aanzetten' ?></button></form>
                         <form method="post" onsubmit="return confirm('Bericht verwijderen?')"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="berichten"><input type="hidden" name="action" value="delete_message"><input type="hidden" name="id" value="<?= (int)$m['id'] ?>"><button class="btn btn-danger btn-sm">Verwijderen</button></form>
                     </div>
+                    <?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; ?>
@@ -708,7 +815,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 </div>
                 <div>
                     <label class="f">Locaties</label>
-                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($s['locations'])) ?>
+                    <?= pd_infoscreen_location_picker($pickable, pd_infoscreen_locs($s['locations']), $scope['all'], '📺 = aantal infoschermen per locatie.', $screenCounts) ?>
                 </div>
                 <div>
                     <label class="f" for="max_items">Aantal berichten</label>
@@ -830,7 +937,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 </div>
                 <div>
                     <label class="f">Locaties</label>
-                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($s['locations'])) ?>
+                    <?= pd_infoscreen_location_picker($pickable, pd_infoscreen_locs($s['locations']), $scope['all'], '📺 = aantal infoschermen per locatie.', $screenCounts) ?>
                 </div>
                 <div>
                     <label class="f" for="max_items">Aantal berichten</label>
@@ -852,7 +959,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
 
     <div class="toolbar">
         <div class="muted"><?= count($rssSources) ?> nieuwsbron(nen) · wordt elke <?= PD_IS_FETCH_MINUTES ?> minuten bijgewerkt</div>
-        <?php if (!$showForm): ?><div class="actions"><a class="btn btn-primary" href="?tab=nieuws&amp;new=1">➕ RSS-feed</a><a class="btn btn-primary" href="?tab=nieuws&amp;new=web">➕ Website zonder feed</a></div><?php endif; ?>
+        <?php if (!$showForm && ($scope['all'] || $pickable)): ?><div class="actions"><a class="btn btn-primary" href="?tab=nieuws&amp;new=1">➕ RSS-feed</a><a class="btn btn-primary" href="?tab=nieuws&amp;new=web">➕ Website zonder feed</a></div><?php endif; ?>
     </div>
     <?php if (!$rssSources): ?>
         <div class="empty"><div class="big">📰</div>Nog geen nieuwsbronnen.</div>
@@ -864,17 +971,17 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
             <tr>
                 <td><strong><?= $h($s['name']) ?></strong> <?php if (($s['provider'] ?? '') === 'web'): ?><span class="pill src" title="Website zonder RSS-feed">Website</span><?php endif; ?> <?php if (!(int)$s['active']): ?><span class="pill off">Uit</span><?php endif; ?>
                     <div class="muted"><code><?= $h(mb_strimwidth((string)$s['url'], 0, 70, '…')) ?></code></div></td>
-                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($s['locations']))) ?></td>
+                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label($s['_locs'])) ?> <?= $shownOn($s['_locs']) ?></td>
                 <td><?= (int)$s['item_count'] ?> <span class="muted">(<?= (int)$s['image_count'] ?> met afbeelding<?= (int)$s['show_images'] ? '' : ', uitgezet' ?>)</span></td>
                 <td><?php if ($s['last_status']): ?><span class="pill <?= $ok ? 'ok' : 'err' ?>"><?= $ok ? 'OK' : 'Fout' ?></span><?php endif; ?>
                     <span class="muted"><?= $h(pd_is_ago($s['last_fetch_at'])) ?></span>
                     <?php if (!$ok && $s['last_status']): ?><div class="muted" style="color:#991b1b"><?= $h(preg_replace('/^Fout: /', '', $s['last_status'])) ?></div><?php endif; ?></td>
-                <td><div class="actions">
+                <td><?php if (!$s['_editable']): ?><?= $readOnly($s['_locs']) ?><?php else: ?><div class="actions">
                     <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="nieuws"><input type="hidden" name="action" value="fetch_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-light btn-sm">🔄 Nu ophalen</button></form>
                     <a class="btn btn-light btn-sm" href="?tab=nieuws&amp;edit=<?= (int)$s['id'] ?>">Bewerken</a>
                     <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="nieuws"><input type="hidden" name="action" value="toggle_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-light btn-sm"><?= (int)$s['active'] ? 'Uitzetten' : 'Aanzetten' ?></button></form>
                     <form method="post" onsubmit="return confirm('Nieuwsbron verwijderen?')"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="nieuws"><input type="hidden" name="action" value="delete_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-danger btn-sm">Verwijderen</button></form>
-                </div></td>
+                </div><?php endif; ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -926,7 +1033,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 </div>
                 <div>
                     <label class="f">Locaties</label>
-                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($s['locations'])) ?>
+                    <?= pd_infoscreen_location_picker($pickable, pd_infoscreen_locs($s['locations']), $scope['all'], '📺 = aantal infoschermen per locatie.', $screenCounts) ?>
                 </div>
                 <div style="display:flex;align-items:flex-end">
                     <label class="check"><input type="checkbox" name="active" value="1" <?= (int)$s['active'] ? 'checked' : '' ?>> Actief</label>
@@ -974,7 +1081,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
 
     <div class="toolbar">
         <div class="muted"><?= count($weatherSources) ?> weerplaats(en)</div>
-        <?php if (!$showForm): ?><a class="btn btn-primary" href="?tab=weer&amp;new=1">➕ Weerplaats toevoegen</a><?php endif; ?>
+        <?php if (!$showForm && ($scope['all'] || $pickable)): ?><a class="btn btn-primary" href="?tab=weer&amp;new=1">➕ Weerplaats toevoegen</a><?php endif; ?>
     </div>
     <?php if (!$weatherSources): ?>
         <div class="empty"><div class="big">🌤️</div>Nog geen weerplaats. Zonder weerplaats toont de zijbalk een grote klok.</div>
@@ -987,17 +1094,17 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 <td><strong><?= $h($s['name']) ?></strong> <?php if (!(int)$s['active']): ?><span class="pill off">Uit</span><?php endif; ?>
                     <div class="muted"><?= $h($s['latitude']) ?>, <?= $h($s['longitude']) ?></div></td>
                 <td><?= $h(PD_IS_WEATHER_PROVIDERS[$s['provider']]['label'] ?? $s['provider']) ?></td>
-                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($s['locations']))) ?></td>
+                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label($s['_locs'])) ?> <?= $shownOn($s['_locs']) ?></td>
                 <td class="wx-now"><?php if (is_array($wx) && isset($wx['current'])): ?><?= $h(round($wx['current']['temp'])) ?>°C, <?= $h($wx['current']['desc']) ?><?php if (!empty($wx['station'])): ?><div class="muted">Meetstation <?= $h($wx['station']) ?></div><?php endif; ?><?php else: ?><span class="muted">—</span><?php endif; ?></td>
                 <td><?php if ($s['last_status']): ?><span class="pill <?= $ok ? 'ok' : 'err' ?>"><?= $ok ? 'OK' : 'Fout' ?></span><?php endif; ?>
                     <span class="muted"><?= $h(pd_is_ago($s['last_fetch_at'])) ?></span>
                     <?php if (!$ok && $s['last_status']): ?><div class="muted" style="color:#991b1b"><?= $h(preg_replace('/^Fout: /', '', $s['last_status'])) ?></div><?php endif; ?></td>
-                <td><div class="actions">
+                <td><?php if (!$s['_editable']): ?><?= $readOnly($s['_locs']) ?><?php else: ?><div class="actions">
                     <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="weer"><input type="hidden" name="action" value="fetch_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-light btn-sm">🔄 Nu ophalen</button></form>
                     <a class="btn btn-light btn-sm" href="?tab=weer&amp;edit=<?= (int)$s['id'] ?>">Bewerken</a>
                     <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="weer"><input type="hidden" name="action" value="toggle_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-light btn-sm"><?= (int)$s['active'] ? 'Uitzetten' : 'Aanzetten' ?></button></form>
                     <form method="post" onsubmit="return confirm('Weerplaats verwijderen?')"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="weer"><input type="hidden" name="action" value="delete_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-danger btn-sm">Verwijderen</button></form>
-                </div></td>
+                </div><?php endif; ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -1039,7 +1146,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 </div>
                 <div>
                     <label class="f">Locaties</label>
-                    <?= pd_infoscreen_location_picker($locations, pd_infoscreen_locs($s['locations'])) ?>
+                    <?= pd_infoscreen_location_picker($pickable, pd_infoscreen_locs($s['locations']), $scope['all'], '📺 = aantal infoschermen per locatie.', $screenCounts) ?>
                 </div>
                 <div style="display:flex;align-items:flex-end">
                     <label class="check"><input type="checkbox" name="active" value="1" <?= (int)$s['active'] ? 'checked' : '' ?>> Actief</label>
@@ -1055,7 +1162,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
 
     <div class="toolbar">
         <div class="muted"><?= count($icalSources) ?> agenda('s) · getoond: <?= (int)$settings['agenda_days'] ?> dagen vooruit (aan te passen bij Weergave)</div>
-        <?php if (!$showForm): ?><a class="btn btn-primary" href="?tab=agenda&amp;new=1">➕ Agenda koppelen</a><?php endif; ?>
+        <?php if (!$showForm && ($scope['all'] || $pickable)): ?><a class="btn btn-primary" href="?tab=agenda&amp;new=1">➕ Agenda koppelen</a><?php endif; ?>
     </div>
     <?php if (!$icalSources): ?>
         <div class="empty"><div class="big">📅</div>Nog geen agenda gekoppeld.</div>
@@ -1067,17 +1174,17 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
             <tr>
                 <td><strong><?= $h($s['name']) ?></strong> <?php if (!(int)$s['active']): ?><span class="pill off">Uit</span><?php endif; ?>
                     <div class="muted"><code><?= $h(mb_strimwidth((string)$s['url'], 0, 60, '…')) ?></code></div></td>
-                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label(pd_infoscreen_locs($s['locations']))) ?></td>
+                <td class="hide-sm"><?= $h(pd_infoscreen_locs_label($s['_locs'])) ?> <?= $shownOn($s['_locs']) ?></td>
                 <td><?= (int)($cnt['n'] ?? 0) ?> <span class="muted">(<?= (int)($cnt['week'] ?? 0) ?> komende week)</span></td>
                 <td><?php if ($s['last_status']): ?><span class="pill <?= $ok ? 'ok' : 'err' ?>"><?= $ok ? 'OK' : 'Fout' ?></span><?php endif; ?>
                     <span class="muted"><?= $h(pd_is_ago($s['last_fetch_at'])) ?></span>
                     <?php if (!$ok && $s['last_status']): ?><div class="muted" style="color:#991b1b"><?= $h(preg_replace('/^Fout: /', '', $s['last_status'])) ?></div><?php endif; ?></td>
-                <td><div class="actions">
+                <td><?php if (!$s['_editable']): ?><?= $readOnly($s['_locs']) ?><?php else: ?><div class="actions">
                     <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="agenda"><input type="hidden" name="action" value="fetch_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-light btn-sm">🔄 Nu ophalen</button></form>
                     <a class="btn btn-light btn-sm" href="?tab=agenda&amp;edit=<?= (int)$s['id'] ?>">Bewerken</a>
                     <form method="post"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="agenda"><input type="hidden" name="action" value="toggle_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-light btn-sm"><?= (int)$s['active'] ? 'Uitzetten' : 'Aanzetten' ?></button></form>
                     <form method="post" onsubmit="return confirm('Agenda ontkoppelen?')"><input type="hidden" name="csrf" value="<?= $h($csrf) ?>"><input type="hidden" name="tab" value="agenda"><input type="hidden" name="action" value="delete_source"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>"><button class="btn btn-danger btn-sm">Verwijderen</button></form>
-                </div></td>
+                </div><?php endif; ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -1287,8 +1394,8 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         van hun eigen locaties aanpassen met het recht <em>Huisstijl aanpassen</em> (Gebruikers › 📺 Infoscherm).
     </div>
     <div class="loc-tabs">
-        <a href="?tab=huisstijl" class="<?= $brandLoc === '' ? 'active' : '' ?>">🌐 Hele organisatie<?= isset($brandRows['']) ? ' ✓' : '' ?></a>
-        <?php foreach ($locations as $l): ?>
+        <?php if ($scope['all']): ?><a href="?tab=huisstijl&amp;loc=" class="<?= $brandLoc === '' ? 'active' : '' ?>">🌐 Hele organisatie<?= isset($brandRows['']) ? ' ✓' : '' ?></a><?php endif; ?>
+        <?php foreach ($pickable as $l): ?>
             <a href="?tab=huisstijl&amp;loc=<?= $h(rawurlencode($l)) ?>" class="<?= $l === $brandLoc ? 'active' : '' ?>">📍 <?= $h($l) ?><?= isset($brandRows[$l]) ? ' ✓' : '' ?></a>
         <?php endforeach; ?>
     </div>
@@ -1307,26 +1414,39 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
 
 <?php elseif ($tab === 'schermen'): ?>
     <div class="info">
-        <strong>Wat toont een scherm?</strong> Per gebruikersaccount (meestal het account van een kiosk of tv-scherm) kiest u wat er verschijnt:
-        <br>• <strong>Google Slides</strong> — de presentatie zoals nu (presentatie-ID bij de gebruiker of in de systeemconfiguratie).
-        <br>• <strong>Infoscherm</strong> — eigen berichten, nieuws en weer.
-        <br>• <strong>Slides + infoscherm</strong> — de Google Slides presentatie groot in beeld, met weer, mededelingen en nieuwsbalk eromheen.
-        <br>Op een aanraakscherm met medewerkerskaarten verschijnt dit na de ingestelde inactiviteit (“Automatisch tonen” moet aan staan); aanraken sluit het weer.
-        <br><strong>Huisstijl</strong>: <em>Automatisch</em> = een scherm met één locatie krijgt de huisstijl van die locatie, een scherm met meer locaties die van de organisatie. Of kies zelf.
-        <br><strong>Vandaag jarig</strong> en <strong>BHV aanwezig</strong>: <em>Standaard</em> volgt de instelling bij Weergave; met <em>Aan</em> of <em>Uit</em> kiest u het voor dit scherm apart. Een scherm toont altijd alleen de jarigen en BHV'ers van de eigen locaties; een account zonder locaties ziet alle locaties.
+        <strong>Wat toont een scherm?</strong> Elk scherm (tv, kiosk of tablet) is een gebruikersaccount. Per account kiest u:
+        <br>• <strong>Google Slides</strong> — de presentatie (presentatie-ID bij de gebruiker of in de systeemconfiguratie).
+        <br>• <strong>Infoscherm</strong> — eigen berichten, nieuws, weer en agenda.
+        <br>• <strong>Slides + infoscherm</strong> — de presentatie groot in beeld, met weer, mededelingen en nieuwsbalk eromheen.
+        <br>Op een kiosk met medewerkerskaarten verschijnt dit na de ingestelde inactiviteit (“Automatisch tonen” aan); aanraken sluit het weer.
+        <br><strong>Welke inhoud?</strong> Dat bepalen de <strong>locaties van het account</strong> (Gebruikers › Zichtbare locaties, in te stellen door de beheerder). Zie de tabel hieronder.
     </div>
+    <details class="rules" <?= $scope['all'] ? '' : 'open' ?>>
+        <summary>📋 Wat toont een scherm met één, meer of alle locaties?</summary>
+        <table class="rules-table">
+            <thead><tr><th></th><th>Scherm met 1 locatie</th><th>Meer locaties (bijv. een MFA of een kiosk voor meerdere locaties)</th><th>🌐 Alle locaties (geen locatie aangevinkt)</th></tr></thead>
+            <tbody>
+                <tr><th>Berichten, nieuws, agenda</th><td>van die locatie + wat voor alle locaties is</td><td>van al zijn locaties samen + wat voor alle locaties is</td><td>alles</td></tr>
+                <tr><th>BHV aanwezig, Vandaag jarig</th><td>die locatie</td><td>al zijn locaties samen</td><td>iedereen</td></tr>
+                <tr><th>Weer</th><td>de weerplaats van die locatie, anders de algemene</td><td>de eerste van zijn locaties met een eigen weerplaats, anders de algemene</td><td>de algemene weerplaats</td></tr>
+                <tr><th>Huisstijl</th><td>die van de locatie (als die er een heeft), anders de organisatie</td><td>de organisatie, of hieronder zelf een kiezen</td><td>de organisatie, of zelf kiezen</td></tr>
+            </tbody>
+        </table>
+        <div class="muted">Een kiosk toont op het infoscherm altijd de inhoud van al zijn locaties, ook als op de kiosk één locatie is gekozen.</div>
+    </details>
     <form method="post">
         <input type="hidden" name="csrf" value="<?= $h($csrf) ?>">
         <input type="hidden" name="action" value="save_screens">
         <input type="hidden" name="tab" value="schermen">
         <table>
-            <thead><tr><th>Gebruiker</th><th class="hide-sm">Rol</th><th>Automatisch tonen</th><th>Weergave</th><th>Infoscherm</th><th class="hide-sm">Na inactiviteit</th><th>Voorbeeld</th></tr></thead>
+            <thead><tr><th>Scherm (account)</th><th>Locaties</th><th>Automatisch tonen</th><th>Weergave</th><th>Infoscherm</th><th>Voorbeeld</th></tr></thead>
             <tbody>
             <?php foreach ($screens as $u): $hasId = trim((string)$u['presentation_id']) !== '' || $globalPresentation !== ''; ?>
                 <tr>
-                    <td><strong><?= $h($u['display_name'] ?: $u['username']) ?></strong><div class="muted"><?= $h($u['username']) ?></div></td>
-                    <td class="hide-sm muted"><?= $h($u['role']) ?></td>
-                    <td><label class="check"><input type="checkbox" name="can_show[<?= (int)$u['id'] ?>]" value="1" <?= (int)$u['can_show_presentation'] ? 'checked' : '' ?>> Aan</label></td>
+                    <td><strong><?= $h($u['display_name'] ?: $u['username']) ?></strong><div class="muted"><?= $h($u['username']) ?> · <?= $h($u['role']) ?></div></td>
+                    <td><?= $u['_locs'] ? implode(' ', array_map(fn($l) => '<span class="loc-badge">📍 ' . $h($l) . '</span>', $u['_locs'])) : '<span class="loc-badge all" title="Geen locatie aangevinkt: dit scherm toont alle locaties">🌐 Alle locaties</span>' ?></td>
+                    <td><label class="check"><input type="checkbox" name="can_show[<?= (int)$u['id'] ?>]" value="1" <?= (int)$u['can_show_presentation'] ? 'checked' : '' ?>> Aan</label>
+                        <div class="muted">na <?= (int)$u['presentation_idle_seconds'] ?> sec</div></td>
                     <td>
                         <select name="screen_mode[<?= (int)$u['id'] ?>]" style="max-width:200px">
                             <option value="slides" <?= $u['screen_mode'] === 'slides' ? 'selected' : '' ?>>Google Slides<?= $hasId ? '' : ' (geen ID ingesteld)' ?></option>
@@ -1345,7 +1465,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                         <select name="brand[<?= (int)$u['id'] ?>]" title="Automatisch: een scherm met één locatie krijgt de huisstijl van die locatie, anders die van de organisatie">
                             <option value="*auto*" <?= $ub === null ? 'selected' : '' ?>>Automatisch (<?= $h($auto) ?>)</option>
                             <option value="*org*" <?= $ub === '' ? 'selected' : '' ?>>Organisatie</option>
-                            <?php foreach ($locations as $l): if (!isset($brandRows[$l]) && $ub !== $l) continue; ?>
+                            <?php foreach ($pickable as $l): if (!isset($brandRows[$l]) && $ub !== $l) continue; ?>
                                 <option value="<?= $h($l) ?>" <?= $ub === $l ? 'selected' : '' ?>><?= $h($l) ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -1360,7 +1480,6 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                         <?php endforeach; ?>
                         </div>
                     </td>
-                    <td class="hide-sm muted"><?= (int)$u['presentation_idle_seconds'] ?> sec</td>
                     <td>
                         <?php if ($u['screen_mode'] === 'slides'):
                             $pid = trim((string)$u['presentation_id']) !== '' ? trim((string)$u['presentation_id']) : $globalPresentation; ?>
@@ -1380,7 +1499,9 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <div class="form-actions"><button class="btn btn-primary" type="submit">💾 Opslaan</button>
             <span class="help" style="margin-left:8px">Het voorbeeld toont de opgeslagen keuze; sla eerst op na een wijziging.</span></div>
     </form>
+    <?php if (!$screens): ?><div class="empty"><div class="big">🖥️</div>Er zijn nog geen schermen voor uw locaties. De beheerder koppelt een schermaccount aan locaties bij Gebruikers.</div><?php endif; ?>
 
+    <?php if ($isAdminRole): ?>
     <div class="panel" style="margin-top:26px">
         <h2>🖥️ Een scherm dat alleen het infoscherm toont</h2>
         <p class="help" style="font-size:14px;color:#374151">Voor een tv of scherm zonder aanraking: log op dat scherm in met het schermaccount (vink “Blijf ingelogd” aan) en open:</p>
@@ -1403,6 +1524,7 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
         <p class="help">De sleutel staat bij Beheer &gt; Automatische taken (alleen voor beheerders met het recht Systeemconfiguratie).</p>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 <?php endif; ?>
 </div>
 <?= pd_infoscreen_location_picker_js() ?>

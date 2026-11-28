@@ -148,7 +148,7 @@ Met tweestapsverificatie vult een gebruiker bij het inloggen, naast het wachtwoo
 
 ## Rechten van een admin
 
-Heeft de gebruiker de rol **Admin**, dan staat er een extra tabblad **🔐 Rechten**. Daar vink je aan welke beheerfuncties deze admin mag gebruiken: locaties, afdelingen, kiosk tokens, bezoekers, badges, bulk acties, audit log, systeemconfiguratie, sub-status datums, gebruikers, back-up en infoscherm. Met **Alles aan** en **Alles uit** zet je ze in één keer. Een SuperAdmin mag altijd alles. Het tabblad verschijnt pas nadat je de rol Admin hebt opgeslagen.
+Heeft de gebruiker de rol **Admin**, dan staat er een extra tabblad **🔐 Rechten**. Daar vink je aan welke beheerfuncties deze admin mag gebruiken: locaties, afdelingen, kiosk tokens, bezoekers, badges, bulk acties, audit log, systeemconfiguratie, sub-status datums, gebruikers en back-up. De rechten voor het infoscherm staan op het tabblad **📺 Infoscherm** (zie [Rechten voor het infoscherm](#rechten-voor-het-infoscherm)). Met **Alles aan** en **Alles uit** zet je ze in één keer. Een SuperAdmin mag altijd alles. Het tabblad verschijnt pas nadat je de rol Admin hebt opgeslagen.
 
 ![Het tabblad Rechten van een admin](../images/gebruiker-rechten.png)
 
@@ -258,7 +258,7 @@ Met **Deactiveren** of **Verwijderen** werkt de link direct niet meer, bijvoorbe
 
 # Infoscherm
 
-Het infoscherm toont **eigen berichten, nieuws, het weer en de agenda** op een scherm, met datum en tijd. Collega's kunnen ook vanuit **Teams** een bericht plaatsen. Je gebruikt het in plaats van de Google Slides-presentatie, of samen ermee. Het is beschikbaar in alle pakketten, ook in Starter. Je beheert het via **Infoscherm** op het dashboard (groep *Systeem Configuratie*).
+Het infoscherm toont **eigen berichten, nieuws, het weer en de agenda** op een scherm, met datum en tijd. Collega's kunnen ook vanuit **Teams** een bericht plaatsen. Je gebruikt het in plaats van de Google Slides-presentatie, of samen ermee. Het is beschikbaar in alle pakketten, ook in Starter. Je beheert het via **Infoscherm** op het dashboard (groep *Systeem Configuratie*); wie dat mag en voor welke locaties, lees je bij [Rechten voor het infoscherm](#rechten-voor-het-infoscherm).
 
 ![Het infoscherm met een eigen bericht, het weer in de zijbalk en de nieuwsbalk](../images/infoscherm-scherm.png)
 
@@ -287,18 +287,41 @@ Klik op **Nieuw bericht** en vul in:
 
 In de lijst zie je per bericht voor welke locaties het is en of het **Op het scherm** staat, **Gepland** of **Verlopen** is, of **Uit** staat. Met **Uitzetten** haal je een bericht weg zonder het te verwijderen.
 
-Ook nieuwsbronnen, weerplaatsen, agenda's en koppelingen kun je aan één, meer of alle locaties koppelen. Wijzig je de naam van een locatie, dan gaan berichten, bronnen en koppelingen automatisch mee.
+Achter elk bericht en elke bron staat **📺** met het aantal infoschermen dat het toont; wijs ernaar om de namen te zien. Bij het kiezen van locaties staat dat aantal per locatie. Ook nieuwsbronnen, weerplaatsen, agenda's en koppelingen kun je aan één, meer of alle locaties koppelen. Wijzig je de naam van een locatie, dan gaan berichten, bronnen en koppelingen automatisch mee.
 
-## Wie mag berichten plaatsen?
+## Rechten voor het infoscherm
 
-- **SuperAdmin** en een **Admin** met het recht *Infoscherm beheren* beheren alles op deze pagina en plaatsen berichten voor **alle locaties**, bijvoorbeeld een belangrijk bericht dat overal moet staan.
-- Andere gebruikers, bijvoorbeeld de directeur, de receptie of de conciërge van één school, krijgen rechten **alleen voor hun eigen locaties**. Open de gebruiker bij **Gebruikers** en ga naar het tabblad **📺 Infoscherm**. Vink aan wat hij of zij mag: **📝 Berichten plaatsen** en/of **🖌️ Huisstijl aanpassen**, en vink onder **Voor welke locaties?** de locaties aan. Geen locatie aangevinkt betekent: geen enkele. De rol mag gewoon *User* blijven. Deze locaties staan los van de *Zichtbare locaties* (welke medewerkerskaarten iemand ziet); bij gebruikers van vóór versie 2.9.0 zijn ze daar eenmalig van overgenomen.
+Wie wat mag op het infoscherm, stel je per gebruiker in op één plek: bij **Gebruikers** › ✏️ › tabblad **📺 Infoscherm**. Dat kan bij elke rol, ook bij een gewone *User*. Zo kan bijvoorbeeld de directeur van één school de berichten, het nieuws en de huisstijl van die school beheren, zonder bij de andere scholen te kunnen en zonder andere beheerrechten.
 
 ![Rechten voor het infoscherm per gebruiker](../images/gebruiker-infoscherm.png)
 
-De gebruiker krijgt in het menu de knop **📝 Infoscherm**, met de tabbladen *Berichten* en *Huisstijl* (wat hij of zij mag). Bovenaan staat duidelijk voor welke locaties. Berichten voor alle locaties, of die ook op andere locaties staan, zijn voor de redacteur te zien met **🔒 Alleen lezen**, maar niet aan te passen. Nieuws, weer, agenda, koppelingen en weergave blijven bij de beheerder.
+1. **Voor welke locaties?** Kies *Alleen de aangevinkte locaties* en vink ze aan, of *🌐 Alle locaties*. Deze locaties staan los van de *Zichtbare locaties* op het tabblad Features.
+2. **Wat mag deze gebruiker?** Vink de onderdelen aan, of gebruik een snelkeuze en pas die zo nodig aan:
 
-![De pagina van een berichtenredacteur met twee locaties](../images/infoscherm-redacteur.png)
+| Onderdeel | Wat het inhoudt |
+|---|---|
+| 📝 Berichten | berichten plaatsen, aanpassen, uitzetten en verwijderen |
+| 📰 Nieuws | nieuwsbronnen en websites koppelen |
+| 🌤️ Weer | een weerplaats kiezen |
+| 📅 Agenda | agenda's koppelen |
+| 🖌️ Huisstijl | logo, titel, kleuren en lettertype |
+| 🖥️ Schermen | per scherm de weergave, huisstijl, jarigen en BHV kiezen, met voorbeeld; de locaties van een scherm blijven bij de beheerder |
+| 🎨 Weergave | instellingen voor alle schermen (alleen bij alle locaties) |
+| 🔗 Koppelingen | Teams en de Berichten-API (alleen bij alle locaties) |
+
+| Snelkeuze | Rechten |
+|---|---|
+| **Redacteur** | alleen berichten, voor de eigen locaties |
+| **Hoofdredacteur** | alles voor de eigen locaties (berichten, nieuws, weer, agenda, huisstijl, schermen) |
+| **Beheerder infoscherm** | alles, voor alle locaties |
+
+Onderaan staat in één zin wat de gebruiker mag en voor welke locaties. Klik op **Opslaan**.
+
+De gebruiker krijgt op het welkomstscherm de knop **📝 Infoscherm** (een admin ook de tegel op het dashboard) en ziet alleen de tabbladen waarvoor hij of zij rechten heeft. Bovenaan staat voor welke locaties. Alles wat ook voor andere locaties of voor alle locaties geldt, staat er met **🔒 Alleen lezen** bij. Een SuperAdmin mag altijd alles.
+
+![Het infoscherm voor een hoofdredacteur van twee locaties](../images/infoscherm-redacteur.png)
+
+Van vóór versie 2.10.0: een admin met het oude recht *Infoscherm beheren* heeft nu *Beheerder infoscherm, alle locaties*, en een redacteur houdt zijn rechten en locaties. Dat zie je op het tabblad; het wordt vastgelegd zodra je de gebruiker opslaat.
 
 ## Nieuws
 
@@ -399,7 +422,18 @@ Welke huisstijl een scherm gebruikt: een scherm met **één locatie** krijgt de 
 
 ## Schermen
 
-Op het tabblad **Schermen** kies je per gebruikersaccount wat het scherm toont: **Google Slides**, **Infoscherm** of **Slides + infoscherm** (de presentatie groot in beeld, met het weer, de mededelingen en de nieuwsbalk eromheen). Dezelfde keuze staat ook bij de gebruiker op het tabblad *Presentatie*.
+Elk scherm (tv, kiosk of tablet) is een gebruikersaccount. Op het tabblad **Schermen** zie je per account de **locaties** en kies je wat het scherm toont: **Google Slides**, **Infoscherm** of **Slides + infoscherm** (de presentatie groot in beeld, met het weer, de mededelingen en de nieuwsbalk eromheen). Dezelfde keuze staat ook bij de gebruiker op het tabblad *Presentatie*.
+
+**Welke inhoud een scherm toont, bepalen de locaties van het account** (Gebruikers › Features › *Zichtbare locaties*, in te stellen door de beheerder). Staat er geen locatie aangevinkt, dan staat er **🌐 Alle locaties** en toont het scherm alles. Iemand met het recht *Schermen* ziet alleen de schermen van zijn eigen locaties en kan hun locaties niet wijzigen.
+
+| | Scherm met 1 locatie | Meer locaties (bijv. een MFA of een kiosk voor meerdere locaties) | 🌐 Alle locaties |
+|---|---|---|---|
+| Berichten, nieuws, agenda | van die locatie + wat voor alle locaties is | van al zijn locaties samen + wat voor alle locaties is | alles |
+| BHV aanwezig, Vandaag jarig | die locatie | al zijn locaties samen | iedereen |
+| Weer | weerplaats van die locatie, anders de algemene | de eerste van zijn locaties met een eigen weerplaats | de algemene |
+| Huisstijl | van de locatie, anders de organisatie | de organisatie, of zelf een kiezen | de organisatie, of zelf kiezen |
+
+Een **kiosk** met medewerkerskaarten voor meerdere locaties toont op het infoscherm altijd de inhoud van al zijn locaties, ook als op de kiosk één locatie is gekozen.
 
 In de kolom **Infoscherm** kies je per scherm de **Huisstijl** (*Automatisch*, *Organisatie* of een locatie met een eigen huisstijl). Bij **Vandaag jarig** en **BHV aanwezig** kies je per scherm **Standaard** (volgt de instelling bij Weergave), **Aan** of **Uit**. Zo toont bijvoorbeeld het scherm in de school de jarigen wel en het scherm van de opvang niet. Een scherm toont altijd alleen de jarigen en BHV'ers van zijn eigen locaties. Een account zonder aangevinkte locaties ziet alle locaties; vink bij een scherm in een gebouw dus altijd de locatie(s) aan.
 

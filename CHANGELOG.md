@@ -2,6 +2,14 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.10.0 — 2026-11-28
+
+- Nieuw: tabblad 📺 Infoscherm bij Gebruikers met alle infoscherm-rechten op één plek: per onderdeel aan te vinken (Berichten, Nieuws, Weer, Agenda, Huisstijl, Schermen, Weergave, Koppelingen) en voor alle of voor gekozen locaties, met snelkeuzes Redacteur, Hoofdredacteur en Beheerder infoscherm. Werkt bij elke rol, ook bij een gewone gebruiker, zonder andere beheerrechten
+- Nieuw: iedereen met infoscherm-rechten gebruikt dezelfde pagina Infoscherm en ziet alleen zijn eigen tabbladen en locaties; wat ook voor andere locaties geldt staat er met Alleen lezen bij
+- Nieuw: achter elk bericht en elke bron staat op hoeveel infoschermen het te zien is, en bij het kiezen van locaties hoeveel schermen er per locatie zijn
+- Nieuw: het tabblad Schermen toont de locaties van elk scherm (of Alle locaties) en een tabel met wat een scherm met één, meer of alle locaties laat zien, ook voor kiosks en multifunctionele gebouwen
+- Gewijzigd: het admin-recht Infoscherm beheren is vervangen door de nieuwe rechten. Bestaande admins en redacteuren houden wat ze hadden; de pagina Infoscherm-berichten verwijst door naar de nieuwe pagina
+
 ## v2.9.0 — 2026-11-27
 
 - Nieuw: tabblad Huisstijl bij Infoscherm. Stel voor de hele organisatie en per locatie (bijvoorbeeld per school) een logo, titel, hoofdkleur, accentkleur, achtergrondkleuren en lettertype in, met een voorbeeld en een controle of de tekst goed leesbaar blijft

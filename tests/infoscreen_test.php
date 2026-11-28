@@ -436,5 +436,35 @@ eq(pd_infoscreen_screen_brand('{"infoscreenBrand":""}'), '', 'screen brand: orga
 eq(pd_infoscreen_screen_brand('{"infoscreenBrand":"KC Kiem"}'), 'KC Kiem', 'screen brand: location');
 eq(pd_infoscreen_screen_brand('{}'), null, 'screen brand: automatic');
 
+// ── Infoscreen rights (2.10.0) ───────────────────────────────────────────
+$r = pd_infoscreen_rights_from_features([], 'superadmin');
+check($r['all'] && !in_array(false, $r['rights'], true), 'rights: superadmin everything');
+$r = pd_infoscreen_rights_from_features([], 'admin');
+check($r['all'] && $r['rights']['display'] && $r['legacy'], 'rights: old admin without admin_features = everything (as before)');
+$r = pd_infoscreen_rights_from_features(['admin_features' => ['manage_users' => true]], 'admin');
+check(!in_array(true, $r['rights'], true), 'rights: old admin without manage_infoscreen = nothing');
+$r = pd_infoscreen_rights_from_features(['infoscreenEditor' => true, 'locations' => ['A', 'B']], 'user');
+eq([$r['rights']['messages'], $r['rights']['branding'], $r['all'], $r['locations']], [true, false, false, ['A', 'B']], 'rights: old redacteur');
+$r = pd_infoscreen_rights_from_features(['infoscreenRights' => ['messages' => true, 'display' => true, 'connections' => true, 'bogus' => true],
+    'infoscreenAllLocations' => false, 'infoscreenLocations' => ['A', '', 'A']], 'admin');
+eq([$r['rights']['messages'], $r['rights']['display'], $r['rights']['connections'], isset($r['rights']['bogus']), $r['locations']],
+   [true, false, false, false, ['A']], 'rights: organisation-wide rights only with all locations');
+$r = pd_infoscreen_rights_from_features(['infoscreenRights' => ['display' => true], 'infoscreenAllLocations' => true, 'admin_features' => ['manage_infoscreen' => true]], 'admin');
+eq([$r['all'], $r['rights']['display'], $r['rights']['messages']], [true, true, false], 'rights: new settings win over the old admin right');
+$post = pd_infoscreen_rights_from_post(['infoscreen_scope' => 'locations', 'infoscreen_rights' => ['messages', 'branding', 'connections'], 'infoscreen_locations' => ['A']]);
+eq([$post['infoscreenRights']['branding'], $post['infoscreenRights']['connections'], $post['infoscreenAllLocations'], $post['infoscreenLocations']],
+   [true, false, false, ['A']], 'rights from form: own locations');
+$post = pd_infoscreen_rights_from_post(['infoscreen_scope' => 'all', 'infoscreen_rights' => ['connections'], 'infoscreen_locations' => ['A']]);
+eq([$post['infoscreenRights']['connections'], $post['infoscreenAllLocations'], $post['infoscreenLocations']], [true, true, []], 'rights from form: all locations');
+$sc = ['all' => false, 'locations' => ['A', 'B']];
+check(pd_infoscreen_scope_sees_screen($sc, ['A']) && pd_infoscreen_scope_sees_screen($sc, ['A', 'B']), 'screens: own locations');
+check(!pd_infoscreen_scope_sees_screen($sc, ['A', 'C']) && !pd_infoscreen_scope_sees_screen($sc, []), 'screens: other or all locations not');
+check(pd_infoscreen_scope_sees_screen(['all' => true, 'locations' => []], []), 'screens: all-locations scope sees everything');
+check(pd_infoscreen_scope_allows($sc, ['A']) && !pd_infoscreen_scope_allows($sc, []) && !pd_infoscreen_scope_allows($sc, ['A', 'C']), 'items: only within own locations');
+$scr = [['id' => 1, 'name' => 'Hal', 'locations' => ['A']], ['id' => 2, 'name' => 'MFA', 'locations' => ['A', 'B']], ['id' => 3, 'name' => 'Alles', 'locations' => []]];
+eq(pd_infoscreen_screens_showing(['B'], $scr), ['MFA', 'Alles'], 'shown on: screens with that location and all-location screens');
+eq(pd_infoscreen_screens_showing([], $scr), ['Hal', 'MFA', 'Alles'], 'shown on: message for all locations');
+eq(pd_infoscreen_screen_counts(['A', 'B', 'C'], $scr), ['A' => 3, 'B' => 2, 'C' => 1], 'screen counts per location');
+
 echo ($failures ? "FAILED: $failures of $count checks\n" : "OK: $count infoscreen checks passed\n");
 exit($failures ? 1 : 0);

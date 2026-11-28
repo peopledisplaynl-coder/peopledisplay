@@ -21,8 +21,9 @@ header('Cache-Control: no-store');
 require_once __DIR__ . '/../../includes/db.php';
 require_once __DIR__ . '/../auth_helper.php';
 require_once __DIR__ . '/../../includes/infoscreen_web.php';
+require_once __DIR__ . '/../../includes/infoscreen.php';
 
-if (!isset($_SESSION['user_id']) || !hasAdminFeature('manage_infoscreen')) {
+if (!isset($_SESSION['user_id']) || !pd_infoscreen_scope_can(pd_infoscreen_scope($db, (int)$_SESSION['user_id']), 'news')) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'error' => 'Geen toegang']);
     exit;

@@ -73,7 +73,8 @@ $canManageConfig         = hasAdminFeature('manage_system_config');
 $canManageSubstatus      = hasAdminFeature('manage_substatus_dates');
 $canManageUsers          = hasAdminFeature('manage_users');
 $canCreateBackup         = ($userRole === 'superadmin') || hasAdminFeature('create_backup');
-$canManageInfoscreen     = hasAdminFeature('manage_infoscreen');
+require_once __DIR__ . '/../includes/infoscreen.php';
+$canManageInfoscreen     = pd_infoscreen_scope($db, (int)$_SESSION['user_id']) !== null; // 2.10.0: infoscreen rights per user
 
 // Cronjobs (2.6.0): warn while a cron job still uses the old public key
 $cronLegacyWarning = null;
