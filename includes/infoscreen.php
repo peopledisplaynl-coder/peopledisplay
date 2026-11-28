@@ -64,6 +64,7 @@ const PD_IS_WEATHER_PROVIDERS = [
 const PD_IS_DEFAULT_SETTINGS = [
     'title'          => '',      // header text; empty = no title
     'slide_seconds'  => '12',    // default time per slide
+    'slide_order'    => 'continue', // continue (where the screen stopped) | random (2.10.1)
     'news_slides'    => '1',     // show news items with an image as full slides
     'news_slide_max' => '4',     // max news slides per round
     'weather_slide'  => '1',     // a weather slide once per round
@@ -282,6 +283,7 @@ function pd_infoscreen_save_settings(PDO $db, array $input): array
         ? mb_substr(trim((string)$input['title']), 0, 80)
         : pd_infoscreen_settings($db)['title'];
     $clean['slide_seconds']  = (string)max(5, min(120, (int)($input['slide_seconds'] ?? 12)));
+    $clean['slide_order']    = ($input['slide_order'] ?? '') === 'random' ? 'random' : 'continue';
     $clean['news_slides']    = !empty($input['news_slides']) ? '1' : '0';
     $clean['news_slide_max'] = (string)max(0, min(20, (int)($input['news_slide_max'] ?? 4)));
     $clean['weather_slide']  = !empty($input['weather_slide']) ? '1' : '0';
@@ -1262,6 +1264,7 @@ function pd_infoscreen_screen_data(PDO $db, array $locations, string $baseUrl = 
         'settings' => [
             'title'          => $branding['title'],
             'slide_seconds'  => (int)$settings['slide_seconds'],
+            'slide_order'    => $settings['slide_order'] === 'random' ? 'random' : 'continue',
             'news_slides'    => $settings['news_slides'] === '1',
             'news_slide_max' => (int)$settings['news_slide_max'],
             'weather_slide'  => $settings['weather_slide'] === '1',

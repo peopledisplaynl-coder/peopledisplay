@@ -377,6 +377,13 @@ test('infoscreen: API and pages need a login, the cron script only runs from the
   assert.match(read('cron/cron_infoscreen.php'), /php_sapi_name\(\) !== 'cli'/);
 });
 
+test('infoscreen: the slides continue where the screen stopped, or in random order (2.10.1)', () => {
+  const page = read('infoscherm.php');
+  assert.match(page, /const POS_KEY = CACHE_KEY \+ '_pos'/);
+  assert.match(page, /savePos\(item\);/);
+  assert.match(page, /s\.slide_order === 'random'/);
+});
+
 test('infoscreen: long messages are made smaller to fit, the forms show a character counter', () => {
   assert.match(read('infoscherm.php'), /function fitText\(/);
   assert.match(read('infoscherm.php'), /var\(--fit\)/);

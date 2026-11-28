@@ -349,7 +349,7 @@ eq(pd_infoscreen_short_name(['voornaam' => 'Eva', 'achternaam' => 'van der Berg'
 eq(pd_infoscreen_short_name(['voornaam' => 'Jan', 'achternaam' => 'Smit']), 'Jan S.', 'short name');
 eq(pd_infoscreen_short_name(['voornaam' => '', 'achternaam' => '', 'naam' => 'Piet de Vries']), 'Piet V.', 'short name: from naam');
 eq(pd_infoscreen_short_name(['voornaam' => 'Noor', 'achternaam' => '']), 'Noor', 'short name: no surname');
-foreach (['bhv_card' => '0', 'bhv_names' => '1', 'birthday_slide' => '0'] as $k => $v) {
+foreach (['bhv_card' => '0', 'bhv_names' => '1', 'birthday_slide' => '0', 'slide_order' => 'continue'] as $k => $v) {
     eq(PD_IS_DEFAULT_SETTINGS[$k] ?? null, $v, "default setting $k");
 }
 

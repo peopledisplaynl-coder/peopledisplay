@@ -1,12 +1,20 @@
 {
-    "version": "2.10.0",
+    "version": "2.10.1",
     "critical": false,
-    "message": "Nieuw: infoscherm-rechten per gebruiker en per locatie, en duidelijk op welke schermen alles te zien is.",
+    "message": "Het infoscherm gaat nu verder waar het was, zodat alle dia's aan bod komen; of kies een willekeurige volgorde.",
     "changelog_url": "https:\/\/peopledisplay.nl\/peopledisplay-changelog-versiehistorie\/",
     "download_url": "",
     "checksum": "",
     "release_date": "2026-11-28",
     "changelog": [
+        {
+            "version": "2.10.1",
+            "date": "2026-11-28",
+            "changes": [
+                "Verbeterd: het infoscherm gaat verder waar het de vorige keer was. Een kiosk opent het infoscherm na elke aanmelding opnieuw; voorheen begon het dan steeds bij de eerste dia, zodat de rest zelden in beeld kwam",
+                "Nieuw: bij Infoscherm > Weergave kies je de volgorde van de dia's: op volgorde (verder waar het scherm was) of willekeurig (elke ronde anders)"
+            ]
+        },
         {
             "version": "2.10.0",
             "date": "2026-11-28",

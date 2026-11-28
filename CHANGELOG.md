@@ -2,6 +2,11 @@
 
 > Automatisch gegenereerd — niet handmatig bewerken.
 
+## v2.10.1 — 2026-11-28
+
+- Verbeterd: het infoscherm gaat verder waar het de vorige keer was. Een kiosk opent het infoscherm na elke aanmelding opnieuw; voorheen begon het dan steeds bij de eerste dia, zodat de rest zelden in beeld kwam
+- Nieuw: bij Infoscherm > Weergave kies je de volgorde van de dia's: op volgorde (verder waar het scherm was) of willekeurig (elke ronde anders)
+
 ## v2.10.0 — 2026-11-28
 
 - Nieuw: tabblad 📺 Infoscherm bij Gebruikers met alle infoscherm-rechten op één plek: per onderdeel aan te vinken (Berichten, Nieuws, Weer, Agenda, Huisstijl, Schermen, Weergave, Koppelingen) en voor alle of voor gekozen locaties, met snelkeuzes Redacteur, Hoofdredacteur en Beheerder infoscherm. Werkt bij elke rol, ook bij een gewone gebruiker, zonder andere beheerrechten

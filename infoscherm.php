@@ -362,6 +362,14 @@ body.no-weather #side-clock { display: block; }
     let pendingReload = false;
     let noteIndex = -1;
     let newsOffset = 0;         // which news slides this round starts with (moves on every round)
+    let roundNewsStart = 0;     // newsOffset this round was built with (to rebuild the same round after a restart)
+    // 2.10.1: continue where the screen stopped last time (a kiosk opens the infoscreen again and again)
+    const POS_KEY = CACHE_KEY + '_pos';
+    let resumed = false;
+    function loadPos() { try { return JSON.parse(localStorage.getItem(POS_KEY) || 'null'); } catch (e) { return null; } }
+    function savePos(item) {
+        try { localStorage.setItem(POS_KEY, JSON.stringify({ key: item.key || '', news: roundNewsStart, at: Date.now() })); } catch (e) { /* storage blocked */ }
+    }
     const brokenImages = new Set();
 
     const $ = (id) => document.getElementById(id);
@@ -505,6 +513,7 @@ body.no-weather #side-clock { display: block; }
         if (s.news_slides && s.news_slide_max > 0 && pool.length) {
             const count = Math.min(s.news_slide_max, pool.length);
             const start = newsOffset % pool.length;
+            roundNewsStart = start;
             for (let i = 0; i < count; i++) newsWithImage.push(pool[(start + i) % pool.length]);
             newsOffset = start + count;
         }
@@ -513,28 +522,32 @@ body.no-weather #side-clock { display: block; }
         // Messages, with a news slide after every message (news fills the gaps)
         const queueNews = newsWithImage.slice();
         messages.forEach((m) => {
-            list.push({ type: 'msg', html: messageSlide(m), seconds: m.duration || s.slide_seconds });
+            list.push({ type: 'msg', key: 'msg:' + m.id, html: messageSlide(m), seconds: m.duration || s.slide_seconds });
             if (queueNews.length) list.push(newsItem(queueNews.shift(), s));
         });
         while (queueNews.length) list.push(newsItem(queueNews.shift(), s));
 
         // Weather once per round, in the middle
         if (s.weather_slide && d.weather && d.weather.current) {
-            list.splice(Math.ceil(list.length / 2), 0, { type: 'wx', html: weatherSlide(d.weather), seconds: s.slide_seconds });
+            list.splice(Math.ceil(list.length / 2), 0, { type: 'wx', key: 'wx', html: weatherSlide(d.weather), seconds: s.slide_seconds });
         }
         // Agenda once per round, after the first quarter
         if (s.agenda_slide && (d.agenda || []).length) {
-            list.splice(Math.ceil(list.length / 4), 0, { type: 'agenda', html: agendaSlide(d.agenda), seconds: Math.max(s.slide_seconds, 15) });
+            list.splice(Math.ceil(list.length / 4), 0, { type: 'agenda', key: 'agenda', html: agendaSlide(d.agenda), seconds: Math.max(s.slide_seconds, 15) });
         }
         // Birthdays: right at the start of every round
         if (s.birthday_slide && (d.birthdays || []).length) {
-            list.splice(Math.min(1, list.length), 0, { type: 'bday', html: birthdaySlide(d.birthdays), seconds: Math.max(s.slide_seconds, 12) });
+            list.splice(Math.min(1, list.length), 0, { type: 'bday', key: 'bday', html: birthdaySlide(d.birthdays), seconds: Math.max(s.slide_seconds, 12) });
         }
         // Important messages come back halfway through a long round
         if (important.length && list.length > 5) {
-            list.splice(Math.floor(list.length * .75), 0, ...important.map((m) => ({ type: 'msg', html: messageSlide(m), seconds: m.duration || s.slide_seconds })));
+            list.splice(Math.floor(list.length * .75), 0, ...important.map((m) => ({ type: 'msg', key: 'msg2:' + m.id, html: messageSlide(m), seconds: m.duration || s.slide_seconds })));
         }
-        if (!list.length) list.push({ type: 'welcome', html: welcomeSlide(), seconds: 30 });
+        if (!list.length) list.push({ type: 'welcome', key: 'welcome', html: welcomeSlide(), seconds: 30 });
+        // Random order (setting Weergave › Volgorde): shuffle every round
+        if (s.slide_order === 'random') {
+            for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+        }
         return list;
     }
 
@@ -549,7 +562,7 @@ body.no-weather #side-clock { display: block; }
     }
 
     function newsItem(n, s) {
-        return { type: 'news', html: newsSlide(n), seconds: s.slide_seconds, image: n.image };
+        return { type: 'news', key: 'news:' + (n.link || n.title), html: newsSlide(n), seconds: s.slide_seconds, image: n.image };
     }
 
     function preload(url) {
@@ -585,6 +598,7 @@ body.no-weather #side-clock { display: block; }
             break;
         }
         if (!item) item = { html: welcomeSlide(), seconds: 30 };
+        savePos(item);
 
         const stage = $('stage');
         const wrap = document.createElement('div');
@@ -792,8 +806,22 @@ body.no-weather #side-clock { display: block; }
         } else {
             const frame = $('slides-frame');
             if (frame) frame.remove();
-            playlist = buildPlaylist(d);
-            if (modeChanged || index === -1) { index = -1; nextSlide(); }
+            let resumeAt = -1;
+            if (!resumed) {
+                // First start of this page: rebuild the round the screen was in and continue after its last slide
+                resumed = true;
+                const pos = loadPos();
+                if (pos && Number.isFinite(pos.news)) newsOffset = pos.news;
+                playlist = buildPlaylist(d);
+                if (s.slide_order !== 'random') {
+                    resumeAt = pos && pos.key ? playlist.findIndex((it) => it.key === pos.key) : -1;
+                    // Not found (content changed): start somewhere at random rather than always at the first slide
+                    if (resumeAt < 0 && pos) resumeAt = Math.floor(Math.random() * playlist.length) - 1;
+                }
+            } else {
+                playlist = buildPlaylist(d);
+            }
+            if (modeChanged || index === -1) { index = resumeAt; nextSlide(); }
             else if (index >= playlist.length) index = -1;
         }
         // A new PeopleDisplay version or a page open for more than a day: reload at the next slide

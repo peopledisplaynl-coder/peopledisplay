@@ -394,7 +394,9 @@ Click **➕ API-koppeling**. You see a key once: copy and keep it. A system then
 
 ## Display
 
-On the **Weergave** tab you set the colour scheme (dark or light; used when no own colours are set under [Huisstijl](#huisstijl-house-style)), the time per slide, the number of news slides per round, the speed of the news ticker, how many days ahead the agenda goes and which parts are shown (sidebar, news ticker, news slides, weather slide, agenda in the sidebar, agenda slide). **Voorbeeld** (preview) opens the result in a new window. Open screens pick up changes within 5 minutes.
+On the **Weergave** tab you set the colour scheme (dark or light; used when no own colours are set under [Huisstijl](#huisstijl-house-style)), the time per slide, the **order of the slides**, the number of news slides per round, the speed of the news ticker, how many days ahead the agenda goes and which parts are shown (sidebar, news ticker, news slides, weather slide, agenda in the sidebar, agenda slide). **Voorbeeld** (preview) opens the result in a new window. Open screens pick up changes within 5 minutes.
+
+Under **Volgorde van de dia's** (order of the slides) choose *Op volgorde* (in order): the screen continues where it was last time, also when a kiosk opens the infoscreen again and again (after every check-in). That way all slides get their turn, not just the first ones. *Willekeurig* (random) shows each round in a different order.
 
 Under **BHV en verjaardagen** (emergency response and birthdays) there are two extra parts. Both are off by default. What you choose here is the default for all screens; per screen you switch them on or off under [Screens](#screens).
 

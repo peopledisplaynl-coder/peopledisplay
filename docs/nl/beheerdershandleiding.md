@@ -392,7 +392,9 @@ Klik op **➕ API-koppeling**. Je krijgt één keer een sleutel te zien: kopieer
 
 ## Weergave
 
-Op het tabblad **Weergave** stel je de kleurstelling in (donker of licht; geldt als er geen eigen kleuren zijn bij [Huisstijl](#huisstijl)), de tijd per dia, het aantal nieuwsdia's per ronde, de snelheid van de nieuwsbalk, hoeveel dagen vooruit de agenda gaat en welke onderdelen zichtbaar zijn (zijbalk, nieuwsbalk, nieuwsdia's, weerdia, agenda in de zijbalk, agendadia). Met **Voorbeeld** bekijk je het resultaat in een nieuw venster. Open schermen nemen wijzigingen binnen 5 minuten over.
+Op het tabblad **Weergave** stel je de kleurstelling in (donker of licht; geldt als er geen eigen kleuren zijn bij [Huisstijl](#huisstijl)), de tijd per dia, de **volgorde van de dia's**, het aantal nieuwsdia's per ronde, de snelheid van de nieuwsbalk, hoeveel dagen vooruit de agenda gaat en welke onderdelen zichtbaar zijn (zijbalk, nieuwsbalk, nieuwsdia's, weerdia, agenda in de zijbalk, agendadia). Met **Voorbeeld** bekijk je het resultaat in een nieuw venster. Open schermen nemen wijzigingen binnen 5 minuten over.
+
+Bij **Volgorde van de dia's** kies je *Op volgorde*: het scherm gaat verder waar het de vorige keer was, ook als een kiosk het infoscherm telkens opnieuw opent (na elke aanmelding). Zo komen alle dia's aan bod en niet steeds alleen de eerste. Met *Willekeurig* is elke ronde in een andere volgorde.
 
 Onder **BHV en verjaardagen** staan twee extra onderdelen. Beide staan standaard uit. Wat je hier kiest, is de standaard voor alle schermen; per scherm zet je ze apart aan of uit bij [Schermen](#schermen).
 

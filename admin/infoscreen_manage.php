@@ -1344,6 +1344,14 @@ $appUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'jouwdomein.nl') . rtrim(s
                 <div class="help">Per bericht aan te passen. Ook de dia-snelheid van Google Slides in de combinatie-weergave.</div>
             </div>
             <div>
+                <label class="f" for="slide_order">Volgorde van de dia's</label>
+                <select id="slide_order" name="slide_order">
+                    <option value="continue" <?= $settings['slide_order'] !== 'random' ? 'selected' : '' ?>>Op volgorde, verder waar het scherm was</option>
+                    <option value="random" <?= $settings['slide_order'] === 'random' ? 'selected' : '' ?>>Willekeurig (elke ronde anders)</option>
+                </select>
+                <div class="help">Een kiosk opent het infoscherm telkens opnieuw; zo komen alle dia's toch aan bod.</div>
+            </div>
+            <div>
                 <label class="f" for="news_slide_max">Nieuwsdia's per ronde</label>
                 <input type="number" id="news_slide_max" name="news_slide_max" min="0" max="20" value="<?= (int)$settings['news_slide_max'] ?>">
                 <div class="help">Nieuws met een afbeelding als grote dia, tussen de eigen berichten door.</div>
